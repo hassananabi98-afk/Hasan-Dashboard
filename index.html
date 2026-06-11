@@ -470,6 +470,15 @@
 
   // ── AUTH ─────────────────────────────────────────────────
   async function initAuth() {
+    // wait for supabase to restore session from storage
+    await new Promise(resolve => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'INITIAL_SESSION') {
+          subscription.unsubscribe()
+          resolve(session)
+        }
+      })
+    })
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) await supabase.auth.signInAnonymously()
     $('loading').classList.add('hidden')
