@@ -609,12 +609,12 @@
     })
   }
 
-  function bindAddSupp(prefix, stateRef) {
-    const addBtn = $(`${prefix}add-supp-btn`)
-    const inputRow = $(`${prefix}add-supp-input-row`)
-    const input = $(`${prefix}add-supp-input`)
-    const confirm = $(`${prefix}add-supp-confirm`)
-    const cardId = prefix === '' ? 'supp-card' : 'tsupp-card'
+  function bindAddSupp(addBtnId, inputRowId, inputId, confirmId, cardId, stateRef, renderPrefix) {
+    const addBtn = $(addBtnId)
+    const inputRow = $(inputRowId)
+    const input = $(inputId)
+    const confirmBtn = $(confirmId)
+    if (!addBtn || !inputRow || !input || !confirmBtn) return
 
     addBtn.addEventListener('click', () => {
       inputRow.style.display = 'flex'
@@ -625,22 +625,21 @@
     async function doAdd() {
       const name = input.value.trim()
       if (!name) return
-      // add to supplement_list in DB
       const { data, error } = await supabase.from('supplement_list').insert({ name, active: true }).select().single()
       if (error) { showToast('Could not add supplement', true); return }
       stateRef.push({ id: data.id, name, taken: false })
       input.value = ''
       inputRow.style.display = 'none'
       addBtn.style.display = 'flex'
-      renderSuppRows(cardId, stateRef, prefix)
+      renderSuppRows(cardId, stateRef, renderPrefix)
     }
 
-    confirm.addEventListener('click', doAdd)
+    confirmBtn.addEventListener('click', doAdd)
     input.addEventListener('keydown', e => { if (e.key === 'Enter') doAdd() })
   }
 
-  bindAddSupp('', suppState)
-  bindAddSupp('tadd-supp-', tsuppState)
+  bindAddSupp('add-supp-btn', 'add-supp-input-row', 'add-supp-input', 'add-supp-confirm', 'supp-card', suppState, '')
+  bindAddSupp('tadd-supp-btn', 'tadd-supp-input-row', 'tadd-supp-input', 'tadd-supp-confirm', 'tsupp-card', tsuppState, 'tadd-supp-')
 
   // ── LOAD DAY DATA ────────────────────────────────────────
   async function loadDayData(dateStr, prefix, stepperCtrl, stateRef, cardId) {
