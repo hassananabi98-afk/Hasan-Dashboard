@@ -446,10 +446,10 @@
 </div>
 
 <script type="module">
-  // ── CONFIG — fill these in ──────────────────────────────
-  const SUPABASE_URL = 'https://wrsqsrouliceqewkxvpw.supabase.co'
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indyc3Fzcm91bGljZXFld2t4dnB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMDg0NTEsImV4cCI6MjA5NjY4NDQ1MX0.rCLfPy5wzwY76lttpoFPimYHwzh4igbMsAJr9WnMIoY'
-  const PIN_HASH = 'd59a23c3feff6c21bbd651244d14c5639d3aa704751d4ce7aaa481712a18456d' // generate below, then paste here
+  // ── CONFIG ──────────────────────────────────────────────
+  const SUPABASE_URL = 'YOUR_SUPABASE_URL'
+  const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY'
+  const PIN_HASH = 'YOUR_PIN_HASH'
   // ────────────────────────────────────────────────────────
 
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
@@ -634,7 +634,7 @@
     async function doAdd() {
       const name = input.value.trim()
       if (!name) return
-      const { data, error } = await supabase.from('supplement_list').insert({ name, active: true }).select().single()
+      const { data, error } = await supabase.from('supplement_list').insert({ name, active: true }).select().maybeSingle()
       if (error) { showToast('Could not add supplement', true); return }
       stateRef.push({ id: data.id, name, taken: false })
       input.value = ''
@@ -672,15 +672,15 @@
     renderSuppRows(cardId, stateRef, prefix === '' ? '' : 'tadd-supp-')
 
     // load prayers
-    const { data: prayers } = await supabase.from('prayers').select('*').eq('date', dateStr).single()
+    const { data: prayers } = await supabase.from('prayers').select('*').eq('date', dateStr).maybeSingle()
     if (prayers) prayerKeys.forEach(k => setToggle(`${prefix}tog-${k}`, prayers[k]))
 
     // load meals
-    const { data: meals } = await supabase.from('meals').select('*').eq('date', dateStr).single()
+    const { data: meals } = await supabase.from('meals').select('*').eq('date', dateStr).maybeSingle()
     if (meals) mealKeys.forEach(k => setToggle(`${prefix}tog-${k}`, meals[k]))
 
     // load daily tracking
-    const { data: dt } = await supabase.from('daily_tracking').select('*').eq('date', dateStr).single()
+    const { data: dt } = await supabase.from('daily_tracking').select('*').eq('date', dateStr).maybeSingle()
     if (dt) {
       setToggle(`${prefix}tog-smoked`, dt.smoked)
       stepperCtrl.set(dt.patches || 0)
