@@ -911,7 +911,6 @@
             <button class="sett-toggle" id="sett-smoke-analytics-toggle"></button>
           </div>
           <div id="sett-custom-anl-list"></div>
-          <div style="font-size:12px;color:var(--text3);margin-top:6px;padding:0 4px">Add log types in Daily Log Types below to enable them here.</div>
         </div>
 
         <!-- Custom Log Types -->
@@ -2960,13 +2959,21 @@
       const emoji = logtypeEmojiInp.value.trim() || '📋'
       logtypeAddBtn.textContent = 'Adding...'
       logtypeAddBtn.disabled = true
-      const { data, error } = await supabase.from('custom_log_types').insert({ name, emoji, active: true }).select().maybeSingle()
+      const { data, error } = await supabase.from('custom_log_types').insert({ name, emoji, active: true, show_in_analytics: true }).select().maybeSingle()
       logtypeAddBtn.textContent = 'Add'
       logtypeAddBtn.disabled = false
       if (error || !data) { return }
       customLogTypes.push(data)
       logtypeNameInp.value = ''; logtypeEmojiInp.value = ''
       renderSettLogTypes()
+      renderSettCustomAnlList()
+      if (anlLoaded) {
+        const customToShow = customLogTypes.filter(t => t.show_in_analytics)
+        const results = await Promise.all(
+          customToShow.map(t => supabase.from('custom_log_entries').select('date,value').eq('log_type_id', t.id).eq('value', true).order('date', {ascending:false}))
+        )
+        renderCustomAnalyticsCards(customToShow, results)
+      }
     })
 
     // Add category
