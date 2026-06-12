@@ -1216,10 +1216,10 @@
     const start = `${ym}-01`
     const end = `${ym}-31`
     const [prayRes, mealRes, gymRes, smokeRes] = await Promise.all([
-      supabase.from('prayers').select('*').gte('date', start).lte('date', end),
-      supabase.from('meals').select('*').gte('date', start).lte('date', end),
-      supabase.from('health_sessions').select('*').eq('type','gym').gte('date', start).lte('date', end),
-      supabase.from('daily_tracking').select('*').gte('date', start).lte('date', end),
+      supabase.from('prayers').select('*').filter('date','gte',start).filter('date','lte',end),
+      supabase.from('meals').select('*').filter('date','gte',start).filter('date','lte',end),
+      supabase.from('health_sessions').select('*').eq('type','gym').filter('date','gte',start).filter('date','lte',end),
+      supabase.from('daily_tracking').select('*').filter('date','gte',start).filter('date','lte',end),
     ])
     calDotData = {}
     ;(prayRes.data||[]).forEach(r => {
