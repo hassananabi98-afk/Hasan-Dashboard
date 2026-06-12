@@ -911,6 +911,7 @@
             <button class="sett-toggle" id="sett-smoke-analytics-toggle"></button>
           </div>
           <div id="sett-custom-anl-list"></div>
+          <div style="font-size:12px;color:var(--text3);margin-top:6px;padding:0 4px">Add log types in Daily Log Types below to enable them here.</div>
         </div>
 
         <!-- Custom Log Types -->
@@ -2462,7 +2463,7 @@
     if (!customLogTypes.length) await loadCustomLogTypes()
     const customToShow = customLogTypes.filter(t => t.show_in_analytics)
     const [dtAll, expenses6m, cats, ...customResults] = await Promise.all([
-      supabase.from('daily_tracking').select('date,smoked,reading').order('date', {ascending:false}),
+      supabase.from('daily_tracking').select('*').order('date', {ascending:false}),
       supabase.from('expenses').select('date,amount,category').gte('date', get6mStart()).lte('date', today).order('date'),
       supabase.from('categories').select('name,color'),
       ...customToShow.map(t =>
@@ -2863,11 +2864,28 @@
     customLogTypes = data || []
   }
 
+  const READING_EMOJI_KEY = 'hassan-reading-emoji'
+  function getReadingEmoji() { return localStorage.getItem(READING_EMOJI_KEY) || '📚' }
+
   function renderSettLogTypes() {
     const el = document.getElementById('sett-logtype-list')
     if (!el) return
-    if (!customLogTypes.length) { el.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:var(--text3);background:var(--bg2);border-radius:var(--radius)">No log types yet</div>'; return }
-    el.innerHTML = customLogTypes.map(t => `
+
+    // Built-in Reading row — always shown, not deletable
+    const readingEmoji = getReadingEmoji()
+    const builtInRow = `<div class="sett-row" style="opacity:0.9">
+      <input class="sett-rename-input" id="sett-reading-emoji-inp" value="${readingEmoji}" maxlength="4" style="max-width:52px;text-align:center">
+      <input class="sett-rename-input" value="Reading" maxlength="40" style="flex:1;min-width:80px" disabled>
+      <button class="sett-add-btn" id="sett-reading-emoji-save" style="padding:5px 10px;font-size:12px">Save</button>
+      <span style="font-size:11px;color:var(--text3);padding:0 6px;white-space:nowrap">Built-in</span>
+    </div>`
+
+    if (!customLogTypes.length) {
+      el.innerHTML = builtInRow
+      wireReadingEmojiSave()
+      return
+    }
+    el.innerHTML = builtInRow + customLogTypes.map(t => `
       <div class="sett-row" data-logtype-id="${t.id}" style="flex-wrap:wrap;gap:6px">
         <input class="sett-rename-input" data-logtype-emoji-inp="${t.id}" value="${escHtml(t.emoji || '📋')}" maxlength="4" style="max-width:52px;text-align:center">
         <input class="sett-rename-input" data-logtype-name-inp="${t.id}" value="${escHtml(t.name)}" maxlength="40" style="flex:1;min-width:80px">
@@ -2912,6 +2930,19 @@
         customLogTypes = customLogTypes.filter(t => t.id !== id)
         renderSettLogTypes()
       })
+    })
+    wireReadingEmojiSave()
+  }
+
+  function wireReadingEmojiSave() {
+    const btn = document.getElementById('sett-reading-emoji-save')
+    const inp = document.getElementById('sett-reading-emoji-inp')
+    if (!btn || !inp) return
+    btn.addEventListener('click', () => {
+      const emoji = inp.value.trim() || '📚'
+      localStorage.setItem(READING_EMOJI_KEY, emoji)
+      btn.textContent = '✓'; btn.disabled = true
+      setTimeout(() => { btn.textContent = 'Save'; btn.disabled = false }, 800)
     })
   }
 
