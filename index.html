@@ -495,9 +495,6 @@
           </div>
         </div>
 
-        <!-- Custom log types (injected by JS) -->
-        <div id="custom-log-section"></div>
-
         <!-- Supplements -->
         <div class="log-section">
           <div class="log-section-title">Supplements</div>
@@ -575,9 +572,6 @@
           <div class="log-row"><span class="log-row-label">Read today</span><button class="toggle" id="ttog-reading"><div class="toggle-thumb"></div></button></div>
         </div>
       </div>
-
-      <!-- Custom log types (injected by JS) -->
-      <div id="tcustom-log-section"></div>
 
       <div class="log-section">
         <div class="log-section-title">Supplements</div>
@@ -823,8 +817,6 @@
             <div class="anl-stat"><div class="anl-stat-val" id="anl-reading-total">—</div><div class="anl-stat-lbl">days total</div></div>
           </div>
         </div>
-        <!-- Dynamic custom log analytics cards injected here -->
-        <div id="anl-custom-cards"></div>
         <!-- Smoking -->
         <div class="log-card" style="margin-bottom:14px" id="anl-smoke-card">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
@@ -910,19 +902,9 @@
             <div class="sett-row-label">🚬 Smoking</div>
             <button class="sett-toggle" id="sett-smoke-analytics-toggle"></button>
           </div>
-          <div id="sett-custom-anl-list"></div>
         </div>
 
-        <!-- Custom Log Types -->
-        <div class="sett-section">
-          <div class="sett-section-title">Daily Log Types</div>
-          <div id="sett-logtype-list"></div>
-          <div class="sett-add-row">
-            <input class="sett-add-input" id="sett-logtype-name" placeholder="Log name (e.g. Exercise)" maxlength="40">
-            <input class="sett-add-input" id="sett-logtype-emoji" placeholder="Emoji" maxlength="4" style="max-width:64px">
-            <button class="sett-add-btn" id="sett-logtype-add-btn">Add</button>
-          </div>
-        </div>
+
 
         <div style="height:24px"></div>
       </div>
@@ -1160,61 +1142,12 @@
   bindAddSupp('add-supp-btn', 'add-supp-input-row', 'add-supp-input', 'add-supp-confirm', 'supp-card', suppState, '')
   bindAddSupp('tadd-supp-btn', 'tadd-supp-input-row', 'tadd-supp-input', 'tadd-supp-confirm', 'tsupp-card', tsuppState, 'tadd-supp-')
 
-  // ── CUSTOM LOG ENTRIES ──────────────────────────────────
-  // customLogState[prefix][typeId] = bool
-  const customLogState = { '': {}, 't': {} }
-
-  async function renderCustomLogToggles(prefix, dateStr) {
-    // find or create the custom-logs container in the correct day view
-    const containerId = prefix === '' ? 'custom-log-section' : 'tcustom-log-section'
-    let container = document.getElementById(containerId)
-    if (!container) return
-
-    const activeTypes = customLogTypes.filter(t => t.active)
-    if (!activeTypes.length) { container.innerHTML = ''; return }
-
-    // fetch entries for this day
-    const { data: entries } = await supabase
-      .from('custom_log_entries').select('*').eq('date', dateStr)
-    const valueMap = {}
-    ;(entries || []).forEach(e => { valueMap[e.log_type_id] = e.value })
-
-    // store in state
-    customLogState[prefix] = {}
-    activeTypes.forEach(t => { customLogState[prefix][t.id] = !!valueMap[t.id] })
-
-    // render
-    container.innerHTML = activeTypes.map(t => `
-      <div class="log-section">
-        <div class="log-section-title">${t.emoji || '📋'} ${escHtml(t.name)}</div>
-        <div class="log-card">
-          <div class="log-row">
-            <span class="log-row-label">${escHtml(t.name)} today</span>
-            <button class="toggle ${customLogState[prefix][t.id] ? 'on' : ''}" data-custom-tog="${t.id}" data-prefix="${prefix}"><div class="toggle-thumb"></div></button>
-          </div>
-        </div>
-      </div>`).join('')
-
-    container.querySelectorAll('[data-custom-tog]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        btn.classList.toggle('on')
-        const id = btn.dataset.customTog
-        const px = btn.dataset.prefix
-        customLogState[px][id] = btn.classList.contains('on')
-      })
-    })
-  }
-
   // ── LOAD DAY DATA ────────────────────────────────────────
   async function loadDayData(dateStr, prefix, stepperCtrl, stateRef, cardId) {
     // reset UI
     ;[...prayerKeys, ...mealKeys, 'smoked', 'reading'].forEach(k => setToggle(`${prefix}tog-${k}`, false))
     stepperCtrl.set(0)
     stateRef.length = 0
-
-    // load + render custom log types
-    if (!customLogTypes.length) await loadCustomLogTypes()
-    renderCustomLogToggles(prefix, dateStr)
 
     // load supplement list
     const { data: suppList } = await supabase.from('supplement_list').select('*').eq('active', true).order('name')
@@ -1294,15 +1227,7 @@
         )
       }
 
-      // custom log entries: delete + re-insert
-      await supabase.from('custom_log_entries').delete().eq('date', dateStr)
-      const px = prefix === '' ? '' : 't'
-      const customEntries = Object.entries(customLogState[px] || {})
-      if (customEntries.length > 0) {
-        await supabase.from('custom_log_entries').insert(
-          customEntries.map(([log_type_id, value]) => ({ date: dateStr, log_type_id, value }))
-        )
-      }
+
 
       showToast('Saved ✓')
     } catch (e) {
@@ -1323,10 +1248,9 @@
     const ym = `${year}-${String(month+1).padStart(2,'0')}`
     const start = `${ym}-01`
     const end = new Date(year, month + 1, 0).toISOString().slice(0, 10) // actual last day of month
-    const [prayRes, mealRes, gymRes, smokeRes] = await Promise.all([
+    const [prayRes, mealRes, dtRes] = await Promise.all([
       supabase.from('prayers').select('*').filter('date','gte',start).filter('date','lte',end),
       supabase.from('meals').select('*').filter('date','gte',start).filter('date','lte',end),
-      supabase.from('health_sessions').select('*').eq('type','gym').filter('date','gte',start).filter('date','lte',end),
       supabase.from('daily_tracking').select('*').filter('date','gte',start).filter('date','lte',end),
     ])
     calDotData = {}
@@ -1338,11 +1262,7 @@
       if (!calDotData[r.date]) calDotData[r.date] = {}
       calDotData[r.date].meals = r.breakfast||r.lunch||r.dinner
     })
-    ;(gymRes.data||[]).forEach(r => {
-      if (!calDotData[r.date]) calDotData[r.date] = {}
-      calDotData[r.date].gym = true
-    })
-    ;(smokeRes.data||[]).forEach(r => {
+    ;(dtRes.data||[]).forEach(r => {
       if (!calDotData[r.date]) calDotData[r.date] = {}
       calDotData[r.date].smoke = r.smoked
       calDotData[r.date].reading = r.reading || false
@@ -1380,7 +1300,6 @@
       const segments = []
       if (dots.prayers) segments.push('#a855f7')
       if (dots.meals)   segments.push('#f97316')
-      if (dots.gym)     segments.push('#22c55e')
       if (dots.smoke)   segments.push('#ef4444')
       if (dots.reading) segments.push('#3b82f6')
 
@@ -2458,21 +2377,14 @@
 
     // fetch in parallel
     const today = new Date().toISOString().slice(0,10)
-    const monthStart = anlMonth + '-01'
-    if (!customLogTypes.length) await loadCustomLogTypes()
-    const customToShow = customLogTypes.filter(t => t.show_in_analytics)
-    const [dtAll, expenses6m, cats, ...customResults] = await Promise.all([
+    const [dtAll, expenses6m, cats] = await Promise.all([
       supabase.from('daily_tracking').select('*').order('date', {ascending:false}),
       supabase.from('expenses').select('date,amount,category').gte('date', get6mStart()).lte('date', today).order('date'),
       supabase.from('categories').select('name,color'),
-      ...customToShow.map(t =>
-        supabase.from('custom_log_entries').select('date,value').eq('log_type_id', t.id).eq('value', true).order('date', {ascending:false})
-      )
     ])
 
     renderSmokeStats(dtAll.data || [], anlMonth)
     renderReadingStats(dtAll.data || [], anlMonth)
-    renderCustomAnalyticsCards(customToShow, customResults)
     renderSpendChart(expenses6m.data || [], cats.data || [], anlMonth)
     renderTrendChart(expenses6m.data || [], cats.data || [])
   }
@@ -2542,38 +2454,6 @@
     if (statEls[1]) statEls[1].className = 'anl-stat ' + (monthCount > 0 ? 'anl-smoke-free' : '')
   }
 
-  function renderCustomAnalyticsCards(types, results) {
-    const container = document.getElementById('anl-custom-cards')
-    if (!container) return
-    if (!types || !types.length) { container.innerHTML = ''; return }
-
-    container.innerHTML = types.map((t, i) => {
-      const rows = (results && results[i] && results[i].data) ? results[i].data : []
-      const dateSet = new Set(rows.map(r => r.date))
-
-      // streak from today backwards
-      let streak = 0
-      const d = new Date()
-      while (dateSet.has(d.toISOString().slice(0,10))) {
-        streak++
-        d.setDate(d.getDate() - 1)
-      }
-      const monthCount = rows.filter(r => r.date.startsWith(anlMonth)).length
-      const total = rows.length
-
-      return `<div class="log-card" style="margin-bottom:14px" id="anl-custom-${t.id}">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-          <span style="font-size:22px">${t.emoji || '📋'}</span>
-          <span style="font-size:16px;font-weight:600;color:var(--text)">${escHtml(t.name)}</span>
-        </div>
-        <div class="anl-stat-row">
-          <div class="anl-stat ${streak > 0 ? 'anl-smoke-free' : ''}"><div class="anl-stat-val">${streak}</div><div class="anl-stat-lbl">day streak</div></div>
-          <div class="anl-stat ${monthCount > 0 ? 'anl-smoke-free' : ''}"><div class="anl-stat-val">${monthCount}</div><div class="anl-stat-lbl">days this month</div></div>
-          <div class="anl-stat"><div class="anl-stat-val">${total}</div><div class="anl-stat-lbl">days total</div></div>
-        </div>
-      </div>`
-    }).join('')
-  }
 
   function renderGymStats(rows, month) {
     // streak = consecutive days with gym session ending from most recent gym day
@@ -2678,9 +2558,8 @@
   let settLoaded = false
 
   async function initSettings() {
-    await Promise.all([loadSettCategories(), loadSettSupplements(), loadSettCards(), loadCustomLogTypes()])
+    await Promise.all([loadSettCategories(), loadSettSupplements(), loadSettCards()])
     wireSettEvents()
-    renderSettCustomAnlList()
   }
 
   // ── Categories ──
@@ -2828,153 +2707,13 @@
         if (card) card.style.display = showReadingInAnalytics ? '' : 'none'
       })
     }
-    // Custom log type analytics toggles
-    renderSettCustomAnlList()
-  }
-
-  function renderSettCustomAnlList() {
-    const el = document.getElementById('sett-custom-anl-list')
-    if (!el || !customLogTypes.length) { if (el) el.innerHTML = ''; return }
-    el.innerHTML = customLogTypes.map(t => `
-      <div class="sett-row" style="border-bottom:none">
-        <div class="sett-row-label">${t.emoji || '📋'} ${escHtml(t.name)}</div>
-        <button class="sett-toggle ${t.show_in_analytics ? 'on' : ''}" data-anl-logtype="${t.id}" data-on="${!!t.show_in_analytics}"></button>
-      </div>`).join('')
-    el.querySelectorAll('[data-anl-logtype]').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const id = btn.dataset.anlLogtype
-        const newVal = btn.dataset.on !== 'true'
-        await supabase.from('custom_log_types').update({ show_in_analytics: newVal }).eq('id', id)
-        btn.dataset.on = newVal
-        btn.classList.toggle('on', newVal)
-        const t = customLogTypes.find(t => t.id === id)
-        if (t) t.show_in_analytics = newVal
-        // refresh analytics if loaded
-        if (anlLoaded) renderCustomAnalyticsCards()
-      })
-    })
   }
 
   // ── Custom Log Types ──
-  let customLogTypes = [] // [{id, name, emoji, active}] — loaded from Supabase
-
-  async function loadCustomLogTypes() {
-    const { data } = await supabase.from('custom_log_types').select('*').order('created_at')
-    customLogTypes = data || []
-  }
-
-  const READING_EMOJI_KEY = 'hassan-reading-emoji'
-  function getReadingEmoji() { return localStorage.getItem(READING_EMOJI_KEY) || '📚' }
-
-  function renderSettLogTypes() {
-    const el = document.getElementById('sett-logtype-list')
-    if (!el) return
-
-    // Built-in Reading row — always shown, not deletable
-    const readingEmoji = getReadingEmoji()
-    const builtInRow = `<div class="sett-row" style="opacity:0.9">
-      <input class="sett-rename-input" id="sett-reading-emoji-inp" value="${readingEmoji}" maxlength="4" style="max-width:52px;text-align:center">
-      <input class="sett-rename-input" value="Reading" maxlength="40" style="flex:1;min-width:80px" disabled>
-      <button class="sett-add-btn" id="sett-reading-emoji-save" style="padding:5px 10px;font-size:12px">Save</button>
-      <span style="font-size:11px;color:var(--text3);padding:0 6px;white-space:nowrap">Built-in</span>
-    </div>`
-
-    if (!customLogTypes.length) {
-      el.innerHTML = builtInRow
-      wireReadingEmojiSave()
-      return
-    }
-    el.innerHTML = builtInRow + customLogTypes.map(t => `
-      <div class="sett-row" data-logtype-id="${t.id}" style="flex-wrap:wrap;gap:6px">
-        <input class="sett-rename-input" data-logtype-emoji-inp="${t.id}" value="${escHtml(t.emoji || '📋')}" maxlength="4" style="max-width:52px;text-align:center">
-        <input class="sett-rename-input" data-logtype-name-inp="${t.id}" value="${escHtml(t.name)}" maxlength="40" style="flex:1;min-width:80px">
-        <button class="sett-add-btn" data-logtype-save="${t.id}" style="padding:5px 10px;font-size:12px">Save</button>
-        <button class="sett-toggle ${t.active ? 'on' : ''}" data-logtype-toggle="${t.id}" data-active="${t.active}"></button>
-        <button class="sett-del-btn" data-logtype-del="${t.id}" title="Delete">×</button>
-      </div>`).join('')
-
-    el.querySelectorAll('[data-logtype-save]').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const id = btn.dataset.logtypeSave
-        const nameInp = el.querySelector(`[data-logtype-name-inp="${id}"]`)
-        const emojiInp = el.querySelector(`[data-logtype-emoji-inp="${id}"]`)
-        const name = nameInp.value.trim(); if (!name) return
-        const emoji = emojiInp.value.trim() || '📋'
-        btn.textContent = '✓'; btn.disabled = true
-        await supabase.from('custom_log_types').update({ name, emoji }).eq('id', id)
-        const t = customLogTypes.find(t => t.id === id)
-        if (t) { t.name = name; t.emoji = emoji }
-        setTimeout(() => { btn.textContent = 'Save'; btn.disabled = false }, 800)
-      })
-    })
-
-    el.querySelectorAll('[data-logtype-toggle]').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const id = btn.dataset.logtypeToggle
-        const newActive = btn.dataset.active !== 'true'
-        await supabase.from('custom_log_types').update({ active: newActive }).eq('id', id)
-        btn.dataset.active = newActive
-        btn.classList.toggle('on', newActive)
-        const t = customLogTypes.find(t => t.id === id)
-        if (t) t.active = newActive
-      })
-    })
-
-    el.querySelectorAll('[data-logtype-del]').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        if (btn.textContent === '×') { btn.textContent = '✓'; btn.title = 'Confirm delete'; return }
-        const id = btn.dataset.logtypeDel
-        await supabase.from('custom_log_entries').delete().eq('log_type_id', id)
-        await supabase.from('custom_log_types').delete().eq('id', id)
-        customLogTypes = customLogTypes.filter(t => t.id !== id)
-        renderSettLogTypes()
-      })
-    })
-    wireReadingEmojiSave()
-  }
-
-  function wireReadingEmojiSave() {
-    const btn = document.getElementById('sett-reading-emoji-save')
-    const inp = document.getElementById('sett-reading-emoji-inp')
-    if (!btn || !inp) return
-    btn.addEventListener('click', () => {
-      const emoji = inp.value.trim() || '📚'
-      localStorage.setItem(READING_EMOJI_KEY, emoji)
-      btn.textContent = '✓'; btn.disabled = true
-      setTimeout(() => { btn.textContent = 'Save'; btn.disabled = false }, 800)
-    })
-  }
 
   // ── Wire add buttons ──
   function wireSettEvents() {
     renderSettAnalytics()
-    renderSettLogTypes()
-
-    // Add log type
-    const logtypeAddBtn = document.getElementById('sett-logtype-add-btn')
-    const logtypeNameInp = document.getElementById('sett-logtype-name')
-    const logtypeEmojiInp = document.getElementById('sett-logtype-emoji')
-    logtypeAddBtn.addEventListener('click', async () => {
-      const name = logtypeNameInp.value.trim(); if (!name) return
-      const emoji = logtypeEmojiInp.value.trim() || '📋'
-      logtypeAddBtn.textContent = 'Adding...'
-      logtypeAddBtn.disabled = true
-      const { data, error } = await supabase.from('custom_log_types').insert({ name, emoji, active: true, show_in_analytics: true }).select().maybeSingle()
-      logtypeAddBtn.textContent = 'Add'
-      logtypeAddBtn.disabled = false
-      if (error || !data) { return }
-      customLogTypes.push(data)
-      logtypeNameInp.value = ''; logtypeEmojiInp.value = ''
-      renderSettLogTypes()
-      renderSettCustomAnlList()
-      if (anlLoaded) {
-        const customToShow = customLogTypes.filter(t => t.show_in_analytics)
-        const results = await Promise.all(
-          customToShow.map(t => supabase.from('custom_log_entries').select('date,value').eq('log_type_id', t.id).eq('value', true).order('date', {ascending:false}))
-        )
-        renderCustomAnalyticsCards(customToShow, results)
-      }
-    })
 
     // Add category
     const catAddBtn = document.getElementById('sett-cat-add-btn')
