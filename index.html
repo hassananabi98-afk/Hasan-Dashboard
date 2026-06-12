@@ -60,22 +60,23 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: space-between;
-    padding: max(14vh, 48px) 0 max(7vh, 28px);
+    justify-content: center;
+    padding: 0 0 env(safe-area-inset-bottom);
     z-index: 100;
   }
   #pin-screen.hidden { display: none; }
-  .pin-top { display: flex; flex-direction: column; align-items: center; gap: 18px; }
-  .pin-title { font-size: 20px; font-weight: 500; color: var(--text); }
+  .pin-inner { display: flex; flex-direction: column; align-items: center; gap: 28px; }
+  .pin-top { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .pin-title { font-size: 18px; font-weight: 500; color: var(--text); }
   .pin-dots { display: flex; gap: 14px; }
-  .pin-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--text3); background: transparent; transition: background 0.15s; }
+  .pin-dot { width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--text3); background: transparent; transition: background 0.15s; }
   .pin-dot.filled { background: var(--accent); border-color: var(--accent); }
   .pin-error { font-size: 13px; color: var(--danger); height: 16px; }
-  .pin-keypad { display: grid; grid-template-columns: repeat(3, 64px); gap: 10px; }
-  .pin-key { height: 64px; border-radius: 50%; border: none; background: var(--bg2); color: var(--text); font-size: 20px; font-weight: 400; cursor: pointer; transition: background 0.1s, transform 0.1s; display: flex; align-items: center; justify-content: center; }
+  .pin-keypad { display: grid; grid-template-columns: repeat(3, 60px); gap: 10px; }
+  .pin-key { height: 60px; border-radius: 50%; border: none; background: var(--bg2); color: var(--text); font-size: 19px; font-weight: 400; cursor: pointer; transition: background 0.1s, transform 0.1s; display: flex; align-items: center; justify-content: center; }
   .pin-key:active { background: var(--bg3); transform: scale(0.94); }
   .pin-key.empty { background: transparent; pointer-events: none; }
-  .pin-key.del { font-size: 17px; }
+  .pin-key.del { font-size: 16px; }
 
   /* ── APP SHELL ── */
   #app { display: none; flex-direction: column; height: 100dvh; }
@@ -272,6 +273,14 @@
   .hlth-type-count{font-size:20px;font-weight:600;color:var(--text);line-height:1.2}
   .hlth-type-label{font-size:11px;color:var(--text2);font-weight:500;margin-top:2px}
   .hlth-hint{font-size:11px;color:var(--text3);text-align:center;margin-top:5px}
+  .hlth-hidden-toggle{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;cursor:pointer;color:var(--text3);font-size:13px;user-select:none;margin-top:4px}
+  .hlth-hidden-toggle:hover{color:var(--text2)}
+  .hlth-hidden-chevron{font-size:11px;transition:transform .2s}
+  .hlth-hidden-chevron.open{transform:rotate(180deg)}
+  .hlth-hidden-section{display:none}
+  .hlth-hidden-section.open{display:block}
+  .hlth-hidden-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;opacity:.5}
+  .hlth-hidden-label{font-size:11px;color:var(--text3);margin-bottom:6px;padding-left:2px}
   .hlth-session-row{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-bottom:.5px solid var(--border)}
   .hlth-session-row:last-child{border-bottom:none}
   .hlth-type-chip{font-size:11px;font-weight:500;padding:2px 9px;border-radius:10px;white-space:nowrap;flex-shrink:0;margin-top:2px}
@@ -322,6 +331,7 @@
 
 <!-- PIN Screen -->
 <div id="pin-screen" class="hidden">
+  <div class="pin-inner">
   <div class="pin-top">
     <div class="pin-title">Enter PIN</div>
     <div class="pin-dots">
@@ -345,6 +355,7 @@
     <button class="pin-key empty"></button>
     <button class="pin-key" data-n="0">0</button>
     <button class="pin-key del" id="pin-del">⌫</button>
+  </div>
   </div>
 </div>
 
@@ -591,7 +602,7 @@
             <textarea class="fin-form-input" id="fin-notes" placeholder="Optional..." rows="2" style="resize:none"></textarea>
           </div>
           <div class="fin-form-actions">
-            <button class="fin-confirm-btn" id="fin-confirm-btn" disabled>Add Expense</button>
+            <button class="fin-confirm-btn" id="fin-confirm-btn" disabled>Save</button>
             <button class="fin-cancel-link" id="fin-cancel-btn" type="button">Cancel</button>
           </div>
         </div>
@@ -650,7 +661,7 @@
             <textarea class="fin-form-input" id="txn-notes" placeholder="Optional..." rows="2" style="resize:none"></textarea>
           </div>
           <div class="fin-form-actions">
-            <button class="fin-confirm-btn" id="txn-confirm-btn" disabled>Add Transaction</button>
+            <button class="fin-confirm-btn" id="txn-confirm-btn" disabled>Save</button>
             <button class="fin-cancel-link" id="txn-cancel-btn" type="button">Cancel</button>
           </div>
         </div>
@@ -677,7 +688,17 @@
       <div class="fin-section">
         <div class="log-section-title">This Month</div>
         <div class="hlth-types-grid" id="hlth-types-grid"></div>
-        <div class="hlth-hint">Tap a type to show / hide it</div>
+        <div class="hlth-hint">Tap a type to hide it</div>
+        <!-- Hidden categories disclosure -->
+        <div id="hlth-hidden-wrap" style="display:none">
+          <div class="hlth-hidden-toggle" id="hlth-hidden-toggle">
+            <span id="hlth-hidden-label-text">Hidden</span>
+            <span class="hlth-hidden-chevron" id="hlth-hidden-chevron">▾</span>
+          </div>
+          <div class="hlth-hidden-section" id="hlth-hidden-section">
+            <div class="hlth-hidden-grid" id="hlth-hidden-grid"></div>
+          </div>
+        </div>
       </div>
 
       <div class="fin-section">
@@ -704,7 +725,7 @@
             <textarea class="fin-form-input" id="hlth-notes" placeholder="Optional..." rows="2" style="resize:none"></textarea>
           </div>
           <div class="fin-form-actions">
-            <button class="fin-confirm-btn" id="hlth-confirm-btn">Add Session</button>
+            <button class="fin-confirm-btn" id="hlth-confirm-btn">Save</button>
             <button class="fin-cancel-link" id="hlth-cancel-btn" type="button">Cancel</button>
           </div>
         </div>
@@ -1462,7 +1483,7 @@
 
   async function submitExpense() {
     const btn = $('fin-confirm-btn')
-    btn.disabled = true; btn.textContent = 'Adding...'
+    btn.disabled = true; btn.textContent = 'Saving...'
     const amount = Math.round(parseFloat($('fin-amount').value) * 1000) / 1000
     const label = $('fin-label').value.trim()
     const date = $('fin-date').value || todayStr()
@@ -1472,7 +1493,7 @@
       .select().maybeSingle()
     if (error) {
       showToast('Could not add expense', true)
-      btn.disabled = false; btn.textContent = 'Add Expense'; return
+      btn.disabled = false; btn.textContent = 'Save'; return
     }
     if (date.startsWith(finMonth)) {
       finExpenses.unshift(data)
@@ -1488,7 +1509,7 @@
     if (form) form.style.display = 'none'
     if (addBtn) addBtn.style.display = ''
     const btn = $('fin-confirm-btn')
-    if (btn) { btn.disabled = true; btn.textContent = 'Add Expense' }
+    if (btn) { btn.disabled = true; btn.textContent = 'Save' }
     ;['fin-amount','fin-label','fin-notes'].forEach(id => { const el = $(id); if (el) el.value = '' })
     const dd = $('cat-dropdown'); if (dd) dd.style.display = 'none'
   }
@@ -1705,7 +1726,7 @@
 
   async function submitTransaction() {
     const btn = $('txn-confirm-btn')
-    btn.disabled = true; btn.textContent = 'Adding...'
+    btn.disabled = true; btn.textContent = 'Saving...'
     const amount = Math.round(parseFloat($('txn-amount').value) * 1000) / 1000
     const label = $('txn-label').value.trim()
     const date = $('txn-date').value || todayStr()
@@ -1713,7 +1734,7 @@
     const { data, error } = await supabase.from('card_transactions')
       .insert({ card_id: selectedCardId, type: selectedTxnType, amount, label, category: selectedTxnCatName || null, date, notes })
       .select().maybeSingle()
-    if (error) { showToast('Could not add transaction', true); btn.disabled = false; btn.textContent = 'Add Transaction'; return }
+    if (error) { showToast('Could not add transaction', true); btn.disabled = false; btn.textContent = 'Save'; return }
     finAllTxns.unshift(data)
     finAllTxns.sort((a,b) => b.date.localeCompare(a.date))
     finMonthTxns = finAllTxns.filter(t => t.date.startsWith(finMonth))
@@ -1726,7 +1747,7 @@
     if (form) form.style.display = 'none'
     if (addBtn) addBtn.style.display = ''
     const btn = $('txn-confirm-btn')
-    if (btn) { btn.disabled = true; btn.textContent = 'Add Transaction' }
+    if (btn) { btn.disabled = true; btn.textContent = 'Save' }
     ;['txn-amount','txn-label','txn-notes'].forEach(id => { const el = $(id); if (el) el.value = '' })
     const dd = $('txn-cat-dropdown'); if (dd) dd.style.display = 'none'
   }
@@ -1772,10 +1793,14 @@
     const grid = $('hlth-types-grid'); if (!grid) return
     const counts = {}
     hlthSessions.forEach(s => { const k = hlthNormalizeType(s.type); counts[k] = (counts[k]||0)+1 })
-    grid.innerHTML = HLTH_TYPES.map(t => {
-      const hidden = hlthHiddenTypes.has(t.key)
-      const border = hidden ? 'var(--border)' : HLTH_BORDER[t.key]
-      return `<div class="hlth-type-tile${hidden ? ' hidden-type' : ''}" data-type="${t.key}" style="border-color:${border}">
+
+    const visibleTypes = HLTH_TYPES.filter(t => !hlthHiddenTypes.has(t.key))
+    const hiddenTypes  = HLTH_TYPES.filter(t =>  hlthHiddenTypes.has(t.key))
+
+    // render visible tiles
+    grid.innerHTML = visibleTypes.map(t => {
+      const border = HLTH_BORDER[t.key]
+      return `<div class="hlth-type-tile" data-type="${t.key}" style="border-color:${border}22">
         <div class="hlth-type-icon">${t.emoji}</div>
         <div class="hlth-type-count">${counts[t.key] || 0}</div>
         <div class="hlth-type-label">${t.label}</div>
@@ -1783,31 +1808,89 @@
     }).join('')
     grid.querySelectorAll('.hlth-type-tile').forEach(tile => {
       tile.addEventListener('click', () => {
-        const type = tile.dataset.type
-        if (hlthHiddenTypes.has(type)) hlthHiddenTypes.delete(type); else hlthHiddenTypes.add(type)
+        hlthHiddenTypes.add(tile.dataset.type)
         hlthSaveHidden(); renderHlthTypes(); renderHlthList()
       })
     })
+
+    // hidden section
+    const wrap  = $('hlth-hidden-wrap')
+    const hgrid = $('hlth-hidden-grid')
+    const lbl   = $('hlth-hidden-label-text')
+    if (!wrap || !hgrid) return
+
+    if (hiddenTypes.length === 0) {
+      wrap.style.display = 'none'
+    } else {
+      wrap.style.display = 'block'
+      if (lbl) lbl.textContent = `Hidden (${hiddenTypes.length})`
+      hgrid.innerHTML = hiddenTypes.map(t => `
+        <div class="hlth-type-tile" data-type="${t.key}" style="border-color:var(--border)">
+          <div class="hlth-type-icon">${t.emoji}</div>
+          <div class="hlth-type-count">${counts[t.key] || 0}</div>
+          <div class="hlth-type-label">${t.label}</div>
+        </div>`).join('')
+      hgrid.querySelectorAll('.hlth-type-tile').forEach(tile => {
+        tile.addEventListener('click', () => {
+          hlthHiddenTypes.delete(tile.dataset.type)
+          hlthSaveHidden(); renderHlthTypes(); renderHlthList()
+        })
+      })
+    }
   }
 
   function renderHlthList() {
     const container = $('hlth-session-list'); if (!container) return
     const visible = hlthSessions.filter(s => !hlthHiddenTypes.has(hlthNormalizeType(s.type)))
-    if (visible.length === 0) { container.innerHTML = '<div class="fin-empty">No sessions this month</div>'; return }
-    container.innerHTML = `<div class="log-card">${visible.map(s => {
-      const key = hlthNormalizeType(s.type)
-      return `<div class="hlth-session-row" data-id="${s.id}">
-        <span class="hlth-type-chip" style="${hlthChipStyle(key)}">${escHtml(s.type || 'Session')}</span>
-        <div class="hlth-session-meta">
-          <div class="hlth-session-date">${fmtDateShort(s.date)}</div>
-          ${s.notes ? `<div class="hlth-session-notes">${escHtml(s.notes)}</div>` : ''}
-        </div>
-        <button class="hlth-del-btn" data-del="${s.id}" aria-label="Delete">×</button>
-      </div>`
-    }).join('')}</div>`
-    container.querySelectorAll('[data-del]').forEach(btn => {
-      btn.addEventListener('click', ev => { ev.stopPropagation(); showHlthDeleteConfirm(btn.dataset.del) })
-    })
+    const hidden  = hlthSessions.filter(s =>  hlthHiddenTypes.has(hlthNormalizeType(s.type)))
+
+    if (visible.length === 0) {
+      container.innerHTML = '<div class="fin-empty">No sessions this month</div>'
+    } else {
+      container.innerHTML = `<div class="log-card">${visible.map(s => {
+        const key = hlthNormalizeType(s.type)
+        return `<div class="hlth-session-row" data-id="${s.id}">
+          <span class="hlth-type-chip" style="${hlthChipStyle(key)}">${escHtml(s.type || 'Session')}</span>
+          <div class="hlth-session-meta">
+            <div class="hlth-session-date">${fmtDateShort(s.date)}</div>
+            ${s.notes ? `<div class="hlth-session-notes">${escHtml(s.notes)}</div>` : ''}
+          </div>
+          <button class="hlth-del-btn" data-del="${s.id}" aria-label="Delete">×</button>
+        </div>`
+      }).join('')}</div>`
+      container.querySelectorAll('[data-del]').forEach(btn => {
+        btn.addEventListener('click', ev => { ev.stopPropagation(); showHlthDeleteConfirm(btn.dataset.del) })
+      })
+    }
+
+    // render hidden sessions inside the hidden section
+    const hgrid = $('hlth-hidden-grid')
+    if (hgrid && hidden.length > 0) {
+      // find or create a hidden sessions list below the hidden tiles
+      let hiddenList = $('hlth-hidden-session-list')
+      if (!hiddenList) {
+        hiddenList = document.createElement('div')
+        hiddenList.id = 'hlth-hidden-session-list'
+        $('hlth-hidden-section')?.appendChild(hiddenList)
+      }
+      hiddenList.innerHTML = `<div class="log-card" style="opacity:.6">${hidden.map(s => {
+        const key = hlthNormalizeType(s.type)
+        return `<div class="hlth-session-row" data-id="${s.id}">
+          <span class="hlth-type-chip" style="${hlthChipStyle(key)}">${escHtml(s.type || 'Session')}</span>
+          <div class="hlth-session-meta">
+            <div class="hlth-session-date">${fmtDateShort(s.date)}</div>
+            ${s.notes ? `<div class="hlth-session-notes">${escHtml(s.notes)}</div>` : ''}
+          </div>
+          <button class="hlth-del-btn" data-del="${s.id}" aria-label="Delete">×</button>
+        </div>`
+      }).join('')}</div>`
+      hiddenList.querySelectorAll('[data-del]').forEach(btn => {
+        btn.addEventListener('click', ev => { ev.stopPropagation(); showHlthDeleteConfirm(btn.dataset.del) })
+      })
+    } else {
+      const hiddenList = $('hlth-hidden-session-list')
+      if (hiddenList) hiddenList.innerHTML = ''
+    }
   }
 
   function showHlthDeleteConfirm(id) {
@@ -1858,13 +1941,13 @@
 
   async function submitHlthSession() {
     const btn = $('hlth-confirm-btn')
-    btn.disabled = true; btn.textContent = 'Adding...'
+    btn.disabled = true; btn.textContent = 'Saving...'
     let type = selectedHlthType
     if (type === 'other') { const v = $('hlth-custom-input')?.value.trim(); type = v || 'Other' }
     const date = $('hlth-date').value || todayStr()
     const notes = $('hlth-notes').value.trim() || null
     const { data, error } = await supabase.from('health_sessions').insert({ type, date, notes, visible: true }).select().maybeSingle()
-    if (error) { showToast('Could not add session', true); btn.disabled = false; btn.textContent = 'Add Session'; return }
+    if (error) { showToast('Could not add session', true); btn.disabled = false; btn.textContent = 'Save'; return }
     if (date.startsWith(hlthMonth)) {
       hlthSessions.unshift(data); hlthSessions.sort((a,b) => b.date.localeCompare(a.date))
     }
@@ -1875,7 +1958,7 @@
     const form = $('hlth-add-form'), addBtn = $('hlth-add-btn')
     if (form) form.style.display = 'none'
     if (addBtn) addBtn.style.display = ''
-    const btn = $('hlth-confirm-btn'); if (btn) { btn.disabled = false; btn.textContent = 'Add Session' }
+    const btn = $('hlth-confirm-btn'); if (btn) { btn.disabled = false; btn.textContent = 'Save' }
     if ($('hlth-notes')) $('hlth-notes').value = ''
     if ($('hlth-custom-input')) $('hlth-custom-input').value = ''
     const cr = $('hlth-custom-row'); if (cr) cr.style.display = 'none'
@@ -1912,7 +1995,17 @@
   })
 
   async function initHlthTab() {
-    hlthLoadHidden(); setHlthMonth(currentYM()); bindHlthForm(); await loadHlthData()
+    hlthLoadHidden(); setHlthMonth(currentYM()); bindHlthForm()
+    // bind hidden section toggle
+    const toggle = $('hlth-hidden-toggle')
+    if (toggle) {
+      toggle.addEventListener('click', () => {
+        const section = $('hlth-hidden-section'), chevron = $('hlth-hidden-chevron')
+        const open = section.classList.toggle('open')
+        if (chevron) chevron.classList.toggle('open', open)
+      })
+    }
+    await loadHlthData()
   }
 
   document.querySelector('.nav-item[data-tab="health"]').addEventListener('click', () => {
