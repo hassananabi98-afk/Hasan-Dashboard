@@ -487,6 +487,17 @@
           </div>
         </div>
 
+        <!-- Reading -->
+        <div class="log-section">
+          <div class="log-section-title">Reading 📚</div>
+          <div class="log-card">
+            <div class="log-row"><span class="log-row-label">Read today</span><button class="toggle" id="tog-reading"><div class="toggle-thumb"></div></button></div>
+          </div>
+        </div>
+
+        <!-- Custom log types (injected by JS) -->
+        <div id="custom-log-section"></div>
+
         <!-- Supplements -->
         <div class="log-section">
           <div class="log-section-title">Supplements</div>
@@ -557,6 +568,16 @@
           </div>
         </div>
       </div>
+
+      <div class="log-section">
+        <div class="log-section-title">Reading 📚</div>
+        <div class="log-card">
+          <div class="log-row"><span class="log-row-label">Read today</span><button class="toggle" id="ttog-reading"><div class="toggle-thumb"></div></button></div>
+        </div>
+      </div>
+
+      <!-- Custom log types (injected by JS) -->
+      <div id="tcustom-log-section"></div>
 
       <div class="log-section">
         <div class="log-section-title">Supplements</div>
@@ -792,26 +813,20 @@
       <div class="page-content" id="analytics-content">
         <!-- Smoking -->
         <div class="log-card" style="margin-bottom:14px" id="anl-smoke-card">
-          <div class="log-section-title" style="margin-bottom:12px">🚬 Smoking</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+            <span style="font-size:22px">🚬</span>
+            <span style="font-size:16px;font-weight:600;color:var(--text)">Smoking</span>
+          </div>
           <div class="anl-stat-row" id="anl-smoke-stats">
             <div class="anl-stat"><div class="anl-stat-val" id="anl-smoke-free-streak">—</div><div class="anl-stat-lbl">day streak</div></div>
             <div class="anl-stat"><div class="anl-stat-val" id="anl-smoke-free-month">—</div><div class="anl-stat-lbl">smoke-free this month</div></div>
             <div class="anl-stat"><div class="anl-stat-val" id="anl-smoke-days-month">—</div><div class="anl-stat-lbl">smoked this month</div></div>
           </div>
         </div>
-        <!-- Gym -->
-        <div class="log-card" style="margin-bottom:14px" id="anl-gym-card">
-          <div class="log-section-title" style="margin-bottom:12px">🏋️ Gym</div>
-          <div class="anl-stat-row" id="anl-gym-stats">
-            <div class="anl-stat"><div class="anl-stat-val" id="anl-gym-streak">—</div><div class="anl-stat-lbl">day streak</div></div>
-            <div class="anl-stat"><div class="anl-stat-val" id="anl-gym-month">—</div><div class="anl-stat-lbl">sessions this month</div></div>
-            <div class="anl-stat"><div class="anl-stat-val" id="anl-gym-total">—</div><div class="anl-stat-lbl">sessions total</div></div>
-          </div>
-        </div>
         <!-- Spending -->
         <div class="log-card" style="margin-bottom:14px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-            <div class="log-section-title">💸 Spending</div>
+            <div style="display:flex;align-items:center;gap:8px"><span style="font-size:22px">💸</span><span style="font-size:16px;font-weight:600;color:var(--text)">Spending</span></div>
             <div style="display:flex;gap:6px;align-items:center">
               <button class="anl-nav-btn" id="anl-prev-btn">‹</button>
               <span class="anl-month-lbl" id="anl-month-lbl"></span>
@@ -825,7 +840,7 @@
         </div>
         <!-- Monthly totals -->
         <div class="log-card" style="margin-bottom:14px">
-          <div class="log-section-title" style="margin-bottom:12px">📈 Monthly Spending <span style="font-size:11px;color:var(--text3);font-weight:400">— last 6 months</span></div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px"><span style="font-size:22px">📈</span><span style="font-size:16px;font-weight:600;color:var(--text)">Monthly Spending</span><span style="font-size:11px;color:var(--text3)">— last 6 months</span></div>
           <div id="anl-trend-chart-wrap" style="position:relative;height:200px">
             <canvas id="anl-trend-canvas"></canvas>
           </div>
@@ -870,11 +885,25 @@
           </div>
         </div>
 
-        <!-- Health Privacy -->
+        <!-- Analytics Visibility -->
         <div class="sett-section">
-          <div class="sett-section-title">Health Privacy</div>
-          <div id="sett-hlth-list"></div>
-          <div style="font-size:12px;color:var(--text3);margin-top:6px;padding:0 4px">Hidden types are excluded from Analytics.</div>
+          <div class="sett-section-title">Analytics Visibility</div>
+          <div class="sett-row" style="border-radius:var(--radius);border-bottom:none">
+            <div class="sett-row-label">🚬 Show Smoking in Analytics</div>
+            <button class="sett-toggle" id="sett-smoke-analytics-toggle"></button>
+          </div>
+        </div>
+
+        <!-- Custom Log Types -->
+        <div class="sett-section">
+          <div class="sett-section-title">Daily Log Types</div>
+          <div id="sett-logtype-list"></div>
+          <div class="sett-add-row">
+            <input class="sett-add-input" id="sett-logtype-name" placeholder="Log name (e.g. Exercise)" maxlength="40">
+            <input class="sett-add-input" id="sett-logtype-emoji" placeholder="Emoji" maxlength="4" style="max-width:64px">
+            <button class="sett-add-btn" id="sett-logtype-add-btn">Add</button>
+          </div>
+          <div style="font-size:12px;color:var(--text3);margin-top:6px;padding:0 4px">Reading is built-in. Add more toggle logs here.</div>
         </div>
 
         <div style="height:24px"></div>
@@ -1041,7 +1070,7 @@
   const prayerKeys = ['fajr','dhuhr','asr','maghrib','isha']
   const mealKeys = ['breakfast','lunch','dinner']
 
-  ;[...prayerKeys, ...mealKeys, 'smoked'].forEach(k => {
+  ;[...prayerKeys, ...mealKeys, 'smoked', 'reading'].forEach(k => {
     bindToggle(`tog-${k}`)
     bindToggle(`ttog-${k}`)
   })
@@ -1113,12 +1142,61 @@
   bindAddSupp('add-supp-btn', 'add-supp-input-row', 'add-supp-input', 'add-supp-confirm', 'supp-card', suppState, '')
   bindAddSupp('tadd-supp-btn', 'tadd-supp-input-row', 'tadd-supp-input', 'tadd-supp-confirm', 'tsupp-card', tsuppState, 'tadd-supp-')
 
+  // ── CUSTOM LOG ENTRIES ──────────────────────────────────
+  // customLogState[prefix][typeId] = bool
+  const customLogState = { '': {}, 't': {} }
+
+  async function renderCustomLogToggles(prefix, dateStr) {
+    // find or create the custom-logs container in the correct day view
+    const containerId = prefix === '' ? 'custom-log-section' : 'tcustom-log-section'
+    let container = document.getElementById(containerId)
+    if (!container) return
+
+    const activeTypes = customLogTypes.filter(t => t.active)
+    if (!activeTypes.length) { container.innerHTML = ''; return }
+
+    // fetch entries for this day
+    const { data: entries } = await supabase
+      .from('custom_log_entries').select('*').eq('date', dateStr)
+    const valueMap = {}
+    ;(entries || []).forEach(e => { valueMap[e.log_type_id] = e.value })
+
+    // store in state
+    customLogState[prefix] = {}
+    activeTypes.forEach(t => { customLogState[prefix][t.id] = !!valueMap[t.id] })
+
+    // render
+    container.innerHTML = activeTypes.map(t => `
+      <div class="log-section">
+        <div class="log-section-title">${t.emoji || '📋'} ${escHtml(t.name)}</div>
+        <div class="log-card">
+          <div class="log-row">
+            <span class="log-row-label">${escHtml(t.name)} today</span>
+            <button class="toggle ${customLogState[prefix][t.id] ? 'on' : ''}" data-custom-tog="${t.id}" data-prefix="${prefix}"><div class="toggle-thumb"></div></button>
+          </div>
+        </div>
+      </div>`).join('')
+
+    container.querySelectorAll('[data-custom-tog]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        btn.classList.toggle('on')
+        const id = btn.dataset.customTog
+        const px = btn.dataset.prefix
+        customLogState[px][id] = btn.classList.contains('on')
+      })
+    })
+  }
+
   // ── LOAD DAY DATA ────────────────────────────────────────
   async function loadDayData(dateStr, prefix, stepperCtrl, stateRef, cardId) {
     // reset UI
-    ;[...prayerKeys, ...mealKeys, 'smoked'].forEach(k => setToggle(`${prefix}tog-${k}`, false))
+    ;[...prayerKeys, ...mealKeys, 'smoked', 'reading'].forEach(k => setToggle(`${prefix}tog-${k}`, false))
     stepperCtrl.set(0)
     stateRef.length = 0
+
+    // load + render custom log types
+    if (!customLogTypes.length) await loadCustomLogTypes()
+    renderCustomLogToggles(prefix, dateStr)
 
     // load supplement list
     const { data: suppList } = await supabase.from('supplement_list').select('*').eq('active', true).order('name')
@@ -1146,6 +1224,7 @@
     const { data: dt } = await supabase.from('daily_tracking').select('*').eq('date', dateStr).maybeSingle()
     if (dt) {
       setToggle(`${prefix}tog-smoked`, dt.smoked)
+      setToggle(`${prefix}tog-reading`, dt.reading || false)
       stepperCtrl.set(dt.patches || 0)
       if (prefix === '') {
         $('notes-today').value = dt.notes || ''
@@ -1183,6 +1262,7 @@
       await supabase.from('daily_tracking').upsert({
         date: dateStr,
         smoked: getToggle(`${prefix}tog-smoked`),
+        reading: getToggle(`${prefix}tog-reading`),
         patches: stepperCtrl.get(),
         notes: prefix === '' ? $('notes-today').value : $('tnotes-today').value,
         notes_tomorrow: prefix === '' ? $('notes-tomorrow').value : $('tnotes-tomorrow').value,
@@ -1193,6 +1273,16 @@
       if (stateRef.length > 0) {
         await supabase.from('supplements').insert(
           stateRef.map(s => ({ date: dateStr, supplement_id: s.id, taken: s.taken }))
+        )
+      }
+
+      // custom log entries: delete + re-insert
+      await supabase.from('custom_log_entries').delete().eq('date', dateStr)
+      const px = prefix === '' ? '' : 't'
+      const customEntries = Object.entries(customLogState[px] || {})
+      if (customEntries.length > 0) {
+        await supabase.from('custom_log_entries').insert(
+          customEntries.map(([log_type_id, value]) => ({ date: dateStr, log_type_id, value }))
         )
       }
 
@@ -1237,6 +1327,7 @@
     ;(smokeRes.data||[]).forEach(r => {
       if (!calDotData[r.date]) calDotData[r.date] = {}
       calDotData[r.date].smoke = r.smoked
+      calDotData[r.date].reading = r.reading || false
     })
   }
 
@@ -1267,47 +1358,53 @@
       wrap.className = 'cal-cell-wrap' + (isToday ? ' today' : '') + (isFuture ? ' future' : '')
 
       // SVG rings — each active indicator adds a concentric ring
-      const activeRings = []
-      if (dots.prayers) activeRings.push('#a855f7')
-      if (dots.meals)   activeRings.push('#f97316')
-      if (dots.gym)     activeRings.push('#22c55e')
-      if (dots.smoke)   activeRings.push('#ef4444')
+      // Build one segmented ring: each active indicator = one arc segment
+      const segments = []
+      if (dots.prayers) segments.push('#a855f7')
+      if (dots.meals)   segments.push('#f97316')
+      if (dots.gym)     segments.push('#22c55e')
+      if (dots.smoke)   segments.push('#ef4444')
+      if (dots.reading) segments.push('#3b82f6')
 
-      if (activeRings.length > 0) {
-        // rings start at r=47% and step inward by 9% each
-        const svgNS = 'http://www.w3.org/2000/svg'
-        const svg = document.createElementNS(svgNS, 'svg')
-        svg.setAttribute('viewBox', '0 0 100 100')
-        svg.setAttribute('class', 'cal-rings')
-        activeRings.forEach((color, i) => {
-          const r = 47 - i * 9
-          const circ = document.createElementNS(svgNS, 'circle')
-          circ.setAttribute('cx', '50'); circ.setAttribute('cy', '50')
-          circ.setAttribute('r', String(r))
-          circ.setAttribute('fill', 'none')
-          circ.setAttribute('stroke', color)
-          circ.setAttribute('stroke-width', isToday ? '4' : '3')
-          circ.setAttribute('opacity', isToday ? '0.7' : '0.85')
-          svg.appendChild(circ)
-        })
-        // today: solid accent fill behind rings
-        if (isToday) {
-          const bg = document.createElementNS(svgNS, 'circle')
-          bg.setAttribute('cx','50'); bg.setAttribute('cy','50'); bg.setAttribute('r','28')
-          bg.setAttribute('fill', 'var(--accent)')
-          svg.insertBefore(bg, svg.firstChild)
-        }
-        wrap.appendChild(svg)
-      } else if (isToday) {
-        // today with no data — plain accent circle
-        const svgNS = 'http://www.w3.org/2000/svg'
-        const svg = document.createElementNS(svgNS, 'svg')
-        svg.setAttribute('viewBox', '0 0 100 100')
-        svg.setAttribute('class', 'cal-rings')
+      const svgNS = 'http://www.w3.org/2000/svg'
+      const svg = document.createElementNS(svgNS, 'svg')
+      svg.setAttribute('viewBox', '0 0 100 100')
+      svg.setAttribute('class', 'cal-rings')
+
+      // today: solid accent fill background
+      if (isToday) {
         const bg = document.createElementNS(svgNS, 'circle')
-        bg.setAttribute('cx','50'); bg.setAttribute('cy','50'); bg.setAttribute('r','44')
+        bg.setAttribute('cx','50'); bg.setAttribute('cy','50'); bg.setAttribute('r','38')
         bg.setAttribute('fill', 'var(--accent)')
         svg.appendChild(bg)
+      }
+
+      if (segments.length > 0) {
+        const r = 46
+        const cx = 50, cy = 50
+        const circumference = 2 * Math.PI * r
+        const gap = segments.length > 1 ? 3 : 0 // gap in degrees between segments
+        const totalAngle = 360
+        const segAngle = (totalAngle - gap * segments.length) / segments.length
+        segments.forEach((color, i) => {
+          const startDeg = -90 + i * (segAngle + gap)
+          const endDeg = startDeg + segAngle
+          const start = startDeg * Math.PI / 180
+          const end = endDeg * Math.PI / 180
+          const x1 = cx + r * Math.cos(start), y1 = cy + r * Math.sin(start)
+          const x2 = cx + r * Math.cos(end),   y2 = cy + r * Math.sin(end)
+          const largeArc = segAngle > 180 ? 1 : 0
+          const path = document.createElementNS(svgNS, 'path')
+          path.setAttribute('d', `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`)
+          path.setAttribute('fill', 'none')
+          path.setAttribute('stroke', color)
+          path.setAttribute('stroke-width', '5')
+          path.setAttribute('stroke-linecap', 'round')
+          path.setAttribute('opacity', isToday ? '0.75' : '1')
+          svg.appendChild(path)
+        })
+        wrap.appendChild(svg)
+      } else if (isToday) {
         wrap.appendChild(svg)
       }
 
@@ -1803,7 +1900,7 @@
       const limit   = Number(card.limit)
       const available = Math.max(limit - balance, 0)
       const pct = limit > 0 ? Math.min((balance / limit) * 100, 100) : 0
-      return `<div class="card-tile">
+      return `<div class="card-tile" data-card-id="${card.id}" style="cursor:pointer">
         <div class="card-tile-header">
           <span class="card-tile-name">${escHtml(card.name)}</span>
           <span class="card-tile-balance">${fmtAmount(balance)}</span>
@@ -1813,6 +1910,40 @@
       </div>`
     }).join('')
     if (!selectedCardId && finCards.length > 0) selectedCardId = finCards[0].id
+
+    // wire up card tile tap to toggle mini donut
+    container.querySelectorAll('.card-tile').forEach(tile => {
+      tile.addEventListener('click', (e) => {
+        if (e.target.closest('.card-limit-tap') || e.target.closest('input')) return
+        const cardId = tile.dataset.cardId
+        const existing = tile.nextElementSibling
+        if (existing && existing.classList.contains('card-mini-donut')) {
+          existing.remove(); return
+        }
+        // remove any other open donuts
+        container.querySelectorAll('.card-mini-donut').forEach(d => d.remove())
+        const card = finCards.find(c => c.id === cardId)
+        if (!card) return
+        const txns = finAllTxns.filter(t => t.card_id === cardId)
+        const catTotals = {}
+        txns.filter(t => t.type === 'charge').forEach(t => {
+          catTotals[t.category || 'Other'] = (catTotals[t.category || 'Other'] || 0) + Number(t.amount)
+        })
+        const entries = Object.entries(catTotals).sort((a,b)=>b[1]-a[1])
+        if (!entries.length) return
+        const wrap = document.createElement('div')
+        wrap.className = 'card-mini-donut'
+        wrap.style.cssText = 'padding:14px;background:var(--bg2);border-radius:0 0 var(--radius) var(--radius);border:1px solid var(--border);border-top:none;margin-top:-8px'
+        const canvasId = 'mini-donut-' + cardId
+        wrap.innerHTML = `<div style="position:relative;height:160px;display:flex;align-items:center;justify-content:center"><canvas id="${canvasId}" style="max-width:160px;max-height:160px"></canvas></div><div id="mini-leg-${cardId}" style="margin-top:8px"></div>`
+        tile.after(wrap)
+        const palette = ['#f97316','#3b82f6','#22c55e','#a855f7','#ef4444','#eab308','#ec4899','#6b7280']
+        const colors = entries.map((_,i) => finCategories.find(c=>c.name===entries[i][0])?.color || palette[i%8])
+        const ctx = document.getElementById(canvasId).getContext('2d')
+        new Chart(ctx, { type:'doughnut', data:{ labels:entries.map(([n])=>n), datasets:[{ data:entries.map(([,v])=>v), backgroundColor:colors, borderWidth:2, borderColor:'var(--bg2)' }] }, options:{ cutout:'65%', plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>` BHD ${Number(c.raw).toFixed(3)}`}} } } })
+        document.getElementById('mini-leg-'+cardId).innerHTML = entries.map(([name,amt],i)=>`<div style="display:flex;align-items:center;gap:6px;padding:2px 0;font-size:12px"><div style="width:8px;height:8px;border-radius:50%;background:${colors[i]};flex-shrink:0"></div><span style="flex:1;color:var(--text)">${escHtml(name)}</span><span style="color:var(--text2);font-family:monospace">BHD ${amt.toFixed(3)}</span></div>`).join('')
+      })
+    })
 
     // wire up limit tap-to-edit
     container.querySelectorAll('.card-limit-tap').forEach(el => {
@@ -2273,6 +2404,10 @@
   }
 
   async function initAnalytics() {
+    // apply smoke visibility
+    const smokeCard = document.getElementById('anl-smoke-card')
+    if (smokeCard) smokeCard.style.display = showSmokeInAnalytics ? '' : 'none'
+
     // month nav
     $('anl-prev-btn').addEventListener('click', () => {
       const [y,m] = anlMonth.split('-').map(Number)
@@ -2304,16 +2439,14 @@
     // fetch in parallel
     const today = new Date().toISOString().slice(0,10)
     const monthStart = anlMonth + '-01'
-    const [smokeAll, gymAll, expenses6m, cats] = await Promise.all([
+    const [smokeAll, expenses6m, cats] = await Promise.all([
       supabase.from('daily_tracking').select('date,smoked').order('date', {ascending:false}),
-      supabase.from('health_sessions').select('date,type').eq('type','gym').order('date', {ascending:false}),
       supabase.from('expenses').select('date,amount,category').gte('date', get6mStart()).lte('date', today).order('date'),
       supabase.from('categories').select('name,color'),
     ])
 
     renderSmokeStats(smokeAll.data || [], anlMonth)
-    const gymFiltered = hlthPrivateTypes.has('gym') ? [] : (gymAll.data || [])
-    renderGymStats(gymFiltered, anlMonth)
+    // gym removed from analytics
     renderSpendChart(expenses6m.data || [], cats.data || [], anlMonth)
     renderTrendChart(expenses6m.data || [], cats.data || [])
   }
@@ -2456,8 +2589,7 @@
   let settLoaded = false
 
   async function initSettings() {
-    await Promise.all([loadSettCategories(), loadSettSupplements(), loadSettCards()])
-    renderSettHlth()
+    await Promise.all([loadSettCategories(), loadSettSupplements(), loadSettCards(), loadCustomLogTypes()])
     wireSettEvents()
   }
 
@@ -2505,7 +2637,8 @@
     el.innerHTML = supps.map(s => `
       <div class="sett-row" data-supp-id="${s.id}">
         <div class="sett-row-label">${escHtml(s.name)}</div>
-        <button class="sett-toggle ${s.active ? 'on' : ''}" data-supp-toggle="${s.id}" data-active="${s.active}"></button>
+        <button class="sett-toggle ${s.active ? 'on' : ''}" data-supp-toggle="${s.id}" data-active="${s.active}" style="margin-right:8px"></button>
+        <button class="sett-del-btn" data-supp-del="${s.id}" title="Delete">×</button>
       </div>`).join('')
     el.querySelectorAll('[data-supp-toggle]').forEach(btn => {
       btn.addEventListener('click', async () => {
@@ -2514,6 +2647,14 @@
         await supabase.from('supplement_list').update({ active: newActive }).eq('id', id)
         btn.dataset.active = newActive
         btn.classList.toggle('on', newActive)
+      })
+    })
+    el.querySelectorAll('[data-supp-del]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (btn.textContent === '×') { btn.textContent = '✓'; btn.title = 'Confirm delete'; return }
+        const id = btn.dataset.suppDel
+        await supabase.from('supplement_list').delete().eq('id', id)
+        await loadSettSupplements()
       })
     })
   }
@@ -2535,8 +2676,9 @@
           <div class="sett-row-sub sett-card-limit">Limit BHD ${Number(c.limit).toFixed(3)}</div>
         </div>
         <div style="flex:1"></div>
-        <span style="font-size:12px;color:var(--text3);margin-right:8px">${c.visible ? 'Visible' : 'Hidden'}</span>
-        <button class="sett-toggle ${c.visible ? 'on' : ''}" data-card-toggle="${c.id}" data-visible="${c.visible}"></button>
+        <span style="font-size:12px;color:var(--text3);margin-right:8px" data-card-vis-lbl="${c.id}">${c.visible ? 'Visible' : 'Hidden'}</span>
+        <button class="sett-toggle ${c.visible ? 'on' : ''}" data-card-toggle="${c.id}" data-visible="${c.visible}" style="margin-right:8px"></button>
+        <button class="sett-del-btn" data-card-del="${c.id}" data-del-step="0" title="Delete">×</button>
       </div>`).join('')
     el.querySelectorAll('[data-card-toggle]').forEach(btn => {
       btn.addEventListener('click', async () => {
@@ -2545,37 +2687,107 @@
         await supabase.from('cards').update({ visible: newVis }).eq('id', id)
         btn.dataset.visible = newVis
         btn.classList.toggle('on', newVis)
-        btn.previousElementSibling.textContent = newVis ? 'Visible' : 'Hidden'
-        // sync finCards visibility
+        el.querySelector(`[data-card-vis-lbl="${id}"]`).textContent = newVis ? 'Visible' : 'Hidden'
         const card = finCards.find(c => c.id === id)
         if (card) { card.visible = newVis; if (finLoaded) renderCardTiles() }
       })
     })
+    el.querySelectorAll('[data-card-del]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const step = parseInt(btn.dataset.delStep || '0')
+        if (step === 0) { btn.textContent = '?'; btn.dataset.delStep = '1'; btn.title = 'Tap again to confirm'; return }
+        if (step === 1) { btn.textContent = '✓'; btn.dataset.delStep = '2'; btn.style.color = 'var(--danger)'; btn.title = 'Final confirm — deletes all data'; return }
+        const id = btn.dataset.cardDel
+        await supabase.from('card_transactions').delete().eq('card_id', id)
+        await supabase.from('cards').delete().eq('id', id)
+        finCards = finCards.filter(c => c.id !== id)
+        if (finLoaded) renderCardTiles()
+        await loadSettCards()
+      })
+    })
   }
 
-  // ── Health Privacy ──
-  function renderSettHlth() {
-    const el = document.getElementById('sett-hlth-list')
+  // ── Analytics Visibility ──
+  const SMOKE_ANL_KEY = 'hassan-smoke-anl-show'
+  let showSmokeInAnalytics = localStorage.getItem(SMOKE_ANL_KEY) !== 'false' // default: show
+
+  function renderSettAnalytics() {
+    const btn = document.getElementById('sett-smoke-analytics-toggle')
+    if (!btn) return
+    btn.classList.toggle('on', showSmokeInAnalytics)
+    btn.addEventListener('click', () => {
+      showSmokeInAnalytics = !showSmokeInAnalytics
+      localStorage.setItem(SMOKE_ANL_KEY, showSmokeInAnalytics)
+      btn.classList.toggle('on', showSmokeInAnalytics)
+      const card = document.getElementById('anl-smoke-card')
+      if (card) card.style.display = showSmokeInAnalytics ? '' : 'none'
+    })
+  }
+
+  // ── Custom Log Types ──
+  let customLogTypes = [] // [{id, name, emoji, active}] — loaded from Supabase
+
+  async function loadCustomLogTypes() {
+    const { data } = await supabase.from('custom_log_types').select('*').order('created_at')
+    customLogTypes = data || []
+  }
+
+  function renderSettLogTypes() {
+    const el = document.getElementById('sett-logtype-list')
     if (!el) return
-    el.innerHTML = HLTH_TYPES.map(t => `
-      <div class="sett-row">
-        <div class="sett-row-label">${t.emoji} ${t.label}</div>
-        <button class="sett-toggle ${hlthPrivateTypes.has(t.key) ? 'on' : ''}" data-hlth-private="${t.key}" data-on="${hlthPrivateTypes.has(t.key)}"></button>
+    if (!customLogTypes.length) { el.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:var(--text3);background:var(--bg2);border-radius:var(--radius)">No custom logs yet</div>'; return }
+    el.innerHTML = customLogTypes.map(t => `
+      <div class="sett-row" data-logtype-id="${t.id}">
+        <div class="sett-row-label">${t.emoji || '📋'} ${escHtml(t.name)}</div>
+        <button class="sett-toggle ${t.active ? 'on' : ''}" data-logtype-toggle="${t.id}" data-active="${t.active}" style="margin-right:8px"></button>
+        <button class="sett-del-btn" data-logtype-del="${t.id}" title="Delete">×</button>
       </div>`).join('')
-    el.querySelectorAll('[data-hlth-private]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const key = btn.dataset.hlthPrivate
-        const isOn = btn.dataset.on === 'true'
-        if (isOn) { hlthPrivateTypes.delete(key); btn.dataset.on = 'false' }
-        else { hlthPrivateTypes.add(key); btn.dataset.on = 'true' }
-        btn.classList.toggle('on', !isOn)
-        hlthSavePrivate()
+    el.querySelectorAll('[data-logtype-toggle]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.logtypeToggle
+        const newActive = btn.dataset.active !== 'true'
+        await supabase.from('custom_log_types').update({ active: newActive }).eq('id', id)
+        btn.dataset.active = newActive
+        btn.classList.toggle('on', newActive)
+        const t = customLogTypes.find(t => t.id === id)
+        if (t) t.active = newActive
+      })
+    })
+    el.querySelectorAll('[data-logtype-del]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (btn.textContent === '×') { btn.textContent = '✓'; btn.title = 'Confirm delete'; return }
+        const id = btn.dataset.logtypeDel
+        await supabase.from('custom_log_entries').delete().eq('log_type_id', id)
+        await supabase.from('custom_log_types').delete().eq('id', id)
+        customLogTypes = customLogTypes.filter(t => t.id !== id)
+        renderSettLogTypes()
       })
     })
   }
 
   // ── Wire add buttons ──
   function wireSettEvents() {
+    renderSettAnalytics()
+    renderSettLogTypes()
+
+    // Add log type
+    const logtypeAddBtn = document.getElementById('sett-logtype-add-btn')
+    const logtypeNameInp = document.getElementById('sett-logtype-name')
+    const logtypeEmojiInp = document.getElementById('sett-logtype-emoji')
+    logtypeAddBtn.addEventListener('click', async () => {
+      const name = logtypeNameInp.value.trim(); if (!name) return
+      const emoji = logtypeEmojiInp.value.trim() || '📋'
+      logtypeAddBtn.textContent = 'Adding...'
+      logtypeAddBtn.disabled = true
+      const { data, error } = await supabase.from('custom_log_types').insert({ name, emoji, active: true }).select().maybeSingle()
+      logtypeAddBtn.textContent = 'Add'
+      logtypeAddBtn.disabled = false
+      if (error || !data) { return }
+      customLogTypes.push(data)
+      logtypeNameInp.value = ''; logtypeEmojiInp.value = ''
+      renderSettLogTypes()
+    })
+
     // Add category
     const catAddBtn = document.getElementById('sett-cat-add-btn')
     const catNameInp = document.getElementById('sett-cat-name')
