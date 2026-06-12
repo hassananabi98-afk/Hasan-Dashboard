@@ -117,6 +117,20 @@
   .cal-cell.today { background: var(--accent); color: #fff; font-weight: 500; }
   .cal-cell.today:active { opacity: 0.85; }
   .cal-cell.has-data { font-weight: 500; }
+  .cal-cell-wrap { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; transition: background 0.1s; position: relative; gap: 1px; }
+  .cal-cell-wrap:active { background: var(--bg3); }
+  .cal-cell-wrap.empty { cursor: default; pointer-events: none; }
+  .cal-cell-wrap.future .cal-num { color: var(--text3); }
+  .cal-cell-wrap.today { background: var(--accent); }
+  .cal-cell-wrap.today .cal-num { color: #fff; font-weight: 500; }
+  .cal-cell-wrap.today:active { opacity: 0.85; }
+  .cal-num { font-size: 14px; color: var(--text); line-height: 1; }
+  .cal-dots { display: flex; gap: 2px; align-items: center; height: 5px; }
+  .cal-dot { width: 4px; height: 4px; border-radius: 50%; flex-shrink: 0; }
+  .cal-dot.prayers { background: #a855f7; }
+  .cal-dot.meals    { background: #f97316; }
+  .cal-dot.gym      { background: #22c55e; }
+  .cal-dot.smoke    { background: var(--danger); }
 
   /* ── DAY VIEW ── */
   #day-view { display: none; padding: 16px; }
@@ -343,6 +357,29 @@
   .txn-type-btn.selected.charge{border-color:var(--danger);color:var(--danger);background:rgba(239,68,68,.1)}
   .txn-type-btn.selected.payment{border-color:var(--success);color:var(--success);background:rgba(34,197,94,.1)}
   .fin-section-divider{height:.5px;background:var(--border);margin:20px 0}
+
+  /* ── SETTINGS ──────────────────────────────────────────── */
+  .sett-section { margin-bottom: 20px; }
+  .sett-section-title { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 8px; padding: 0 4px; }
+  .sett-row { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-bottom: .5px solid var(--border); background: var(--bg2); }
+  .sett-row:first-of-type { border-radius: var(--radius) var(--radius) 0 0; }
+  .sett-row:last-of-type { border-bottom: none; border-radius: 0 0 var(--radius) var(--radius); }
+  .sett-row:only-of-type { border-radius: var(--radius); border-bottom: none; }
+  .sett-row-label { flex: 1; font-size: 14px; color: var(--text); }
+  .sett-row-sub { font-size: 12px; color: var(--text3); margin-top: 1px; }
+  .sett-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .sett-del-btn { border: none; background: none; color: var(--text3); font-size: 18px; cursor: pointer; padding: 2px 6px; border-radius: 4px; line-height: 1; }
+  .sett-del-btn:active { color: var(--danger); background: var(--bg3); }
+  .sett-rename-input { flex: 1; font-size: 14px; padding: 4px 8px; border-radius: var(--radius-sm); border: 1px solid var(--accent); background: var(--bg); color: var(--text); font-family: inherit; }
+  .sett-add-row { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+  .sett-add-input { flex: 1; font-size: 14px; padding: 9px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg2); color: var(--text); font-family: inherit; }
+  .sett-add-btn { background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); padding: 9px 16px; font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+  .sett-add-btn:active { opacity: .85; }
+  .sett-toggle { width: 40px; height: 24px; border-radius: 12px; background: var(--bg3); border: none; cursor: pointer; position: relative; transition: background .2s; flex-shrink: 0; }
+  .sett-toggle.on { background: var(--accent); }
+  .sett-toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .2s; }
+  .sett-toggle.on::after { transform: translateX(16px); }
+  .sett-card-limit { font-size: 12px; color: var(--text3); }
 </style>
 </head>
 <body>
@@ -805,10 +842,48 @@
 
     <!-- Settings -->
     <div class="tab" id="tab-settings">
-      <div class="placeholder">
-        <div class="placeholder-icon">⚙️</div>
-        <div class="placeholder-title">Settings</div>
-        <div class="placeholder-sub">Settings management — coming in Session 6</div>
+      <div class="page-content">
+
+        <!-- Categories -->
+        <div class="sett-section">
+          <div class="sett-section-title">Categories</div>
+          <div id="sett-cat-list"></div>
+          <div class="sett-add-row">
+            <input class="sett-add-input" id="sett-cat-name" placeholder="New category name" maxlength="40">
+            <button class="sett-add-btn" id="sett-cat-add-btn">Add</button>
+          </div>
+          <div id="sett-cat-error" style="font-size:12px;color:var(--danger);margin-top:4px;min-height:16px"></div>
+        </div>
+
+        <!-- Supplements -->
+        <div class="sett-section">
+          <div class="sett-section-title">Supplements</div>
+          <div id="sett-supp-list"></div>
+          <div class="sett-add-row">
+            <input class="sett-add-input" id="sett-supp-name" placeholder="New supplement" maxlength="60">
+            <button class="sett-add-btn" id="sett-supp-add-btn">Add</button>
+          </div>
+        </div>
+
+        <!-- Cards -->
+        <div class="sett-section">
+          <div class="sett-section-title">Cards</div>
+          <div id="sett-card-list"></div>
+          <div class="sett-add-row" id="sett-card-add-row">
+            <input class="sett-add-input" id="sett-card-name" placeholder="Card name" maxlength="40" style="max-width:140px">
+            <input class="sett-add-input" id="sett-card-limit-inp" placeholder="Limit (BHD)" type="number" min="0" step="0.001" style="max-width:120px">
+            <button class="sett-add-btn" id="sett-card-add-btn">Add</button>
+          </div>
+        </div>
+
+        <!-- Health Privacy -->
+        <div class="sett-section">
+          <div class="sett-section-title">Health Privacy</div>
+          <div id="sett-hlth-list"></div>
+          <div style="font-size:12px;color:var(--text3);margin-top:6px;padding:0 4px">Hidden types are excluded from Analytics.</div>
+        </div>
+
+        <div style="height:24px"></div>
       </div>
     </div>
 
@@ -1140,11 +1215,42 @@
   const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
   const DAYS = ['S','M','T','W','T','F','S']
   let calYear, calMonth
+  let calDotData = {} // key: 'YYYY-MM-DD', value: { prayers, meals, gym, smoke }
 
-  function renderCalendar() {
+  async function loadCalDots(year, month) {
+    const ym = `${year}-${String(month+1).padStart(2,'0')}`
+    const start = `${ym}-01`
+    const end = `${ym}-31`
+    const [prayRes, mealRes, gymRes, smokeRes] = await Promise.all([
+      supabase.from('prayers').select('date,fajr,dhuhr,asr,maghrib,isha').gte('date', start).lte('date', end),
+      supabase.from('meals').select('date,breakfast,lunch,dinner').gte('date', start).lte('date', end),
+      supabase.from('health_sessions').select('date').eq('type','gym').gte('date', start).lte('date', end),
+      supabase.from('daily_tracking').select('date,smoked').gte('date', start).lte('date', end),
+    ])
+    calDotData = {}
+    ;(prayRes.data||[]).forEach(r => {
+      if (!calDotData[r.date]) calDotData[r.date] = {}
+      calDotData[r.date].prayers = r.fajr||r.dhuhr||r.asr||r.maghrib||r.isha
+    })
+    ;(mealRes.data||[]).forEach(r => {
+      if (!calDotData[r.date]) calDotData[r.date] = {}
+      calDotData[r.date].meals = r.breakfast||r.lunch||r.dinner
+    })
+    ;(gymRes.data||[]).forEach(r => {
+      if (!calDotData[r.date]) calDotData[r.date] = {}
+      calDotData[r.date].gym = true
+    })
+    ;(smokeRes.data||[]).forEach(r => {
+      if (!calDotData[r.date]) calDotData[r.date] = {}
+      calDotData[r.date].smoke = r.smoked
+    })
+  }
+
+  async function renderCalendar() {
     const now = new Date()
     if (calYear === undefined) { calYear = now.getFullYear(); calMonth = now.getMonth() }
     $('cal-month-label').textContent = `${MONTHS[calMonth]} ${calYear}`
+    await loadCalDots(calYear, calMonth)
     const grid = $('cal-grid')
     grid.innerHTML = ''
     DAYS.forEach(d => {
@@ -1156,16 +1262,27 @@
     const firstDay = new Date(calYear, calMonth, 1).getDay()
     const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate()
     for (let i = 0; i < firstDay; i++) {
-      const el = document.createElement('div'); el.className = 'cal-cell empty'; grid.appendChild(el)
+      const el = document.createElement('div'); el.className = 'cal-cell-wrap empty'; grid.appendChild(el)
     }
     for (let d = 1; d <= daysInMonth; d++) {
-      const el = document.createElement('div')
+      const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
+      const dots = calDotData[dateStr] || {}
       const isToday = calYear === now.getFullYear() && calMonth === now.getMonth() && d === now.getDate()
       const isFuture = new Date(calYear, calMonth, d) > now && !isToday
-      el.className = 'cal-cell' + (isToday ? ' today' : '') + (isFuture ? ' future' : '')
-      el.textContent = d
-      el.addEventListener('click', () => openDayView(calYear, calMonth, d))
-      grid.appendChild(el)
+      const wrap = document.createElement('div')
+      wrap.className = 'cal-cell-wrap' + (isToday ? ' today' : '') + (isFuture ? ' future' : '')
+      const num = document.createElement('div')
+      num.className = 'cal-num'; num.textContent = d
+      wrap.appendChild(num)
+      // dots row
+      const dotRow = document.createElement('div'); dotRow.className = 'cal-dots'
+      if (dots.prayers) { const dot = document.createElement('div'); dot.className = 'cal-dot prayers'; dotRow.appendChild(dot) }
+      if (dots.meals)   { const dot = document.createElement('div'); dot.className = 'cal-dot meals';   dotRow.appendChild(dot) }
+      if (dots.gym)     { const dot = document.createElement('div'); dot.className = 'cal-dot gym';     dotRow.appendChild(dot) }
+      if (dots.smoke)   { const dot = document.createElement('div'); dot.className = 'cal-dot smoke';   dotRow.appendChild(dot) }
+      wrap.appendChild(dotRow)
+      wrap.addEventListener('click', () => openDayView(calYear, calMonth, d))
+      grid.appendChild(wrap)
     }
   }
 
@@ -1855,6 +1972,8 @@
     gym:'#22c55e', physio:'#3b82f6', psycho:'#a855f7', dentist:'#f97316', other:'#6b7280'
   }
   const HLTH_HIDDEN_KEY = 'hassan-hlth-hidden'
+  const HLTH_PRIVATE_KEY = 'hassan-hlth-private'
+  let hlthPrivateTypes = new Set() // types hidden from analytics + data
 
   let hlthMonth = '', hlthSessions = [], hlthLoaded = false
   let hlthHiddenTypes = new Set(), selectedHlthType = 'gym', pendingHlthDeleteId = null
@@ -1868,9 +1987,13 @@
 
   function hlthLoadHidden() {
     try { const r = localStorage.getItem(HLTH_HIDDEN_KEY); if (r) hlthHiddenTypes = new Set(JSON.parse(r)) } catch {}
+    try { const r = localStorage.getItem(HLTH_PRIVATE_KEY); if (r) hlthPrivateTypes = new Set(JSON.parse(r)) } catch {}
   }
   function hlthSaveHidden() {
     localStorage.setItem(HLTH_HIDDEN_KEY, JSON.stringify([...hlthHiddenTypes]))
+  }
+  function hlthSavePrivate() {
+    localStorage.setItem(HLTH_PRIVATE_KEY, JSON.stringify([...hlthPrivateTypes]))
   }
 
   function renderHlthTypes() {
@@ -2156,7 +2279,8 @@
     ])
 
     renderSmokeStats(smokeAll.data || [], anlMonth)
-    renderGymStats(gymAll.data || [], anlMonth)
+    const gymFiltered = hlthPrivateTypes.has('gym') ? [] : (gymAll.data || [])
+    renderGymStats(gymFiltered, anlMonth)
     renderSpendChart(expenses6m.data || [], cats.data || [], anlMonth)
     renderTrendChart(expenses6m.data || [], cats.data || [])
   }
@@ -2293,6 +2417,182 @@
       }
     })
   }
+
+
+  // ── SETTINGS ─────────────────────────────────────────────
+  let settLoaded = false
+
+  async function initSettings() {
+    await Promise.all([loadSettCategories(), loadSettSupplements(), loadSettCards()])
+    renderSettHlth()
+    wireSettEvents()
+  }
+
+  // ── Categories ──
+  async function loadSettCategories() {
+    const { data } = await supabase.from('categories').select('*').order('name')
+    if (data) {
+      // sync finCategories if finance already loaded
+      finCategories = data
+      renderSettCatList(data)
+    }
+  }
+
+  function renderSettCatList(cats) {
+    const el = document.getElementById('sett-cat-list')
+    if (!el) return
+    if (!cats.length) { el.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:var(--text3);background:var(--bg2);border-radius:var(--radius)">No categories yet</div>'; return }
+    el.innerHTML = cats.map(c => `
+      <div class="sett-row" data-cat-id="${c.id}">
+        <div class="sett-dot" style="background:${c.color}"></div>
+        <div class="sett-row-label" id="sett-cat-lbl-${c.id}">${escHtml(c.name)}</div>
+        <button class="sett-del-btn" data-cat-del="${c.id}" title="Delete">×</button>
+      </div>`).join('')
+    el.querySelectorAll('[data-cat-del]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (btn.textContent === '×') { btn.textContent = '✓'; btn.title = 'Confirm delete'; return }
+        const id = btn.dataset.catDel
+        await supabase.from('categories').delete().eq('id', id)
+        finCategories = finCategories.filter(c => c.id !== id)
+        await loadSettCategories()
+      })
+    })
+  }
+
+  // ── Supplements ──
+  async function loadSettSupplements() {
+    const { data } = await supabase.from('supplement_list').select('*').order('name')
+    renderSettSuppList(data || [])
+  }
+
+  function renderSettSuppList(supps) {
+    const el = document.getElementById('sett-supp-list')
+    if (!el) return
+    if (!supps.length) { el.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:var(--text3);background:var(--bg2);border-radius:var(--radius)">No supplements yet</div>'; return }
+    el.innerHTML = supps.map(s => `
+      <div class="sett-row" data-supp-id="${s.id}">
+        <div class="sett-row-label">${escHtml(s.name)}</div>
+        <button class="sett-toggle ${s.active ? 'on' : ''}" data-supp-toggle="${s.id}" data-active="${s.active}"></button>
+      </div>`).join('')
+    el.querySelectorAll('[data-supp-toggle]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.suppToggle
+        const newActive = btn.dataset.active !== 'true'
+        await supabase.from('supplement_list').update({ active: newActive }).eq('id', id)
+        btn.dataset.active = newActive
+        btn.classList.toggle('on', newActive)
+      })
+    })
+  }
+
+  // ── Cards ──
+  async function loadSettCards() {
+    const { data } = await supabase.from('cards').select('*').order('name')
+    renderSettCardList(data || [])
+  }
+
+  function renderSettCardList(cards) {
+    const el = document.getElementById('sett-card-list')
+    if (!el) return
+    if (!cards.length) { el.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:var(--text3);background:var(--bg2);border-radius:var(--radius)">No cards yet</div>'; return }
+    el.innerHTML = cards.map(c => `
+      <div class="sett-row" data-card-id="${c.id}">
+        <div>
+          <div class="sett-row-label">${escHtml(c.name)}</div>
+          <div class="sett-row-sub sett-card-limit">Limit BHD ${Number(c.limit).toFixed(3)}</div>
+        </div>
+        <div style="flex:1"></div>
+        <span style="font-size:12px;color:var(--text3);margin-right:8px">${c.visible ? 'Visible' : 'Hidden'}</span>
+        <button class="sett-toggle ${c.visible ? 'on' : ''}" data-card-toggle="${c.id}" data-visible="${c.visible}"></button>
+      </div>`).join('')
+    el.querySelectorAll('[data-card-toggle]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.cardToggle
+        const newVis = btn.dataset.visible !== 'true'
+        await supabase.from('cards').update({ visible: newVis }).eq('id', id)
+        btn.dataset.visible = newVis
+        btn.classList.toggle('on', newVis)
+        btn.previousElementSibling.textContent = newVis ? 'Visible' : 'Hidden'
+        // sync finCards visibility
+        const card = finCards.find(c => c.id === id)
+        if (card) { card.visible = newVis; if (finLoaded) renderCardTiles() }
+      })
+    })
+  }
+
+  // ── Health Privacy ──
+  function renderSettHlth() {
+    const el = document.getElementById('sett-hlth-list')
+    if (!el) return
+    el.innerHTML = HLTH_TYPES.map(t => `
+      <div class="sett-row">
+        <div class="sett-row-label">${t.emoji} ${t.label}</div>
+        <button class="sett-toggle ${hlthPrivateTypes.has(t.key) ? 'on' : ''}" data-hlth-private="${t.key}" data-on="${hlthPrivateTypes.has(t.key)}"></button>
+      </div>`).join('')
+    el.querySelectorAll('[data-hlth-private]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.hlthPrivate
+        const isOn = btn.dataset.on === 'true'
+        if (isOn) { hlthPrivateTypes.delete(key); btn.dataset.on = 'false' }
+        else { hlthPrivateTypes.add(key); btn.dataset.on = 'true' }
+        btn.classList.toggle('on', !isOn)
+        hlthSavePrivate()
+      })
+    })
+  }
+
+  // ── Wire add buttons ──
+  function wireSettEvents() {
+    // Add category
+    const catAddBtn = document.getElementById('sett-cat-add-btn')
+    const catNameInp = document.getElementById('sett-cat-name')
+    const catErr = document.getElementById('sett-cat-error')
+    catAddBtn.addEventListener('click', async () => {
+      const name = catNameInp.value.trim()
+      if (!name) return
+      if (finCategories.find(c => c.name.toLowerCase() === name.toLowerCase())) {
+        catErr.textContent = 'Name already exists'; return
+      }
+      catErr.textContent = ''
+      // use a default color, cycling through palette
+      const palette = ['#f97316','#3b82f6','#22c55e','#a855f7','#ef4444','#eab308','#ec4899','#6b7280']
+      const color = palette[finCategories.length % palette.length]
+      const { data, error } = await supabase.from('categories').insert({ name, color }).select().maybeSingle()
+      if (error || !data) { catErr.textContent = 'Could not add category'; return }
+      finCategories.push(data); finCategories.sort((a,b)=>a.name.localeCompare(b.name))
+      catNameInp.value = ''
+      await loadSettCategories()
+    })
+
+    // Add supplement
+    const suppAddBtn = document.getElementById('sett-supp-add-btn')
+    const suppNameInp = document.getElementById('sett-supp-name')
+    suppAddBtn.addEventListener('click', async () => {
+      const name = suppNameInp.value.trim(); if (!name) return
+      const { error } = await supabase.from('supplement_list').insert({ name, active: true })
+      if (!error) { suppNameInp.value = ''; await loadSettSupplements() }
+    })
+
+    // Add card
+    const cardAddBtn = document.getElementById('sett-card-add-btn')
+    const cardNameInp = document.getElementById('sett-card-name')
+    const cardLimitInp = document.getElementById('sett-card-limit-inp')
+    cardAddBtn.addEventListener('click', async () => {
+      const name = cardNameInp.value.trim(); if (!name) return
+      const limit = parseFloat(cardLimitInp.value) || 0
+      const { data, error } = await supabase.from('cards').insert({ name, limit, paid: 0, visible: true }).select().maybeSingle()
+      if (!error && data) {
+        finCards.push(data)
+        cardNameInp.value = ''; cardLimitInp.value = ''
+        await loadSettCards()
+        if (finLoaded) renderCardTiles()
+      }
+    })
+  }
+
+  document.querySelector('#settings-btn').addEventListener('click', () => {
+    if (!settLoaded) { settLoaded = true; initSettings() }
+  })
 
   document.querySelector('.nav-item[data-tab="analytics"]').addEventListener('click', () => {
     if (!anlLoaded) { anlLoaded = true; initAnalytics() }
