@@ -117,20 +117,14 @@
   .cal-cell.today { background: var(--accent); color: #fff; font-weight: 500; }
   .cal-cell.today:active { opacity: 0.85; }
   .cal-cell.has-data { font-weight: 500; }
-  .cal-cell-wrap { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; transition: background 0.1s; position: relative; gap: 1px; }
+  .cal-cell-wrap { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; transition: background 0.1s; position: relative; }
   .cal-cell-wrap:active { background: var(--bg3); }
   .cal-cell-wrap.empty { cursor: default; pointer-events: none; }
   .cal-cell-wrap.future .cal-num { color: var(--text3); }
-  .cal-cell-wrap.today { background: var(--accent); }
   .cal-cell-wrap.today .cal-num { color: #fff; font-weight: 500; }
   .cal-cell-wrap.today:active { opacity: 0.85; }
-  .cal-num { font-size: 14px; color: var(--text); line-height: 1; }
-  .cal-dots { display: flex; gap: 2px; align-items: center; height: 5px; }
-  .cal-dot { width: 4px; height: 4px; border-radius: 50%; flex-shrink: 0; }
-  .cal-dot.prayers { background: #a855f7; }
-  .cal-dot.meals    { background: #f97316; }
-  .cal-dot.gym      { background: #22c55e; }
-  .cal-dot.smoke    { background: var(--danger); }
+  .cal-num { font-size: 14px; color: var(--text); line-height: 1; position: relative; z-index: 1; }
+  .cal-rings { position: absolute; inset: 0; border-radius: 50%; pointer-events: none; }
 
   /* ── DAY VIEW ── */
   #day-view { display: none; padding: 16px; }
@@ -1271,16 +1265,55 @@
       const isFuture = new Date(calYear, calMonth, d) > now && !isToday
       const wrap = document.createElement('div')
       wrap.className = 'cal-cell-wrap' + (isToday ? ' today' : '') + (isFuture ? ' future' : '')
+
+      // SVG rings — each active indicator adds a concentric ring
+      const activeRings = []
+      if (dots.prayers) activeRings.push('#a855f7')
+      if (dots.meals)   activeRings.push('#f97316')
+      if (dots.gym)     activeRings.push('#22c55e')
+      if (dots.smoke)   activeRings.push('#ef4444')
+
+      if (activeRings.length > 0) {
+        // rings start at r=47% and step inward by 9% each
+        const svgNS = 'http://www.w3.org/2000/svg'
+        const svg = document.createElementNS(svgNS, 'svg')
+        svg.setAttribute('viewBox', '0 0 100 100')
+        svg.setAttribute('class', 'cal-rings')
+        activeRings.forEach((color, i) => {
+          const r = 47 - i * 9
+          const circ = document.createElementNS(svgNS, 'circle')
+          circ.setAttribute('cx', '50'); circ.setAttribute('cy', '50')
+          circ.setAttribute('r', String(r))
+          circ.setAttribute('fill', 'none')
+          circ.setAttribute('stroke', color)
+          circ.setAttribute('stroke-width', isToday ? '4' : '3')
+          circ.setAttribute('opacity', isToday ? '0.7' : '0.85')
+          svg.appendChild(circ)
+        })
+        // today: solid accent fill behind rings
+        if (isToday) {
+          const bg = document.createElementNS(svgNS, 'circle')
+          bg.setAttribute('cx','50'); bg.setAttribute('cy','50'); bg.setAttribute('r','28')
+          bg.setAttribute('fill', 'var(--accent)')
+          svg.insertBefore(bg, svg.firstChild)
+        }
+        wrap.appendChild(svg)
+      } else if (isToday) {
+        // today with no data — plain accent circle
+        const svgNS = 'http://www.w3.org/2000/svg'
+        const svg = document.createElementNS(svgNS, 'svg')
+        svg.setAttribute('viewBox', '0 0 100 100')
+        svg.setAttribute('class', 'cal-rings')
+        const bg = document.createElementNS(svgNS, 'circle')
+        bg.setAttribute('cx','50'); bg.setAttribute('cy','50'); bg.setAttribute('r','44')
+        bg.setAttribute('fill', 'var(--accent)')
+        svg.appendChild(bg)
+        wrap.appendChild(svg)
+      }
+
       const num = document.createElement('div')
       num.className = 'cal-num'; num.textContent = d
       wrap.appendChild(num)
-      // dots row
-      const dotRow = document.createElement('div'); dotRow.className = 'cal-dots'
-      if (dots.prayers) { const dot = document.createElement('div'); dot.className = 'cal-dot prayers'; dotRow.appendChild(dot) }
-      if (dots.meals)   { const dot = document.createElement('div'); dot.className = 'cal-dot meals';   dotRow.appendChild(dot) }
-      if (dots.gym)     { const dot = document.createElement('div'); dot.className = 'cal-dot gym';     dotRow.appendChild(dot) }
-      if (dots.smoke)   { const dot = document.createElement('div'); dot.className = 'cal-dot smoke';   dotRow.appendChild(dot) }
-      wrap.appendChild(dotRow)
       wrap.addEventListener('click', () => openDayView(calYear, calMonth, d))
       grid.appendChild(wrap)
     }
