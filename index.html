@@ -72,11 +72,12 @@
   .pin-dot { width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--text3); background: transparent; transition: background 0.15s; }
   .pin-dot.filled { background: var(--accent); border-color: var(--accent); }
   .pin-error { font-size: 13px; color: var(--danger); height: 16px; }
-  .pin-keypad { display: grid; grid-template-columns: repeat(3, 60px); gap: 10px; }
-  .pin-key { height: 60px; border-radius: 50%; border: none; background: var(--bg2); color: var(--text); font-size: 19px; font-weight: 400; cursor: pointer; transition: background 0.1s, transform 0.1s; display: flex; align-items: center; justify-content: center; }
+  .pin-keypad { display: grid; grid-template-columns: repeat(3, 76px); gap: 14px; }
+  .pin-key { height: 76px; border-radius: 50%; border: none; background: var(--bg2); color: var(--text); font-size: 22px; font-weight: 400; cursor: pointer; transition: background 0.1s, transform 0.1s; display: flex; align-items: center; justify-content: center; }
   .pin-key:active { background: var(--bg3); transform: scale(0.94); }
   .pin-key.empty { background: transparent; pointer-events: none; }
-  .pin-key.del { font-size: 16px; }
+  .pin-key.del { font-size: 18px; }
+  .pin-dot { width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--text3); background: transparent; transition: background 0.15s; }
 
   /* ── APP SHELL ── */
   #app { display: none; flex-direction: column; height: 100dvh; }
@@ -266,12 +267,15 @@
   .fin-empty{text-align:center;padding:32px 16px;color:var(--text3);font-size:14px;background:var(--bg2);border-radius:var(--radius)}
 
   /* ── HEALTH ──────────────────────────────────────────── */
-  .hlth-types-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px}
-  .hlth-type-tile{flex:1;min-width:calc(33.333% - 8px);background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 8px;text-align:center;cursor:pointer;transition:border-color .2s,opacity .2s;user-select:none}
+  .hlth-types-grid{display:flex;flex-direction:column;gap:6px;margin-bottom:4px}
+  .hlth-type-tile{display:flex;align-items:center;gap:14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;cursor:pointer;transition:border-color .2s,opacity .2s;user-select:none;position:relative;overflow:hidden}
+  .hlth-type-tile::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:var(--radius) 0 0 var(--radius)}
   .hlth-type-tile.hidden-type{opacity:.35}
-  .hlth-type-icon{font-size:20px;margin-bottom:3px}
-  .hlth-type-count{font-size:20px;font-weight:600;color:var(--text);line-height:1.2}
-  .hlth-type-label{font-size:11px;color:var(--text2);font-weight:500;margin-top:2px}
+  .hlth-type-icon{font-size:22px;flex-shrink:0;width:32px;text-align:center}
+  .hlth-type-info{flex:1;min-width:0}
+  .hlth-type-label{font-size:14px;font-weight:600;color:var(--text)}
+  .hlth-type-sub{font-size:11px;color:var(--text3);margin-top:1px}
+  .hlth-type-count{font-size:22px;font-weight:700;color:var(--text);font-family:ui-monospace,'Cascadia Code',monospace;flex-shrink:0}
   .hlth-hint{font-size:11px;color:var(--text3);text-align:center;margin-top:5px}
   .hlth-hidden-toggle{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;cursor:pointer;color:var(--text3);font-size:13px;user-select:none;margin-top:4px}
   .hlth-hidden-toggle:hover{color:var(--text2)}
@@ -293,6 +297,21 @@
   .type-opt{padding:5px 12px;border-radius:20px;font-size:13px;background:var(--bg3);color:var(--text2);cursor:pointer;border:1.5px solid transparent;transition:all .15s;user-select:none}
   .type-opt.selected{background:rgba(59,130,246,.15);border-color:var(--accent);color:var(--accent)}
 
+  /* ── ANALYTICS ──────────────────────────────────────── */
+  .anl-stat-row{display:flex;gap:8px;justify-content:space-between}
+  .anl-stat{flex:1;background:var(--bg3);border-radius:var(--radius-sm);padding:12px 8px;text-align:center}
+  .anl-stat-val{font-size:26px;font-weight:700;color:var(--text);font-family:ui-monospace,'Cascadia Code',monospace;line-height:1}
+  .anl-stat-lbl{font-size:10px;color:var(--text3);margin-top:4px;font-weight:500;text-transform:uppercase;letter-spacing:.3px}
+  .anl-nav-btn{background:var(--bg3);border:none;color:var(--text2);font-size:18px;width:30px;height:30px;border-radius:var(--radius-sm);cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+  .anl-nav-btn:active{background:var(--accent);color:#fff}
+  .anl-month-lbl{font-size:13px;font-weight:500;color:var(--text);min-width:80px;text-align:center}
+  .anl-legend-row{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px;color:var(--text)}
+  .anl-legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+  .anl-legend-name{flex:1}
+  .anl-legend-amt{font-family:ui-monospace,'Cascadia Code',monospace;color:var(--text2);font-size:13px}
+  .anl-smoke-free .anl-stat-val{color:#22c55e}
+  .anl-smoke-bad .anl-stat-val{color:var(--danger)}
+
   /* ── CARDS ───────────────────────────────────────────── */
   .card-tile{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:8px}
   .card-tile-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
@@ -302,6 +321,8 @@
   .card-tile-fill{height:100%;border-radius:3px;background:var(--accent);transition:width .4s}
   .card-tile-fill.danger{background:var(--danger)}
   .card-tile-meta{font-size:11px;color:var(--text3);display:flex;justify-content:space-between}
+  .card-limit-tap{cursor:pointer;border-bottom:1px dashed var(--text3);transition:color .15s}
+  .card-limit-tap:hover{color:var(--accent)}
   .txn-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:.5px solid var(--border)}
   .txn-row:last-child{border-bottom:none}
   .txn-sign{font-size:14px;font-weight:700;flex-shrink:0;width:14px;text-align:center}
@@ -738,10 +759,48 @@
 
     <!-- Analytics tab -->
     <div class="tab" id="tab-analytics">
-      <div class="placeholder">
-        <div class="placeholder-icon">📊</div>
-        <div class="placeholder-title">Analytics</div>
-        <div class="placeholder-sub">Analytics — coming in Session 5</div>
+      <div class="page-content" id="analytics-content">
+        <!-- Smoking -->
+        <div class="log-card" style="margin-bottom:14px" id="anl-smoke-card">
+          <div class="log-section-title" style="margin-bottom:12px">🚬 Smoking</div>
+          <div class="anl-stat-row" id="anl-smoke-stats">
+            <div class="anl-stat"><div class="anl-stat-val" id="anl-smoke-free-streak">—</div><div class="anl-stat-lbl">day streak</div></div>
+            <div class="anl-stat"><div class="anl-stat-val" id="anl-smoke-free-month">—</div><div class="anl-stat-lbl">smoke-free this month</div></div>
+            <div class="anl-stat"><div class="anl-stat-val" id="anl-smoke-days-month">—</div><div class="anl-stat-lbl">smoked this month</div></div>
+          </div>
+        </div>
+        <!-- Gym -->
+        <div class="log-card" style="margin-bottom:14px" id="anl-gym-card">
+          <div class="log-section-title" style="margin-bottom:12px">🏋️ Gym</div>
+          <div class="anl-stat-row" id="anl-gym-stats">
+            <div class="anl-stat"><div class="anl-stat-val" id="anl-gym-streak">—</div><div class="anl-stat-lbl">day streak</div></div>
+            <div class="anl-stat"><div class="anl-stat-val" id="anl-gym-month">—</div><div class="anl-stat-lbl">sessions this month</div></div>
+            <div class="anl-stat"><div class="anl-stat-val" id="anl-gym-total">—</div><div class="anl-stat-lbl">sessions total</div></div>
+          </div>
+        </div>
+        <!-- Spending -->
+        <div class="log-card" style="margin-bottom:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div class="log-section-title">💸 Spending</div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <button class="anl-nav-btn" id="anl-prev-btn">‹</button>
+              <span class="anl-month-lbl" id="anl-month-lbl"></span>
+              <button class="anl-nav-btn" id="anl-next-btn">›</button>
+            </div>
+          </div>
+          <div id="anl-spend-chart-wrap" style="position:relative;height:200px;margin-bottom:12px">
+            <canvas id="anl-spend-canvas"></canvas>
+          </div>
+          <div id="anl-spend-legend" style="margin-top:8px"></div>
+        </div>
+        <!-- Category trends -->
+        <div class="log-card" style="margin-bottom:14px">
+          <div class="log-section-title" style="margin-bottom:12px">📈 Category Trends <span style="font-size:11px;color:var(--text3);font-weight:400">— last 6 months</span></div>
+          <div id="anl-trend-chart-wrap" style="position:relative;height:220px">
+            <canvas id="anl-trend-canvas"></canvas>
+          </div>
+        </div>
+        <div style="height:24px"></div>
       </div>
     </div>
 
@@ -1601,10 +1660,36 @@
           <span class="card-tile-balance">${fmtAmount(balance)}</span>
         </div>
         <div class="card-tile-track"><div class="card-tile-fill${pct > 80 ? ' danger' : ''}" style="width:${pct.toFixed(1)}%"></div></div>
-        <div class="card-tile-meta"><span>Limit ${fmtAmount(limit)}</span><span>Available ${fmtAmount(available)}</span></div>
+        <div class="card-tile-meta"><span class="card-limit-tap" data-card-id="${card.id}" data-limit="${limit}" title="Tap to edit">Limit <span class="card-limit-val">${fmtAmount(limit)}</span> ✎</span><span>Available ${fmtAmount(available)}</span></div>
       </div>`
     }).join('')
     if (!selectedCardId && finCards.length > 0) selectedCardId = finCards[0].id
+
+    // wire up limit tap-to-edit
+    container.querySelectorAll('.card-limit-tap').forEach(el => {
+      el.style.cursor = 'pointer'
+      el.addEventListener('click', async () => {
+        const cardId = el.dataset.cardId
+        const currentLimit = el.dataset.limit
+        const inp = document.createElement('input')
+        inp.type = 'number'; inp.step = '0.001'; inp.min = '0'
+        inp.value = Number(currentLimit).toFixed(3)
+        inp.style.cssText = 'width:100px;font-size:11px;padding:2px 5px;border-radius:4px;border:1px solid var(--accent);background:var(--bg);color:var(--text);font-family:inherit'
+        el.replaceWith(inp)
+        inp.focus(); inp.select()
+        async function commitLimit() {
+          const newVal = parseFloat(inp.value)
+          if (!isNaN(newVal) && newVal >= 0) {
+            await supabase.from('cards').update({ limit: newVal }).eq('id', cardId)
+            const card = finCards.find(c => c.id === cardId)
+            if (card) card.limit = newVal
+          }
+          renderCardTiles()
+        }
+        inp.addEventListener('blur', commitLimit)
+        inp.addEventListener('keydown', e => { if (e.key === 'Enter') inp.blur(); if (e.key === 'Escape') renderCardTiles() })
+      })
+    })
   }
 
   function buildCardSelector() {
@@ -1800,10 +1885,15 @@
     // render visible tiles
     grid.innerHTML = visibleTypes.map(t => {
       const border = HLTH_BORDER[t.key]
-      return `<div class="hlth-type-tile" data-type="${t.key}" style="border-color:${border}22">
+      const subLabel = counts[t.key] ? `${counts[t.key]} this month` : 'No sessions this month'
+      return `<div class="hlth-type-tile" data-type="${t.key}" style="border-color:${border}33;--tile-accent:${border}">
+        <div class="hlth-type-tile-bar" style="position:absolute;left:0;top:0;bottom:0;width:4px;background:${border};border-radius:var(--radius) 0 0 var(--radius)"></div>
         <div class="hlth-type-icon">${t.emoji}</div>
+        <div class="hlth-type-info">
+          <div class="hlth-type-label">${t.label}</div>
+          <div class="hlth-type-sub">${subLabel}</div>
+        </div>
         <div class="hlth-type-count">${counts[t.key] || 0}</div>
-        <div class="hlth-type-label">${t.label}</div>
       </div>`
     }).join('')
     grid.querySelectorAll('.hlth-type-tile').forEach(tile => {
@@ -1826,9 +1916,13 @@
       if (lbl) lbl.textContent = `Hidden (${hiddenTypes.length})`
       hgrid.innerHTML = hiddenTypes.map(t => `
         <div class="hlth-type-tile" data-type="${t.key}" style="border-color:var(--border)">
+          <div class="hlth-type-tile-bar" style="position:absolute;left:0;top:0;bottom:0;width:4px;background:${HLTH_BORDER[t.key]};border-radius:var(--radius) 0 0 var(--radius)"></div>
           <div class="hlth-type-icon">${t.emoji}</div>
+          <div class="hlth-type-info">
+            <div class="hlth-type-label">${t.label}</div>
+            <div class="hlth-type-sub">Hidden — tap to show</div>
+          </div>
           <div class="hlth-type-count">${counts[t.key] || 0}</div>
-          <div class="hlth-type-label">${t.label}</div>
         </div>`).join('')
       hgrid.querySelectorAll('.hlth-type-tile').forEach(tile => {
         tile.addEventListener('click', () => {
@@ -2010,6 +2104,201 @@
 
   document.querySelector('.nav-item[data-tab="health"]').addEventListener('click', () => {
     if (!hlthLoaded) { hlthLoaded = true; initHlthTab() }
+  })
+
+
+  // ── ANALYTICS ────────────────────────────────────────────
+  let anlLoaded = false
+  let anlMonth = new Date().toISOString().slice(0,7)
+  let anlSpendChart = null, anlTrendChart = null
+
+  function anlFmtMonth(ym) {
+    const [y,m] = ym.split('-')
+    return new Date(y, m-1, 1).toLocaleDateString('en-US', {month:'short', year:'numeric'})
+  }
+
+  async function initAnalytics() {
+    // month nav
+    $('anl-prev-btn').addEventListener('click', () => {
+      const [y,m] = anlMonth.split('-').map(Number)
+      let pm = m - 1; let py = y
+      if (pm < 1) { pm = 12; py-- }
+      anlMonth = `${py}-${String(pm).padStart(2,'0')}`
+      loadAnalytics()
+    })
+    $('anl-next-btn').addEventListener('click', () => {
+      const cur = new Date().toISOString().slice(0,7)
+      if (anlMonth >= cur) return
+      const [y,m] = anlMonth.split('-').map(Number)
+      let nm = m + 1; let ny = y
+      if (nm > 12) { nm = 1; ny++ }
+      anlMonth = `${ny}-${String(nm).padStart(2,'0')}`
+      loadAnalytics()
+    })
+    await loadAnalytics()
+  }
+
+  async function loadAnalytics() {
+    $('anl-month-lbl').textContent = anlFmtMonth(anlMonth)
+
+    // disable next if at current month
+    const cur = new Date().toISOString().slice(0,7)
+    $('anl-next-btn').disabled = anlMonth >= cur
+    $('anl-next-btn').style.opacity = anlMonth >= cur ? '0.3' : '1'
+
+    // fetch in parallel
+    const today = new Date().toISOString().slice(0,10)
+    const monthStart = anlMonth + '-01'
+    const [smokeAll, gymAll, expenses6m, cats] = await Promise.all([
+      supabase.from('daily_tracking').select('date,smoked').order('date', {ascending:false}),
+      supabase.from('health_sessions').select('date,type').eq('type','gym').order('date', {ascending:false}),
+      supabase.from('expenses').select('date,amount,category').gte('date', get6mStart()).lte('date', today).order('date'),
+      supabase.from('categories').select('name,color'),
+    ])
+
+    renderSmokeStats(smokeAll.data || [], anlMonth)
+    renderGymStats(gymAll.data || [], anlMonth)
+    renderSpendChart(expenses6m.data || [], cats.data || [], anlMonth)
+    renderTrendChart(expenses6m.data || [], cats.data || [])
+  }
+
+  function get6mStart() {
+    const d = new Date()
+    d.setMonth(d.getMonth() - 5)
+    d.setDate(1)
+    return d.toISOString().slice(0,10)
+  }
+
+  function renderSmokeStats(rows, month) {
+    // streak = consecutive smoke-free days ending today going backwards
+    const smokeSet = new Set(rows.filter(r => r.smoked).map(r => r.date))
+    const loggedSet = new Set(rows.map(r => r.date))
+    let streak = 0
+    const d = new Date()
+    while (true) {
+      const ds = d.toISOString().slice(0,10)
+      if (!loggedSet.has(ds)) break
+      if (smokeSet.has(ds)) break
+      streak++
+      d.setDate(d.getDate() - 1)
+    }
+
+    const monthRows = rows.filter(r => r.date.startsWith(month))
+    const smokedDays = monthRows.filter(r => r.smoked).length
+    const freeDays = monthRows.filter(r => !r.smoked).length
+
+    $('anl-smoke-free-streak').textContent = streak
+    $('anl-smoke-free-month').textContent = freeDays
+    $('anl-smoke-days-month').textContent = smokedDays
+
+    const statEls = document.querySelectorAll('#anl-smoke-card .anl-stat')
+    statEls[0].className = 'anl-stat ' + (streak > 0 ? 'anl-smoke-free' : 'anl-smoke-bad')
+    statEls[1].className = 'anl-stat anl-smoke-free'
+    statEls[2].className = 'anl-stat ' + (smokedDays > 0 ? 'anl-smoke-bad' : '')
+  }
+
+  function renderGymStats(rows, month) {
+    // streak = consecutive days with gym session ending from most recent gym day
+    const gymDates = [...new Set(rows.map(r => r.date))].sort().reverse()
+    let streak = 0
+    if (gymDates.length > 0) {
+      const latest = new Date(gymDates[0])
+      const today = new Date(); today.setHours(0,0,0,0)
+      const diffDays = Math.round((today - latest) / 86400000)
+      if (diffDays <= 1) {
+        const gymSet = new Set(gymDates)
+        let d = new Date(gymDates[0])
+        while (gymSet.has(d.toISOString().slice(0,10))) {
+          streak++
+          d.setDate(d.getDate() - 1)
+        }
+      }
+    }
+    const monthSessions = rows.filter(r => r.date.startsWith(month)).length
+    $('anl-gym-streak').textContent = streak
+    $('anl-gym-month').textContent = monthSessions
+    $('anl-gym-total').textContent = rows.length
+  }
+
+  function renderSpendChart(expenses, cats, month) {
+    const monthExp = expenses.filter(e => e.date.startsWith(month))
+    const catMap = {}
+    cats.forEach(c => catMap[c.name] = c.color)
+
+    const totals = {}
+    monthExp.forEach(e => { totals[e.category] = (totals[e.category]||0) + Number(e.amount) })
+    const sorted = Object.entries(totals).sort((a,b) => b[1]-a[1])
+
+    // legend
+    const leg = $('anl-spend-legend')
+    if (sorted.length === 0) {
+      leg.innerHTML = '<div style="text-align:center;color:var(--text3);font-size:13px;padding:16px 0">No expenses this month</div>'
+    } else {
+      leg.innerHTML = sorted.map(([name, amt]) =>
+        `<div class="anl-legend-row"><div class="anl-legend-dot" style="background:${catMap[name]||'#6b7280'}"></div><span class="anl-legend-name">${escHtml(name)}</span><span class="anl-legend-amt">BHD ${amt.toFixed(3)}</span></div>`
+      ).join('')
+    }
+
+    if (anlSpendChart) { anlSpendChart.destroy(); anlSpendChart = null }
+    if (sorted.length === 0) { $('anl-spend-canvas').style.display='none'; return }
+    $('anl-spend-canvas').style.display = ''
+
+    const ctx = $('anl-spend-canvas').getContext('2d')
+    anlSpendChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: sorted.map(([n])=>n),
+        datasets: [{ data: sorted.map(([,v])=>v), backgroundColor: sorted.map(([n])=>catMap[n]||'#6b7280'), borderWidth: 0 }]
+      },
+      options: { cutout: '65%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` BHD ${Number(ctx.raw).toFixed(3)}` } } } }
+    })
+  }
+
+  function renderTrendChart(expenses, cats) {
+    // build last 6 months labels
+    const months = []
+    for (let i=5; i>=0; i--) {
+      const d = new Date(); d.setDate(1); d.setMonth(d.getMonth()-i)
+      months.push(d.toISOString().slice(0,7))
+    }
+    const labels = months.map(m => { const [y,mo] = m.split('-'); return new Date(y,mo-1,1).toLocaleDateString('en-US',{month:'short'}) })
+
+    // top 5 categories by total spend across 6m
+    const catTotals = {}
+    expenses.forEach(e => { catTotals[e.category] = (catTotals[e.category]||0) + Number(e.amount) })
+    const top5 = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([n])=>n)
+    const catMap = {}; cats.forEach(c => catMap[c.name] = c.color)
+
+    const datasets = top5.map(cat => {
+      return {
+        label: cat,
+        data: months.map(m => {
+          const sum = expenses.filter(e => e.date.startsWith(m) && e.category === cat).reduce((s,e)=>s+Number(e.amount),0)
+          return sum > 0 ? parseFloat(sum.toFixed(3)) : 0
+        }),
+        backgroundColor: catMap[cat] || '#6b7280',
+        borderRadius: 3, borderSkipped: false,
+      }
+    })
+
+    if (anlTrendChart) { anlTrendChart.destroy(); anlTrendChart = null }
+    const ctx = $('anl-trend-canvas').getContext('2d')
+    anlTrendChart = new Chart(ctx, {
+      type: 'bar',
+      data: { labels, datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: {
+          x: { stacked: true, grid: { display: false }, ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--text2').trim() || '#666' } },
+          y: { stacked: true, grid: { color: getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || 'rgba(0,0,0,.1)' }, ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--text2').trim() || '#666', callback: v => 'BD '+v } }
+        },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: BHD ${Number(ctx.raw).toFixed(3)}` } } }
+      }
+    })
+  }
+
+  document.querySelector('.nav-item[data-tab="analytics"]').addEventListener('click', () => {
+    if (!anlLoaded) { anlLoaded = true; initAnalytics() }
   })
 
   // ── INIT ─────────────────────────────────────────────────
