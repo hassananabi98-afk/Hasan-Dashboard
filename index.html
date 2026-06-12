@@ -1032,6 +1032,14 @@
     if (name === 'calendar') {
       $('day-view').classList.remove('active')
       $('calendar-view').style.display = ''
+      // reload dots if data changed since last render
+      if (calNeedsRefresh) { calNeedsRefresh = false; renderCalendar() }
+    }
+    if (name === 'health' && hlthLoaded) {
+      loadHlthData()
+    }
+    if (name === 'analytics' && anlLoaded) {
+      loadAnalytics()
     }
   }
 
@@ -1191,10 +1199,9 @@
   }
 
   // ── SAVE DAY DATA ────────────────────────────────────────
-  async function saveDayData(dateStr, prefix, stepperCtrl, stateRef) {
+  async function saveDayData(dateStr, prefix, stepperCtrl, stateRef, silent = false) {
     const btn = $(`${prefix === '' ? '' : 't'}save-btn`)
-    btn.disabled = true
-    btn.textContent = 'Saving...'
+    if (!silent) { btn.disabled = true; btn.textContent = 'Saving...' }
 
     try {
       // prayers upsert
@@ -1229,20 +1236,31 @@
 
 
 
-      showToast('Saved ✓')
+      calNeedsRefresh = true
+      if (!silent) showToast('Saved ✓')
     } catch (e) {
-      showToast('Save failed', true)
+      if (!silent) showToast('Save failed', true)
     }
 
-    btn.disabled = false
-    btn.textContent = 'Save'
+    if (!silent) { btn.disabled = false; btn.textContent = 'Save' }
   }
 
   // ── CALENDAR ─────────────────────────────────────────────
   const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
   const DAYS = ['S','M','T','W','T','F','S']
   let calYear, calMonth
-  let calDotData = {} // key: 'YYYY-MM-DD', value: { prayers, meals, gym, smoke }
+  let calDotData = {} // key: 'YYYY-MM-DD', value: { prayers, meals, smoke, reading }
+  let calNeedsRefresh = false // set true after any day save
+
+  // ── AUTO-SAVE ─────────────────────────────────────────────
+  const autoSaveTimers = {}
+  function scheduleAutoSave(dateStr, prefix, stepperCtrl, stateRef) {
+    const key = prefix || 'day'
+    clearTimeout(autoSaveTimers[key])
+    autoSaveTimers[key] = setTimeout(() => {
+      saveDayData(dateStr, prefix, stepperCtrl, stateRef, true)
+    }, 800)
+  }
 
   async function loadCalDots(year, month) {
     const ym = `${year}-${String(month+1).padStart(2,'0')}`
@@ -1359,6 +1377,29 @@
   // ── DAY VIEW ─────────────────────────────────────────────
   let currentDayStr = ''
 
+  function wireAutoSave(prefix, dateStr, stepperCtrl, stateRef) {
+    // Toggles
+    const toggleIds = [...prayerKeys, ...mealKeys, 'smoked', 'reading'].map(k => `${prefix}tog-${k}`)
+    toggleIds.forEach(id => {
+      const el = $(id); if (!el) return
+      el.addEventListener('click', () => scheduleAutoSave(dateStr, prefix, stepperCtrl, stateRef), { capture: true })
+    })
+    // Stepper
+    const decId = prefix === '' ? 'dec-patches' : 'tdec-patches'
+    const incId = prefix === '' ? 'inc-patches' : 'tinc-patches'
+    ;[decId, incId].forEach(id => {
+      const el = $(id); if (!el) return
+      el.addEventListener('click', () => scheduleAutoSave(dateStr, prefix, stepperCtrl, stateRef))
+    })
+    // Notes
+    const notesId = prefix === '' ? 'notes-today' : 'tnotes-today'
+    const tmrwId  = prefix === '' ? 'notes-tomorrow' : 'tnotes-tomorrow'
+    ;[notesId, tmrwId].forEach(id => {
+      const el = $(id); if (!el) return
+      el.addEventListener('input', () => scheduleAutoSave(dateStr, prefix, stepperCtrl, stateRef))
+    })
+  }
+
   async function openDayView(y, m, d) {
     currentDayStr = toDateStr(y, m, d)
     const date = new Date(y, m, d)
@@ -1367,6 +1408,7 @@
     $('day-view').classList.add('active')
     $('top-title').textContent = 'Day'
     await loadDayData(currentDayStr, '', patchesStepper, suppState, 'supp-card')
+    wireAutoSave('', currentDayStr, patchesStepper, suppState)
   }
 
   $('day-back').addEventListener('click', () => {
@@ -1382,6 +1424,7 @@
     const now = new Date()
     $('today-date-label').textContent = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
     await loadDayData(todayStr(), 't', tpatchesStepper, tsuppState, 'tsupp-card')
+    wireAutoSave('t', todayStr(), tpatchesStepper, tsuppState)
   }
 
   $('tsave-btn').addEventListener('click', () => saveDayData(todayStr(), 't', tpatchesStepper, tsuppState))
