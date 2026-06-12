@@ -1035,6 +1035,9 @@
       // reload dots if data changed since last render
       if (calNeedsRefresh) { calNeedsRefresh = false; renderCalendar() }
     }
+    if (name === 'today') {
+      loadTodayTab()
+    }
     if (name === 'health' && hlthLoaded) {
       loadHlthData()
     }
@@ -1099,10 +1102,11 @@
   let suppState = []   // for calendar day view
   let tsuppState = []  // for today tab
 
-  function renderSuppRows(cardId, state, prefix) {
+  function renderSuppRows(cardId, state, prefix, saveCtx) {
     const card = $(cardId)
-    const addBtn = $(`${prefix}add-supp-btn`)
-    const inputRow = $(`${prefix}add-supp-input-row`)
+    // addBtn id: '' → 'add-supp-btn', 'tadd-supp-' → 'tadd-supp-btn'
+    const addBtnId = prefix === '' ? 'add-supp-btn' : prefix.replace(/-$/, '-btn').replace('tadd-supp', 'tadd-supp')
+    const addBtn = $(prefix === '' ? 'add-supp-btn' : 'tadd-supp-btn')
     // remove existing supp rows
     card.querySelectorAll('.supp-row').forEach(r => r.remove())
     // insert before add button
@@ -1113,6 +1117,8 @@
       row.querySelector('button').addEventListener('click', (e) => {
         e.currentTarget.classList.toggle('on')
         state[i].taken = e.currentTarget.classList.contains('on')
+        // auto-save on supplement toggle
+        if (saveCtx) scheduleAutoSave(saveCtx.dateStr, saveCtx.prefix, saveCtx.stepperCtrl, saveCtx.stateRef)
       })
       card.insertBefore(row, addBtn)
     })
@@ -1140,7 +1146,7 @@
       input.value = ''
       inputRow.style.display = 'none'
       addBtn.style.display = 'flex'
-      renderSuppRows(cardId, stateRef, renderPrefix)
+      renderSuppRows(cardId, stateRef, renderPrefix, null)
     }
 
     confirmBtn.addEventListener('click', doAdd)
@@ -1169,7 +1175,8 @@
     supplements.forEach(s => {
       stateRef.push({ id: s.id, name: s.name, taken: !!takenMap[s.id] })
     })
-    renderSuppRows(cardId, stateRef, prefix === '' ? '' : 'tadd-supp-')
+    const saveCtx = { dateStr, prefix, stepperCtrl, stateRef }
+    renderSuppRows(cardId, stateRef, prefix === '' ? '' : 'tadd-supp-', saveCtx)
 
     // load prayers
     const { data: prayers } = await supabase.from('prayers').select('*').eq('date', dateStr).maybeSingle()
