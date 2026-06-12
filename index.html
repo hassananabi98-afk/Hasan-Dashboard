@@ -811,6 +811,20 @@
     <!-- Analytics tab -->
     <div class="tab" id="tab-analytics">
       <div class="page-content" id="analytics-content">
+        <!-- Reading -->
+        <div class="log-card" style="margin-bottom:14px" id="anl-reading-card">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+            <span style="font-size:22px">📚</span>
+            <span style="font-size:16px;font-weight:600;color:var(--text)">Reading</span>
+          </div>
+          <div class="anl-stat-row">
+            <div class="anl-stat"><div class="anl-stat-val" id="anl-reading-streak">—</div><div class="anl-stat-lbl">day streak</div></div>
+            <div class="anl-stat"><div class="anl-stat-val" id="anl-reading-month">—</div><div class="anl-stat-lbl">days this month</div></div>
+            <div class="anl-stat"><div class="anl-stat-val" id="anl-reading-total">—</div><div class="anl-stat-lbl">days total</div></div>
+          </div>
+        </div>
+        <!-- Dynamic custom log analytics cards injected here -->
+        <div id="anl-custom-cards"></div>
         <!-- Smoking -->
         <div class="log-card" style="margin-bottom:14px" id="anl-smoke-card">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
@@ -888,10 +902,15 @@
         <!-- Analytics Visibility -->
         <div class="sett-section">
           <div class="sett-section-title">Analytics Visibility</div>
-          <div class="sett-row" style="border-radius:var(--radius);border-bottom:none">
-            <div class="sett-row-label">🚬 Show Smoking in Analytics</div>
+          <div class="sett-row">
+            <div class="sett-row-label">📚 Reading</div>
+            <button class="sett-toggle" id="sett-reading-analytics-toggle"></button>
+          </div>
+          <div class="sett-row" style="border-bottom:none">
+            <div class="sett-row-label">🚬 Smoking</div>
             <button class="sett-toggle" id="sett-smoke-analytics-toggle"></button>
           </div>
+          <div id="sett-custom-anl-list"></div>
         </div>
 
         <!-- Custom Log Types -->
@@ -903,7 +922,6 @@
             <input class="sett-add-input" id="sett-logtype-emoji" placeholder="Emoji" maxlength="4" style="max-width:64px">
             <button class="sett-add-btn" id="sett-logtype-add-btn">Add</button>
           </div>
-          <div style="font-size:12px;color:var(--text3);margin-top:6px;padding:0 4px">Reading is built-in. Add more toggle logs here.</div>
         </div>
 
         <div style="height:24px"></div>
@@ -2404,9 +2422,11 @@
   }
 
   async function initAnalytics() {
-    // apply smoke visibility
+    // apply visibility
     const smokeCard = document.getElementById('anl-smoke-card')
     if (smokeCard) smokeCard.style.display = showSmokeInAnalytics ? '' : 'none'
+    const readCard = document.getElementById('anl-reading-card')
+    if (readCard) readCard.style.display = showReadingInAnalytics ? '' : 'none'
 
     // month nav
     $('anl-prev-btn').addEventListener('click', () => {
@@ -2439,14 +2459,20 @@
     // fetch in parallel
     const today = new Date().toISOString().slice(0,10)
     const monthStart = anlMonth + '-01'
-    const [smokeAll, expenses6m, cats] = await Promise.all([
-      supabase.from('daily_tracking').select('date,smoked').order('date', {ascending:false}),
+    if (!customLogTypes.length) await loadCustomLogTypes()
+    const customToShow = customLogTypes.filter(t => t.show_in_analytics)
+    const [dtAll, expenses6m, cats, ...customResults] = await Promise.all([
+      supabase.from('daily_tracking').select('date,smoked,reading').order('date', {ascending:false}),
       supabase.from('expenses').select('date,amount,category').gte('date', get6mStart()).lte('date', today).order('date'),
       supabase.from('categories').select('name,color'),
+      ...customToShow.map(t =>
+        supabase.from('custom_log_entries').select('date,value').eq('log_type_id', t.id).eq('value', true).order('date', {ascending:false})
+      )
     ])
 
-    renderSmokeStats(smokeAll.data || [], anlMonth)
-    // gym removed from analytics
+    renderSmokeStats(dtAll.data || [], anlMonth)
+    renderReadingStats(dtAll.data || [], anlMonth)
+    renderCustomAnalyticsCards(customToShow, customResults)
     renderSpendChart(expenses6m.data || [], cats.data || [], anlMonth)
     renderTrendChart(expenses6m.data || [], cats.data || [])
   }
@@ -2484,6 +2510,69 @@
     statEls[0].className = 'anl-stat ' + (streak > 0 ? 'anl-smoke-free' : 'anl-smoke-bad')
     statEls[1].className = 'anl-stat anl-smoke-free'
     statEls[2].className = 'anl-stat ' + (smokedDays > 0 ? 'anl-smoke-bad' : '')
+  }
+
+  function renderReadingStats(rows, month) {
+    if (!showReadingInAnalytics) return
+    const readRows = rows.filter(r => r.reading)
+    const readSet = new Set(readRows.map(r => r.date))
+    const loggedSet = new Set(rows.map(r => r.date))
+
+    // streak: consecutive days with reading=true going back from today
+    let streak = 0
+    const d = new Date()
+    while (true) {
+      const ds = d.toISOString().slice(0,10)
+      if (!loggedSet.has(ds)) break
+      if (!readSet.has(ds)) break
+      streak++
+      d.setDate(d.getDate() - 1)
+    }
+
+    const monthCount = rows.filter(r => r.date.startsWith(month) && r.reading).length
+    const total = readRows.length
+
+    $('anl-reading-streak').textContent = streak
+    $('anl-reading-month').textContent = monthCount
+    $('anl-reading-total').textContent = total
+
+    const card = document.getElementById('anl-reading-card')
+    const statEls = card ? card.querySelectorAll('.anl-stat') : []
+    if (statEls[0]) statEls[0].className = 'anl-stat ' + (streak > 0 ? 'anl-smoke-free' : '')
+    if (statEls[1]) statEls[1].className = 'anl-stat ' + (monthCount > 0 ? 'anl-smoke-free' : '')
+  }
+
+  function renderCustomAnalyticsCards(types, results) {
+    const container = document.getElementById('anl-custom-cards')
+    if (!container) return
+    if (!types || !types.length) { container.innerHTML = ''; return }
+
+    container.innerHTML = types.map((t, i) => {
+      const rows = (results && results[i] && results[i].data) ? results[i].data : []
+      const dateSet = new Set(rows.map(r => r.date))
+
+      // streak from today backwards
+      let streak = 0
+      const d = new Date()
+      while (dateSet.has(d.toISOString().slice(0,10))) {
+        streak++
+        d.setDate(d.getDate() - 1)
+      }
+      const monthCount = rows.filter(r => r.date.startsWith(anlMonth)).length
+      const total = rows.length
+
+      return `<div class="log-card" style="margin-bottom:14px" id="anl-custom-${t.id}">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+          <span style="font-size:22px">${t.emoji || '📋'}</span>
+          <span style="font-size:16px;font-weight:600;color:var(--text)">${escHtml(t.name)}</span>
+        </div>
+        <div class="anl-stat-row">
+          <div class="anl-stat ${streak > 0 ? 'anl-smoke-free' : ''}"><div class="anl-stat-val">${streak}</div><div class="anl-stat-lbl">day streak</div></div>
+          <div class="anl-stat ${monthCount > 0 ? 'anl-smoke-free' : ''}"><div class="anl-stat-val">${monthCount}</div><div class="anl-stat-lbl">days this month</div></div>
+          <div class="anl-stat"><div class="anl-stat-val">${total}</div><div class="anl-stat-lbl">days total</div></div>
+        </div>
+      </div>`
+    }).join('')
   }
 
   function renderGymStats(rows, month) {
@@ -2591,6 +2680,7 @@
   async function initSettings() {
     await Promise.all([loadSettCategories(), loadSettSupplements(), loadSettCards(), loadCustomLogTypes()])
     wireSettEvents()
+    renderSettCustomAnlList()
   }
 
   // ── Categories ──
@@ -2710,17 +2800,58 @@
   // ── Analytics Visibility ──
   const SMOKE_ANL_KEY = 'hassan-smoke-anl-show'
   let showSmokeInAnalytics = localStorage.getItem(SMOKE_ANL_KEY) !== 'false' // default: show
+  const READING_ANL_KEY = 'hassan-reading-anl-show'
+  let showReadingInAnalytics = localStorage.getItem(READING_ANL_KEY) !== 'false' // default: show
 
   function renderSettAnalytics() {
-    const btn = document.getElementById('sett-smoke-analytics-toggle')
-    if (!btn) return
-    btn.classList.toggle('on', showSmokeInAnalytics)
-    btn.addEventListener('click', () => {
-      showSmokeInAnalytics = !showSmokeInAnalytics
-      localStorage.setItem(SMOKE_ANL_KEY, showSmokeInAnalytics)
-      btn.classList.toggle('on', showSmokeInAnalytics)
-      const card = document.getElementById('anl-smoke-card')
-      if (card) card.style.display = showSmokeInAnalytics ? '' : 'none'
+    // Smoke toggle
+    const smokeBtn = document.getElementById('sett-smoke-analytics-toggle')
+    if (smokeBtn) {
+      smokeBtn.classList.toggle('on', showSmokeInAnalytics)
+      smokeBtn.addEventListener('click', () => {
+        showSmokeInAnalytics = !showSmokeInAnalytics
+        localStorage.setItem(SMOKE_ANL_KEY, showSmokeInAnalytics)
+        smokeBtn.classList.toggle('on', showSmokeInAnalytics)
+        const card = document.getElementById('anl-smoke-card')
+        if (card) card.style.display = showSmokeInAnalytics ? '' : 'none'
+      })
+    }
+    // Reading toggle
+    const readBtn = document.getElementById('sett-reading-analytics-toggle')
+    if (readBtn) {
+      readBtn.classList.toggle('on', showReadingInAnalytics)
+      readBtn.addEventListener('click', () => {
+        showReadingInAnalytics = !showReadingInAnalytics
+        localStorage.setItem(READING_ANL_KEY, showReadingInAnalytics)
+        readBtn.classList.toggle('on', showReadingInAnalytics)
+        const card = document.getElementById('anl-reading-card')
+        if (card) card.style.display = showReadingInAnalytics ? '' : 'none'
+      })
+    }
+    // Custom log type analytics toggles
+    renderSettCustomAnlList()
+  }
+
+  function renderSettCustomAnlList() {
+    const el = document.getElementById('sett-custom-anl-list')
+    if (!el || !customLogTypes.length) { if (el) el.innerHTML = ''; return }
+    el.innerHTML = customLogTypes.map(t => `
+      <div class="sett-row" style="border-bottom:none">
+        <div class="sett-row-label">${t.emoji || '📋'} ${escHtml(t.name)}</div>
+        <button class="sett-toggle ${t.show_in_analytics ? 'on' : ''}" data-anl-logtype="${t.id}" data-on="${!!t.show_in_analytics}"></button>
+      </div>`).join('')
+    el.querySelectorAll('[data-anl-logtype]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.anlLogtype
+        const newVal = btn.dataset.on !== 'true'
+        await supabase.from('custom_log_types').update({ show_in_analytics: newVal }).eq('id', id)
+        btn.dataset.on = newVal
+        btn.classList.toggle('on', newVal)
+        const t = customLogTypes.find(t => t.id === id)
+        if (t) t.show_in_analytics = newVal
+        // refresh analytics if loaded
+        if (anlLoaded) renderCustomAnalyticsCards()
+      })
     })
   }
 
@@ -2735,13 +2866,31 @@
   function renderSettLogTypes() {
     const el = document.getElementById('sett-logtype-list')
     if (!el) return
-    if (!customLogTypes.length) { el.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:var(--text3);background:var(--bg2);border-radius:var(--radius)">No custom logs yet</div>'; return }
+    if (!customLogTypes.length) { el.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:var(--text3);background:var(--bg2);border-radius:var(--radius)">No log types yet</div>'; return }
     el.innerHTML = customLogTypes.map(t => `
-      <div class="sett-row" data-logtype-id="${t.id}">
-        <div class="sett-row-label">${t.emoji || '📋'} ${escHtml(t.name)}</div>
-        <button class="sett-toggle ${t.active ? 'on' : ''}" data-logtype-toggle="${t.id}" data-active="${t.active}" style="margin-right:8px"></button>
+      <div class="sett-row" data-logtype-id="${t.id}" style="flex-wrap:wrap;gap:6px">
+        <input class="sett-rename-input" data-logtype-emoji-inp="${t.id}" value="${escHtml(t.emoji || '📋')}" maxlength="4" style="max-width:52px;text-align:center">
+        <input class="sett-rename-input" data-logtype-name-inp="${t.id}" value="${escHtml(t.name)}" maxlength="40" style="flex:1;min-width:80px">
+        <button class="sett-add-btn" data-logtype-save="${t.id}" style="padding:5px 10px;font-size:12px">Save</button>
+        <button class="sett-toggle ${t.active ? 'on' : ''}" data-logtype-toggle="${t.id}" data-active="${t.active}"></button>
         <button class="sett-del-btn" data-logtype-del="${t.id}" title="Delete">×</button>
       </div>`).join('')
+
+    el.querySelectorAll('[data-logtype-save]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.logtypeSave
+        const nameInp = el.querySelector(`[data-logtype-name-inp="${id}"]`)
+        const emojiInp = el.querySelector(`[data-logtype-emoji-inp="${id}"]`)
+        const name = nameInp.value.trim(); if (!name) return
+        const emoji = emojiInp.value.trim() || '📋'
+        btn.textContent = '✓'; btn.disabled = true
+        await supabase.from('custom_log_types').update({ name, emoji }).eq('id', id)
+        const t = customLogTypes.find(t => t.id === id)
+        if (t) { t.name = name; t.emoji = emoji }
+        setTimeout(() => { btn.textContent = 'Save'; btn.disabled = false }, 800)
+      })
+    })
+
     el.querySelectorAll('[data-logtype-toggle]').forEach(btn => {
       btn.addEventListener('click', async () => {
         const id = btn.dataset.logtypeToggle
@@ -2753,6 +2902,7 @@
         if (t) t.active = newActive
       })
     })
+
     el.querySelectorAll('[data-logtype-del]').forEach(btn => {
       btn.addEventListener('click', async () => {
         if (btn.textContent === '×') { btn.textContent = '✓'; btn.title = 'Confirm delete'; return }
