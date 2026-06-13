@@ -631,6 +631,8 @@
       if (finChartInstance) { finChartInstance.destroy(); finChartInstance = null }
       return
     }
+    const expWrap = $('expense-section-wrap')
+    if (expWrap && expWrap.style.display === 'none') return
     section.style.display = 'block'
 
     const catTotals = {}
@@ -670,6 +672,7 @@
 
   // ── EXPENSE LIST ─────────────────────────────────────────
   let finBudgetCollapsed = true
+  let finExpensesCollapsed = true
 
   function renderExpenseList() {
     const container = $('expense-list')
@@ -865,13 +868,22 @@
     const pickerBtn = $('cat-picker-btn'), dropdown = $('cat-dropdown')
     if (!addBtn) return
 
+    const colBtn = $('expense-collapse-btn')
+    if (colBtn) colBtn.addEventListener('click', () => {
+      finExpensesCollapsed = !finExpensesCollapsed
+      const wrap = $('expense-section-wrap')
+      if (wrap) wrap.style.display = finExpensesCollapsed ? 'none' : ''
+      colBtn.textContent = finExpensesCollapsed ? '▸' : '▾'
+      if (!finExpensesCollapsed) renderDonutChart()
+    })
+
     addBtn.addEventListener('click', () => {
-      if (finBudgetCollapsed) {
-        finBudgetCollapsed = false
-        const wrap = $('budget-section-wrap')
+      if (finExpensesCollapsed) {
+        finExpensesCollapsed = false
+        const wrap = $('expense-section-wrap')
         if (wrap) wrap.style.display = ''
-        const colBtn = $('budget-collapse-btn')
         if (colBtn) colBtn.textContent = '▾'
+        renderDonutChart()
       }
       form.style.display = 'block'
       addBtn.style.display = 'none'

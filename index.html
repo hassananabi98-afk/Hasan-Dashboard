@@ -251,17 +251,27 @@
         </button>
       </div>
 
-      <!-- Cash Expenses (budget + donut + list all collapse together) -->
+      <!-- Section 1: Monthly Budget -->
+      <div class="fin-section">
+        <div class="fin-section-row">
+          <div class="log-section-title" style="margin-bottom:0">💰 Monthly Budget</div>
+          <button class="expense-collapse-btn" id="budget-collapse-btn" title="Show/hide">▸</button>
+        </div>
+        <div id="budget-section-wrap" style="display:none">
+          <div class="budget-wrap" id="budget-wrap"></div>
+        </div>
+      </div>
+
+      <!-- Section 2: Cash Expenses + Donut -->
       <div class="fin-section">
         <div class="fin-section-row">
           <div class="log-section-title" style="margin-bottom:0">💵 Cash Expenses</div>
           <div style="display:flex;gap:6px;align-items:center">
-            <button class="expense-collapse-btn" id="budget-collapse-btn" title="Show/hide">▸</button>
+            <button class="expense-collapse-btn" id="expense-collapse-btn" title="Show/hide">▸</button>
             <button class="fin-add-btn" id="fin-add-btn">+ Add</button>
           </div>
         </div>
-        <div id="budget-section-wrap" style="display:none">
-          <div class="budget-wrap" id="budget-wrap"></div>
+        <div id="expense-section-wrap" style="display:none">
           <div id="fin-chart-section" style="display:none">
             <div class="donut-wrap">
               <canvas id="fin-chart"></canvas>
@@ -306,7 +316,7 @@
         </div>
       </div>
 
-      <!-- Per-card sections (dynamically rendered) -->
+      <!-- Section 3: Card tiles (always visible; each tile expands for donut + transactions) -->
       <div id="fin-cards-container"></div>
 
       <div style="height:24px"></div>
