@@ -9,9 +9,9 @@
 ## File Layout
 
 ```
-index.html   550 lines   HTML shell + inline Finance/Health/Settings markup
-style.css    547 lines   All CSS (light + dark variables, iOS HIG palette)
-script.js   2434 lines   All logic (ES module, single IIFE-like block)
+index.html   550 lines   HTML shell + inline Finance/Health/Settings markup  (cache-bust v=17)
+style.css    547 lines   All CSS (light + dark variables, iOS HIG palette)   (cache-bust v=17)
+script.js   2434 lines   All logic (ES module, single IIFE-like block)       (cache-bust v=17)
 ```
 
 ---
@@ -110,6 +110,12 @@ The CSS for `.card-section` and `.card-section::before` reads these vars, so eve
 - **Cash Expenses** inside `budget-section-wrap` — only visible when budget box is tapped open.
 - **Donut charts** — `drawCardDonut` called on expand; chart destroyed + removed on collapse to free memory. Budget section donut skips render if parent is hidden.
 
+#### Card form class names
+The add-transaction form div carries **two** classes: `add-expense-form card-txn-form`.  
+- `add-expense-form` — used by CSS for layout/styling  
+- `card-txn-form` — used by `wireCardEvents()` to attach `input` listeners that enable the Save button  
+Both must stay present; removing either breaks saving (button stays disabled) or styling.
+
 #### Listener leak guard
 `wireCardEvents()` runs on every render. The `document` outside-click handler for dropdowns is bound only once via `cardDocClickBound` flag.
 
@@ -194,3 +200,12 @@ Name matching is `.toLowerCase().trim()`. No CSS change needed.
 - **Budget donut**: `finChartInstance` is reused (not destroyed on collapse), unlike per-card charts which are properly destroyed. No memory leak in practice — only one instance exists.
 - **Progress bar danger threshold**: bars turn red at >80% utilisation (class `danger`). This is intentional; to remove per-card just drop the `.card-tile-fill.danger` override in style.css.
 - **Queued GitHub Actions run**: Run #39 is stuck in "queued" state and cannot be cancelled via API. It will time out on its own and will NOT re-deploy (newer runs supersede it).
+
+---
+
+## Changelog
+
+| Version | What changed |
+|---|---|
+| v=17 | Fix: card Save button permanently disabled — form div was missing `card-txn-form` class so `wireCardEvents()` never attached input validation listeners |
+| v=16 | Per-card accent theming (`darkTint`, `hexA`, `cardTheme`); CREDIMAX→blue, ILA→green; budget box tap-toggle for Cash Expenses; `cardDocClickBound` listener leak guard |
