@@ -1021,14 +1021,6 @@
   async function initFinanceTab() {
     setFinMonth(currentYM())
     bindExpenseForm()
-    const budgetToggle = $('budget-toggle')
-    if (budgetToggle) {
-      budgetToggle.addEventListener('click', () => {
-        finBudgetCollapsed = !finBudgetCollapsed
-        const wrap = $('budget-section-wrap')
-        if (wrap) wrap.style.display = finBudgetCollapsed ? 'none' : ''
-      })
-    }
     await loadFinanceData()
   }
 
@@ -1044,7 +1036,7 @@
     finCardCharts = {}
     if (finCards.length === 0) { container.innerHTML = ''; return }
     container.innerHTML = finCards.map(card => renderCardSectionHTML(card)).join('')
-    finCards.forEach(card => { if (finCardCollapsed[card.id] === false) drawCardDonut(card.id) })
+    finCards.forEach(card => drawCardDonut(card.id))
     wireCardEvents()
   }
 
@@ -1057,11 +1049,10 @@
     const limit   = Number(card.limit)
     const available = Math.max(limit - balance, 0)
     const pct = limit > 0 ? Math.min((balance / limit) * 100, 100) : 0
-    const collapsed = finCardCollapsed[card.id] !== false
     const txnType = finCardTxnType[card.id] || 'charge'
     const txnCat = finCardTxnCat[card.id]
     return `<div class="fin-section card-section" data-card-id="${card.id}">
-      <div class="fin-section-row fin-toggle-row card-toggle-hdr" data-card-id="${card.id}" style="align-items:flex-start">
+      <div class="fin-section-row" data-card-id="${card.id}" style="align-items:flex-start">
         <div style="flex:1;min-width:0">
           <div class="card-tile-header">
             <span class="card-tile-name">${escHtml(card.name)}</span>
@@ -1074,7 +1065,7 @@
           </div>
         </div>
       </div>
-      <div id="card-body-${card.id}" style="display:${collapsed ? 'none' : 'block'}">
+      <div id="card-body-${card.id}" style="display:block">
         <div id="card-donut-area-${card.id}"></div>
         <div class="fin-section-row" style="margin-top:12px;margin-bottom:4px">
           <span class="log-section-title" style="margin-bottom:0">Transactions</span>
@@ -1162,19 +1153,6 @@
   function wireCardEvents() {
     const container = $('fin-cards-container')
     if (!container) return
-
-    container.querySelectorAll('.card-toggle-hdr').forEach(hdr => {
-      hdr.addEventListener('click', ev => {
-        if (ev.target.closest('.card-limit-tap') || ev.target.closest('input')) return
-        const cardId = hdr.dataset.cardId
-        const body = $(`card-body-${cardId}`)
-        const isCollapsed = finCardCollapsed[cardId] !== false
-        finCardCollapsed[cardId] = !isCollapsed
-        if (body) body.style.display = isCollapsed ? 'block' : 'none'
-        if (isCollapsed) drawCardDonut(cardId)
-        else { if (finCardCharts[cardId]) { finCardCharts[cardId].destroy(); delete finCardCharts[cardId] } }
-      })
-    })
 
     container.querySelectorAll('.card-limit-tap').forEach(el => {
       el.style.cursor = 'pointer'
