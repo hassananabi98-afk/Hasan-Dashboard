@@ -222,8 +222,18 @@
   .fin-legend-amt{font-weight:500;color:var(--text);white-space:nowrap}
 
   /* expense list */
-  .expense-row{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:.5px solid var(--border)}
+  .expense-row{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:.5px solid var(--border);cursor:pointer;transition:background .1s}
   .expense-row:last-child{border-bottom:none}
+  .expense-row:active{background:var(--bg3)}
+  .expense-edit-form{padding:12px 14px;border-bottom:.5px solid var(--border);background:var(--bg2)}
+  .expense-edit-form:last-child{border-bottom:none}
+  .expense-edit-grid{display:flex;flex-direction:column;gap:8px}
+  .expense-edit-row{display:flex;gap:8px;align-items:center}
+  .expense-edit-inp{flex:1;font-size:13px;padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit}
+  .expense-edit-inp:focus{border-color:var(--accent);outline:none}
+  .expense-edit-save{background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);padding:6px 14px;font-size:13px;font-weight:500;cursor:pointer}
+  .expense-edit-cancel{background:none;border:none;color:var(--text3);font-size:13px;cursor:pointer;padding:6px 8px}
+  .expense-collapse-btn{background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:2px 6px}
   .expense-cat-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
   .expense-meta{flex:1;min-width:0}
   .expense-label{font-size:14px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -255,7 +265,7 @@
   .cat-picker-btn:focus{border-color:var(--accent);outline:none}
   .cat-picker-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
   .cat-picker-chevron{margin-left:auto;font-size:11px;color:var(--text3)}
-  .cat-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius);box-shadow:0 4px 16px rgba(0,0,0,.15);z-index:30;max-height:220px;overflow-y:auto}
+  .cat-dropdown{position:fixed;background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius);box-shadow:0 4px 20px rgba(0,0,0,.3);z-index:999;max-height:220px;overflow-y:auto;min-width:180px}
   .cat-option{display:flex;align-items:center;gap:8px;padding:10px 12px;font-size:14px;color:var(--text);cursor:pointer}
   .cat-option:active,.cat-option:hover{background:var(--bg2)}
   .cat-option.selected{color:var(--accent)}
@@ -635,7 +645,10 @@
       <div class="fin-section">
         <div class="fin-section-row">
           <div class="log-section-title" style="margin-bottom:0">Expenses</div>
-          <button class="fin-add-btn" id="fin-add-btn">+ Add</button>
+          <div style="display:flex;gap:6px;align-items:center">
+            <button class="expense-collapse-btn" id="expense-collapse-btn" title="Show/hide">▾</button>
+            <button class="fin-add-btn" id="fin-add-btn">+ Add</button>
+          </div>
         </div>
 
         <!-- Inline add form -->
@@ -1244,7 +1257,6 @@
 
 
       calNeedsRefresh = true
-      todayNeedsRefresh = true
       anlNeedsRefresh = true
       if (!silent) showToast('Saved ✓')
     } catch (e) {
@@ -1610,13 +1622,21 @@
   }
 
   // ── EXPENSE LIST ─────────────────────────────────────────
+  let expensesCollapsed = false
+
   function renderExpenseList() {
     const container = $('expense-list')
+    const colBtn = $('expense-collapse-btn')
     if (!container) return
+
     if (finExpenses.length === 0) {
       container.innerHTML = '<div class="fin-empty">No expenses this month</div>'
       return
     }
+
+    if (colBtn) colBtn.textContent = expensesCollapsed ? '▸' : '▾'
+    if (expensesCollapsed) { container.innerHTML = ''; return }
+
     container.innerHTML = `<div class="log-card">${finExpenses.map(e => {
       const cat = finCategories.find(c => c.name === e.category)
       const color = cat ? cat.color : '#6b7280'
@@ -1631,8 +1651,56 @@
       </div>`
     }).join('')}</div>`
 
+    // tap row to edit
+    container.querySelectorAll('.expense-row').forEach(row => {
+      row.addEventListener('click', ev => {
+        if (ev.target.closest('.expense-del-btn')) return
+        showExpenseEditForm(row.dataset.id)
+      })
+    })
     container.querySelectorAll('[data-del]').forEach(btn => {
       btn.addEventListener('click', ev => { ev.stopPropagation(); showDeleteConfirm(btn.dataset.del) })
+    })
+  }
+
+  function showExpenseEditForm(id) {
+    const e = finExpenses.find(x => x.id === id); if (!e) return
+    const row = document.querySelector(`.expense-row[data-id="${id}"]`); if (!row) return
+    const cat = finCategories.find(c => c.name === e.category)
+    const color = cat ? cat.color : '#6b7280'
+    const form = document.createElement('div')
+    form.className = 'expense-edit-form'
+    form.dataset.editId = id
+    form.innerHTML = `
+      <div class="expense-edit-grid">
+        <div class="expense-edit-row">
+          <input class="expense-edit-inp" id="ee-label" value="${escHtml(e.label)}" placeholder="Label" maxlength="80">
+          <input class="expense-edit-inp" id="ee-amount" type="number" value="${e.amount}" step="0.001" min="0" style="max-width:90px" inputmode="decimal">
+        </div>
+        <div class="expense-edit-row">
+          <input class="expense-edit-inp" id="ee-date" type="date" value="${e.date}" style="max-width:140px">
+          <select class="expense-edit-inp" id="ee-cat">
+            ${finCategories.map(c => `<option value="${escHtml(c.name)}" ${c.name === e.category ? 'selected' : ''}>${escHtml(c.name)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="expense-edit-row" style="justify-content:flex-end">
+          <button class="expense-edit-cancel" id="ee-cancel">Cancel</button>
+          <button class="expense-edit-save" id="ee-save">Save</button>
+        </div>
+      </div>`
+    row.replaceWith(form)
+    form.querySelector('#ee-cancel').addEventListener('click', () => renderExpenseList())
+    form.querySelector('#ee-save').addEventListener('click', async () => {
+      const label = form.querySelector('#ee-label').value.trim(); if (!label) return
+      const amount = parseFloat(form.querySelector('#ee-amount').value); if (isNaN(amount)) return
+      const date = form.querySelector('#ee-date').value
+      const category = form.querySelector('#ee-cat').value
+      const btn = form.querySelector('#ee-save'); btn.textContent = 'Saving...'; btn.disabled = true
+      const { error } = await supabase.from('expenses').update({ label, amount, date, category }).eq('id', id)
+      if (error) { btn.textContent = 'Save'; btn.disabled = false; showToast('Update failed', true); return }
+      const idx = finExpenses.findIndex(x => x.id === id)
+      if (idx !== -1) finExpenses[idx] = { ...finExpenses[idx], label, amount, date, category }
+      renderBudgetBar(); renderExpenseList(); renderDonutChart()
     })
   }
 
@@ -1748,6 +1816,10 @@
 
   // ── ADD EXPENSE FORM (bound once) ────────────────────────
   function bindExpenseForm() {
+    // collapse toggle
+    const colBtn = $('expense-collapse-btn')
+    if (colBtn) colBtn.addEventListener('click', () => { expensesCollapsed = !expensesCollapsed; renderExpenseList() })
+
     const addBtn = $('fin-add-btn'), form = $('add-expense-form')
     const cancelBtn = $('fin-cancel-btn'), amtInp = $('fin-amount'), lblInp = $('fin-label')
     const pickerBtn = $('cat-picker-btn'), dropdown = $('cat-dropdown')
@@ -1766,8 +1838,18 @@
     pickerBtn.addEventListener('click', ev => {
       ev.stopPropagation()
       const open = dropdown.style.display !== 'none'
-      dropdown.style.display = open ? 'none' : 'block'
-      if (!open) renderCatDropdown()
+      if (open) { dropdown.style.display = 'none'; return }
+      renderCatDropdown()
+      const rect = pickerBtn.getBoundingClientRect()
+      const spaceBelow = window.innerHeight - rect.bottom
+      dropdown.style.display = 'block'
+      dropdown.style.width = rect.width + 'px'
+      if (spaceBelow < 240) {
+        dropdown.style.top = (rect.top - dropdown.offsetHeight - 4) + 'px'
+      } else {
+        dropdown.style.top = (rect.bottom + 4) + 'px'
+      }
+      dropdown.style.left = rect.left + 'px'
     })
 
     document.addEventListener('click', ev => {
@@ -2073,8 +2155,18 @@
     pickerBtn.addEventListener('click', ev => {
       ev.stopPropagation()
       const open = dropdown.style.display !== 'none'
-      dropdown.style.display = open ? 'none' : 'block'
-      if (!open) renderTxnCatDropdown()
+      if (open) { dropdown.style.display = 'none'; return }
+      renderTxnCatDropdown()
+      const rect = txnPickerBtn.getBoundingClientRect()
+      const spaceBelow = window.innerHeight - rect.bottom
+      dropdown.style.display = 'block'
+      dropdown.style.width = rect.width + 'px'
+      if (spaceBelow < 240) {
+        dropdown.style.top = (rect.top - dropdown.offsetHeight - 4) + 'px'
+      } else {
+        dropdown.style.top = (rect.bottom + 4) + 'px'
+      }
+      dropdown.style.left = rect.left + 'px'
     })
     document.addEventListener('click', ev => {
       const wrap = $('txn-cat-picker-wrap')
@@ -2639,16 +2731,64 @@
     }
   }
 
+  const SETT_CAT_PALETTE = ['#f97316','#3b82f6','#22c55e','#a855f7','#ef4444','#eab308','#ec4899','#6b7280']
+
   function renderSettCatList(cats) {
     const el = document.getElementById('sett-cat-list')
     if (!el) return
     if (!cats.length) { el.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:var(--text3);background:var(--bg2);border-radius:var(--radius)">No categories yet</div>'; return }
     el.innerHTML = cats.map(c => `
-      <div class="sett-row" data-cat-id="${c.id}">
-        <div class="sett-dot" style="background:${c.color}"></div>
-        <div class="sett-row-label" id="sett-cat-lbl-${c.id}">${escHtml(c.name)}</div>
+      <div class="sett-row" data-cat-id="${c.id}" style="flex-wrap:wrap;gap:6px;align-items:center">
+        <button class="sett-dot" data-cat-color-btn="${c.id}" style="background:${c.color};cursor:pointer;border:none;width:22px;height:22px;border-radius:50%;flex-shrink:0" title="Change color"></button>
+        <input class="sett-rename-input" data-cat-name-inp="${c.id}" value="${escHtml(c.name)}" maxlength="40" style="flex:1;min-width:80px">
+        <button class="sett-add-btn" data-cat-save="${c.id}" style="padding:5px 10px;font-size:12px">Save</button>
         <button class="sett-del-btn" data-cat-del="${c.id}" title="Delete">×</button>
+        <div data-cat-palette="${c.id}" style="display:none;width:100%;padding:6px 0 2px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            ${SETT_CAT_PALETTE.map(hex => `<button data-pick-color="${hex}" data-pick-for="${c.id}" style="width:24px;height:24px;border-radius:50%;background:${hex};border:2px solid ${hex === c.color ? '#fff' : 'transparent'};cursor:pointer"></button>`).join('')}
+          </div>
+        </div>
       </div>`).join('')
+
+    // color button toggle palette
+    el.querySelectorAll('[data-cat-color-btn]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.catColorBtn
+        const palette = el.querySelector(`[data-cat-palette="${id}"]`)
+        palette.style.display = palette.style.display === 'none' ? '' : 'none'
+      })
+    })
+
+    // pick color swatch
+    el.querySelectorAll('[data-pick-color]').forEach(swatch => {
+      swatch.addEventListener('click', () => {
+        const color = swatch.dataset.pickColor
+        const id = swatch.dataset.pickFor
+        const colorBtn = el.querySelector(`[data-cat-color-btn="${id}"]`)
+        colorBtn.style.background = color
+        colorBtn.dataset.currentColor = color
+        // highlight selected
+        el.querySelectorAll(`[data-pick-for="${id}"]`).forEach(s => s.style.border = `2px solid ${s.dataset.pickColor === color ? '#fff' : 'transparent'}`)
+      })
+    })
+
+    // save
+    el.querySelectorAll('[data-cat-save]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.catSave
+        const nameInp = el.querySelector(`[data-cat-name-inp="${id}"]`)
+        const colorBtn = el.querySelector(`[data-cat-color-btn="${id}"]`)
+        const name = nameInp.value.trim(); if (!name) return
+        const color = colorBtn.dataset.currentColor || colorBtn.style.background
+        btn.textContent = '✓'; btn.disabled = true
+        await supabase.from('categories').update({ name, color }).eq('id', id)
+        const cat = finCategories.find(c => c.id === id)
+        if (cat) { cat.name = name; cat.color = color }
+        setTimeout(() => { btn.textContent = 'Save'; btn.disabled = false }, 800)
+      })
+    })
+
+    // delete
     el.querySelectorAll('[data-cat-del]').forEach(btn => {
       btn.addEventListener('click', async () => {
         if (btn.textContent === '×') { btn.textContent = '✓'; btn.title = 'Confirm delete'; return }
@@ -2683,6 +2823,7 @@
         await supabase.from('supplement_list').update({ active: newActive }).eq('id', id)
         btn.dataset.active = newActive
         btn.classList.toggle('on', newActive)
+        todayNeedsRefresh = true
       })
     })
     el.querySelectorAll('[data-supp-del]').forEach(btn => {
@@ -2690,6 +2831,7 @@
         if (btn.textContent === '×') { btn.textContent = '✓'; btn.title = 'Confirm delete'; return }
         const id = btn.dataset.suppDel
         await supabase.from('supplement_list').delete().eq('id', id)
+        todayNeedsRefresh = true
         await loadSettSupplements()
       })
     })
@@ -2809,7 +2951,7 @@
     suppAddBtn.addEventListener('click', async () => {
       const name = suppNameInp.value.trim(); if (!name) return
       const { error } = await supabase.from('supplement_list').insert({ name, active: true })
-      if (!error) { suppNameInp.value = ''; await loadSettSupplements() }
+      if (!error) { suppNameInp.value = ''; todayNeedsRefresh = true; await loadSettSupplements() }
     })
 
     // Add card
