@@ -999,7 +999,6 @@
     if (nextBtn) nextBtn.disabled = ym >= currentYM()
     cancelDeleteConfirm()
     closeExpenseForm()
-    closeTxnForm()
     finMonthTxns = finAllTxns.filter(t => t.date.startsWith(ym))
   }
 
