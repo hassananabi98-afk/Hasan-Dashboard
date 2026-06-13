@@ -669,7 +669,8 @@
   }
 
   // ── EXPENSE LIST ─────────────────────────────────────────
-  let expensesCollapsed = false
+  let expensesCollapsed = true
+  let finBudgetCollapsed = true
 
   function renderExpenseList() {
     const container = $('expense-list')
@@ -1010,6 +1011,15 @@
     setFinMonth(currentYM())
     bindExpenseForm()
     bindTxnForm()
+    const budgetColBtn = $('budget-collapse-btn')
+    if (budgetColBtn) {
+      budgetColBtn.addEventListener('click', () => {
+        finBudgetCollapsed = !finBudgetCollapsed
+        const wrap = $('budget-section-wrap')
+        if (wrap) wrap.style.display = finBudgetCollapsed ? 'none' : ''
+        budgetColBtn.textContent = finBudgetCollapsed ? '▸' : '▾'
+      })
+    }
     await loadFinanceData()
   }
 
