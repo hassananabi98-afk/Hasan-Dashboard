@@ -389,3 +389,111 @@
   .anl-quarter-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.3px;font-weight:500;margin-bottom:4px}
   .anl-quarter-amount{font-size:18px;font-weight:700;color:var(--text);font-family:ui-monospace,'Cascadia Code',monospace;line-height:1.2}
   .anl-quarter-sub{font-size:10px;color:var(--text3);margin-top:3px}
+
+  /* ── VISUAL ENHANCEMENTS ───────────────────────────────── */
+
+  /* Card depth */
+  .log-card{box-shadow:0 1px 4px rgba(0,0,0,.07),0 0.5px 1px rgba(0,0,0,.04)}
+  .budget-wrap{box-shadow:0 1px 4px rgba(0,0,0,.07)}
+  .add-expense-form{box-shadow:0 2px 10px rgba(0,0,0,.08)}
+  @media(prefers-color-scheme:dark){
+    .log-card{box-shadow:0 1px 4px rgba(0,0,0,.35),0 0.5px 1px rgba(0,0,0,.25)}
+    .budget-wrap{box-shadow:0 1px 4px rgba(0,0,0,.35)}
+    .add-expense-form{box-shadow:0 2px 10px rgba(0,0,0,.4)}
+  }
+
+  /* Budget bar gradient */
+  .budget-fill{background:linear-gradient(90deg,#3b82f6,#1d4ed8)}
+  .budget-fill.over{background:linear-gradient(90deg,#f87171,#dc2626)}
+  .budget-track{height:8px;border-radius:4px}
+
+  /* Finance card tiles — polished */
+  .card-tile{
+    background:var(--bg2);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:16px;
+    margin-bottom:10px;
+    position:relative;
+    overflow:hidden;
+    box-shadow:0 2px 8px rgba(0,0,0,.07)
+  }
+  .card-tile::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:3px;
+    background:linear-gradient(90deg,#3b82f6,#8b5cf6);
+    border-radius:var(--radius) var(--radius) 0 0
+  }
+  @media(prefers-color-scheme:dark){.card-tile{box-shadow:0 2px 8px rgba(0,0,0,.35)}}
+
+  /* Nav active indicator */
+  .nav-item{position:relative}
+  .nav-item.active::before{
+    content:'';position:absolute;top:0;left:25%;right:25%;
+    height:2.5px;background:var(--accent);border-radius:0 0 3px 3px
+  }
+
+  /* Analytics stat tiles */
+  .anl-stat{
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    padding:14px 8px;
+    text-align:center;
+    box-shadow:0 1px 3px rgba(0,0,0,.05)
+  }
+  .anl-stat-val{font-size:28px}
+  .anl-smoke-free .anl-stat-val{color:#22c55e}
+  .anl-smoke-bad .anl-stat-val{color:var(--danger)}
+
+  /* Health tiles */
+  .hlth-type-tile{
+    box-shadow:0 1px 4px rgba(0,0,0,.06);
+    transition:box-shadow .15s,opacity .2s
+  }
+  @media(prefers-color-scheme:dark){.hlth-type-tile{box-shadow:0 1px 4px rgba(0,0,0,.3)}}
+
+  /* Form input focus glow */
+  .fin-form-input:focus{
+    box-shadow:0 0 0 3px var(--accent-bg);
+    border-color:var(--accent)
+  }
+  .log-textarea:focus{box-shadow:0 0 0 3px var(--accent-bg)}
+
+  /* Pin keys */
+  .pin-key{box-shadow:0 2px 6px rgba(0,0,0,.1)}
+  @media(prefers-color-scheme:dark){.pin-key{box-shadow:0 2px 6px rgba(0,0,0,.4)}}
+
+  /* Top bar subtle border */
+  .top-bar{border-bottom:.5px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,.04)}
+  @media(prefers-color-scheme:dark){.top-bar{box-shadow:0 1px 4px rgba(0,0,0,.2)}}
+
+  /* Save button */
+  .save-btn{
+    background:linear-gradient(135deg,#3b82f6,#1d4ed8);
+    box-shadow:0 2px 8px rgba(59,130,246,.4);
+    letter-spacing:.2px
+  }
+  .fin-confirm-btn{background:linear-gradient(135deg,#3b82f6,#1d4ed8)}
+  .fin-add-btn{box-shadow:0 1px 4px rgba(59,130,246,.3)}
+
+  /* ── MISSED PRAYERS ────────────────────────────────────── */
+  .prayer-totals-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:4px}
+  .prayer-total-tile{
+    background:var(--bg3);border-radius:var(--radius-sm);
+    padding:10px 4px;text-align:center;
+    border:1px solid var(--border)
+  }
+  .prayer-total-tile.done{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.25)}
+  .prayer-total-count{font-size:22px;font-weight:700;color:var(--danger);font-family:ui-monospace,'Cascadia Code',monospace;line-height:1}
+  .prayer-total-tile.done .prayer-total-count{color:var(--success)}
+  .prayer-total-label{font-size:10px;color:var(--text3);margin-top:3px;text-transform:uppercase;letter-spacing:.3px}
+  .prayer-missed-row{
+    display:flex;align-items:center;gap:10px;padding:10px 14px;
+    border-bottom:.5px solid var(--border);cursor:pointer;transition:background .1s
+  }
+  .prayer-missed-row:last-child{border-bottom:none}
+  .prayer-missed-row:active{background:var(--bg3)}
+  .prayer-missed-date{font-size:13px;font-weight:500;color:var(--text);min-width:80px;flex-shrink:0}
+  .prayer-missed-chips{display:flex;gap:4px;flex-wrap:wrap}
+  .prayer-chip{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:500;white-space:nowrap}
+  .prayer-chip.missed{background:rgba(239,68,68,.12);color:var(--danger)}
+  .prayer-all-done{text-align:center;padding:16px;color:var(--success);font-size:14px;font-weight:500}

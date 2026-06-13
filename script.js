@@ -1640,7 +1640,57 @@
   let anlMonth = new Date().toISOString().slice(0,7)
   let anlSpendChart = null, anlTrendChart = null, anlQtrChart = null
   let anlQtrYear = new Date().getFullYear()
-  let anlExpensesAll = []
+  let anlExpensesAll = [], anlPrayersAll = []
+
+  const PRAYER_KEYS = ['fajr','dhuhr','asr','maghrib','isha']
+  const PRAYER_LABELS = { fajr:'Fajr', dhuhr:'Dhuhr', asr:'Asr', maghrib:'Maghrib', isha:'Isha' }
+
+  function fmtDateMed(ds) {
+    const [y,m,d] = ds.split('-').map(Number)
+    return new Date(y, m-1, d).toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' })
+  }
+
+  function renderMissedPrayers(rows) {
+    const today = todayStr()
+    const missed = rows.filter(r => r.date < today && PRAYER_KEYS.some(k => !r[k]))
+
+    const totals = { fajr:0, dhuhr:0, asr:0, maghrib:0, isha:0 }
+    missed.forEach(r => PRAYER_KEYS.forEach(k => { if (!r[k]) totals[k]++ }))
+    const totalMissed = PRAYER_KEYS.reduce((s,k) => s + totals[k], 0)
+
+    const totalsEl = $('prayer-totals')
+    if (totalsEl) {
+      if (totalMissed === 0) {
+        totalsEl.innerHTML = '<div class="prayer-all-done">All prayers up to date ✓</div>'
+      } else {
+        totalsEl.innerHTML = `<div class="prayer-totals-grid">${PRAYER_KEYS.map(k => `
+          <div class="prayer-total-tile${totals[k] === 0 ? ' done' : ''}">
+            <div class="prayer-total-count">${totals[k]}</div>
+            <div class="prayer-total-label">${PRAYER_LABELS[k]}</div>
+          </div>`).join('')}</div>`
+      }
+    }
+
+    const listEl = $('prayer-missed-list')
+    if (!listEl) return
+    if (missed.length === 0) { listEl.innerHTML = ''; return }
+
+    listEl.innerHTML = `<div class="log-card" style="margin-top:12px">${missed.slice(0, 90).map(r => {
+      const missedPrayers = PRAYER_KEYS.filter(k => !r[k])
+      return `<div class="prayer-missed-row" data-date="${r.date}">
+        <div class="prayer-missed-date">${fmtDateMed(r.date)}</div>
+        <div class="prayer-missed-chips">${missedPrayers.map(k => `<span class="prayer-chip missed">${PRAYER_LABELS[k]}</span>`).join('')}</div>
+      </div>`
+    }).join('')}</div>`
+
+    listEl.querySelectorAll('.prayer-missed-row').forEach(row => {
+      row.addEventListener('click', () => {
+        const [y,m,d] = row.dataset.date.split('-').map(Number)
+        switchTab('calendar')
+        openDayView(y, m - 1, d)
+      })
+    })
+  }
 
   function anlFmtMonth(ym) {
     const [y,m] = ym.split('-')
@@ -1692,14 +1742,17 @@
     $('anl-next-btn').disabled = anlMonth >= cur
     $('anl-next-btn').style.opacity = anlMonth >= cur ? '0.3' : '1'
 
-    // fetch in parallel — all expenses (no date filter) for quarterly + trend
-    const [dtAll, expensesAll, cats] = await Promise.all([
+    // fetch in parallel — all expenses for quarterly + trend; prayers for missed section
+    const [dtAll, expensesAll, cats, prayersAll] = await Promise.all([
       supabase.from('daily_tracking').select('*').order('date', {ascending:false}),
       supabase.from('expenses').select('date,amount,category').order('date'),
       supabase.from('categories').select('name,color'),
+      supabase.from('prayers').select('*').lt('date', todayStr()).order('date', {ascending:false}),
     ])
 
     anlExpensesAll = expensesAll.data || []
+    anlPrayersAll  = prayersAll.data  || []
+    renderMissedPrayers(anlPrayersAll)
     renderSmokeStats(dtAll.data || [], anlMonth)
     renderReadingStats(dtAll.data || [], anlMonth)
     renderSpendChart(anlExpensesAll, cats.data || [], anlMonth)
@@ -1917,14 +1970,19 @@
     })
   }
 
-  // ── EXPORT ───────────────────────────────────────────────
+  // ── EXPORT (CSV + ZIP) ───────────────────────────────────
+  function tableToCSV(rows, columns) {
+    const esc = v => { const s = String(v ?? ''); return (s.includes(',') || s.includes('"') || s.includes('\n')) ? `"${s.replace(/"/g,'""')}"` : s }
+    return [columns.join(','), ...(rows.map(r => columns.map(c => esc(r[c])).join(',')))].join('\n')
+  }
+
   async function exportData() {
     const btn = $('sett-export-btn')
     if (!btn) return
     btn.textContent = 'Exporting...'
     btn.disabled = true
     try {
-      const [dt, prayers, meals, expenses, cards, txns, health, cats, budget, suppList, supps] = await Promise.all([
+      const [dt, prayersD, meals, expenses, cards, txns, health, suppList, supps] = await Promise.all([
         supabase.from('daily_tracking').select('*').order('date'),
         supabase.from('prayers').select('*').order('date'),
         supabase.from('meals').select('*').order('date'),
@@ -1932,39 +1990,32 @@
         supabase.from('cards').select('*').order('name'),
         supabase.from('card_transactions').select('*').order('date'),
         supabase.from('health_sessions').select('*').order('date'),
-        supabase.from('categories').select('*').order('name'),
-        supabase.from('budget_settings').select('*').order('month'),
         supabase.from('supplement_list').select('*').order('name'),
         supabase.from('supplements').select('*').order('date'),
       ])
-      const payload = {
-        exported_at: new Date().toISOString(),
-        daily_tracking: dt.data || [],
-        prayers: prayers.data || [],
-        meals: meals.data || [],
-        expenses: expenses.data || [],
-        cards: cards.data || [],
-        card_transactions: txns.data || [],
-        health_sessions: health.data || [],
-        categories: cats.data || [],
-        budget_settings: budget.data || [],
-        supplement_list: suppList.data || [],
-        supplements: supps.data || [],
-      }
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+      const zip = new JSZip()
+      zip.file('expenses.csv',         tableToCSV(expenses.data || [],  ['id','date','label','amount','category','notes','created_at']))
+      zip.file('card_transactions.csv',tableToCSV(txns.data || [],      ['id','card_id','date','type','label','amount','category','notes']))
+      zip.file('daily_tracking.csv',   tableToCSV(dt.data || [],        ['id','date','smoked','patches','reading','notes','notes_tomorrow','created_at']))
+      zip.file('prayers.csv',          tableToCSV(prayersD.data || [],  ['id','date','fajr','dhuhr','asr','maghrib','isha']))
+      zip.file('meals.csv',            tableToCSV(meals.data || [],     ['id','date','breakfast','lunch','dinner']))
+      zip.file('health_sessions.csv',  tableToCSV(health.data || [],    ['id','date','type','notes']))
+      zip.file('supplement_list.csv',  tableToCSV(suppList.data || [],  ['id','name','active']))
+      zip.file('supplements.csv',      tableToCSV(supps.data || [],     ['id','date','supplement_id','taken']))
+      zip.file('cards.csv',            tableToCSV(cards.data || [],     ['id','name','limit','visible']))
+      const blob = await zip.generateAsync({ type: 'blob' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `dashboard-export-${new Date().toISOString().slice(0,10)}.json`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
+      a.download = `dashboard-${new Date().toISOString().slice(0,10)}.zip`
+      document.body.appendChild(a); a.click(); document.body.removeChild(a)
       URL.revokeObjectURL(url)
-      showToast('Export downloaded ✓')
-    } catch {
+      showToast('CSV export downloaded ✓')
+    } catch (e) {
+      console.error(e)
       showToast('Export failed', true)
     }
-    btn.textContent = 'Export All Data (JSON)'
+    btn.textContent = 'Export All Data (CSV)'
     btn.disabled = false
   }
 
