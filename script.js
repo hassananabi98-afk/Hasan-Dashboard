@@ -631,7 +631,7 @@
       if (finChartInstance) { finChartInstance.destroy(); finChartInstance = null }
       return
     }
-    const expWrap = $('expense-section-wrap')
+    const expWrap = $('budget-section-wrap')
     if (expWrap && expWrap.style.display === 'none') return
     section.style.display = 'block'
 
@@ -671,12 +671,10 @@
   }
 
   // ── EXPENSE LIST ─────────────────────────────────────────
-  let finBudgetCollapsed = true
   let finExpensesCollapsed = true
 
   function renderExpenseList() {
     const container = $('expense-list')
-    const colBtn = $('expense-collapse-btn')
     if (!container) return
 
     if (finExpenses.length === 0) {
@@ -868,12 +866,15 @@
     const pickerBtn = $('cat-picker-btn'), dropdown = $('cat-dropdown')
     if (!addBtn) return
 
-    const expToggle = $('expense-toggle')
-    if (expToggle) {
-      expToggle.addEventListener('click', ev => {
-        if (ev.target.closest('.fin-add-btn')) return
+    // The budget gray box is the tap target — tapping it expands Cash Expenses
+    const budgetBox = $('budget-wrap')
+    if (budgetBox) {
+      budgetBox.addEventListener('click', ev => {
+        // let budget-edit affordances work without toggling
+        if (ev.target.closest('.budget-amount-val') || ev.target.closest('.budget-not-set') ||
+            ev.target.closest('.budget-edit-row') || ev.target.closest('input') || ev.target.closest('button')) return
         finExpensesCollapsed = !finExpensesCollapsed
-        const wrap = $('expense-section-wrap')
+        const wrap = $('budget-section-wrap')
         if (wrap) wrap.style.display = finExpensesCollapsed ? 'none' : ''
         if (!finExpensesCollapsed) renderDonutChart()
       })
@@ -882,7 +883,7 @@
     addBtn.addEventListener('click', () => {
       if (finExpensesCollapsed) {
         finExpensesCollapsed = false
-        const wrap = $('expense-section-wrap')
+        const wrap = $('budget-section-wrap')
         if (wrap) wrap.style.display = ''
         renderDonutChart()
       }
@@ -1021,14 +1022,6 @@
   async function initFinanceTab() {
     setFinMonth(currentYM())
     bindExpenseForm()
-    const budgetToggle = $('budget-toggle')
-    if (budgetToggle) {
-      budgetToggle.addEventListener('click', () => {
-        finBudgetCollapsed = !finBudgetCollapsed
-        const wrap = $('budget-section-wrap')
-        if (wrap) wrap.style.display = finBudgetCollapsed ? 'none' : ''
-      })
-    }
     await loadFinanceData()
   }
 
