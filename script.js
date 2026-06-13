@@ -1107,7 +1107,7 @@
           <span class="log-section-title" style="margin-bottom:0">Transactions</span>
           <button class="fin-add-btn card-add-btn" data-card-id="${card.id}">+ Add</button>
         </div>
-        <div class="add-expense-form" id="card-form-${card.id}" style="display:none;margin-top:8px">
+        <div class="add-expense-form card-txn-form" id="card-form-${card.id}" style="display:none;margin-top:8px">
           <div class="fin-form-row">
             <span class="fin-form-label">Type</span>
             <div class="txn-type-toggle">
