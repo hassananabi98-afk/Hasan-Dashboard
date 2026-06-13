@@ -530,11 +530,11 @@
   let finCards = []
   let finAllTxns = []
   let finMonthTxns = []
-  let selectedCardId = null
-  let selectedTxnCatName = null
-  let selectedTxnCatColor = '#6b7280'
-  let selectedTxnType = 'charge'
   let pendingTxnDeleteId = null
+  let finCardCollapsed = {}
+  let finCardTxnType = {}
+  let finCardTxnCat = {}
+  let finCardCharts = {}
 
   function finMonthLabel(ym) {
     const [y, m] = ym.split('-').map(Number)
@@ -669,7 +669,6 @@
   }
 
   // ── EXPENSE LIST ─────────────────────────────────────────
-  let expensesCollapsed = true
   let finBudgetCollapsed = true
 
   function renderExpenseList() {
@@ -681,9 +680,6 @@
       container.innerHTML = '<div class="fin-empty">No expenses this month</div>'
       return
     }
-
-    if (colBtn) colBtn.textContent = expensesCollapsed ? '▸' : '▾'
-    if (expensesCollapsed) { container.innerHTML = ''; return }
 
     container.innerHTML = `<div class="log-card">${finExpenses.map(e => {
       const cat = finCategories.find(c => c.name === e.category)
@@ -864,16 +860,19 @@
 
   // ── ADD EXPENSE FORM (bound once) ────────────────────────
   function bindExpenseForm() {
-    // collapse toggle
-    const colBtn = $('expense-collapse-btn')
-    if (colBtn) colBtn.addEventListener('click', () => { expensesCollapsed = !expensesCollapsed; renderExpenseList() })
-
     const addBtn = $('fin-add-btn'), form = $('add-expense-form')
     const cancelBtn = $('fin-cancel-btn'), amtInp = $('fin-amount'), lblInp = $('fin-label')
     const pickerBtn = $('cat-picker-btn'), dropdown = $('cat-dropdown')
     if (!addBtn) return
 
     addBtn.addEventListener('click', () => {
+      if (finBudgetCollapsed) {
+        finBudgetCollapsed = false
+        const wrap = $('budget-section-wrap')
+        if (wrap) wrap.style.display = ''
+        const colBtn = $('budget-collapse-btn')
+        if (colBtn) colBtn.textContent = '▾'
+      }
       form.style.display = 'block'
       addBtn.style.display = 'none'
       $('fin-date').value = todayStr()
@@ -975,7 +974,7 @@
       const { data: allTxns } = await supabase.from('card_transactions').select('*').order('date', { ascending: false })
       finAllTxns = allTxns || []
       finMonthTxns = finAllTxns.filter(t => t.date.startsWith(finMonth))
-      renderCardTiles(); renderTransactionList()
+      renderCardSections()
     }
   }
 
@@ -1010,7 +1009,6 @@
   async function initFinanceTab() {
     setFinMonth(currentYM())
     bindExpenseForm()
-    bindTxnForm()
     const budgetColBtn = $('budget-collapse-btn')
     if (budgetColBtn) {
       budgetColBtn.addEventListener('click', () => {
@@ -1027,77 +1025,156 @@
     if (!finLoaded) { finLoaded = true; initFinanceTab() }
   })
 
-  // ── CARDS ────────────────────────────────────────────────
-  function renderCardTiles() {
-    const container = $('fin-card-tiles'), section = $('fin-cards-section')
-    if (!container || !section) return
-    if (finCards.length === 0) { section.style.display = 'none'; return }
-    section.style.display = 'block'
-    container.innerHTML = finCards.map(card => {
-      const txns = finAllTxns.filter(t => t.card_id === card.id)
-      const charged = txns.filter(t => t.type === 'charge').reduce((s,t) => s + Number(t.amount), 0)
-      const paid    = txns.filter(t => t.type === 'payment').reduce((s,t) => s + Number(t.amount), 0)
-      const balance = charged - paid
-      const limit   = Number(card.limit)
-      const available = Math.max(limit - balance, 0)
-      const pct = limit > 0 ? Math.min((balance / limit) * 100, 100) : 0
-      return `<div class="card-tile" data-card-id="${card.id}" style="cursor:pointer">
-        <div class="card-tile-header">
-          <span class="card-tile-name">${escHtml(card.name)}</span>
-          <span class="card-tile-balance">${fmtAmount(balance)}</span>
-        </div>
-        <div class="card-tile-track"><div class="card-tile-fill${pct > 80 ? ' danger' : ''}" style="width:${pct.toFixed(1)}%"></div></div>
-        <div class="card-tile-meta"><span class="card-limit-tap" data-card-id="${card.id}" data-limit="${limit}" title="Tap to edit">Limit <span class="card-limit-val">${fmtAmount(limit)}</span> ✎</span><span>Available ${fmtAmount(available)}</span></div>
-      </div>`
-    }).join('')
-    if (!selectedCardId && finCards.length > 0) selectedCardId = finCards[0].id
+  // ── CARDS (per-card collapsible sections) ────────────────
+  function renderCardSections() {
+    const container = $('fin-cards-container')
+    if (!container) return
+    Object.values(finCardCharts).forEach(ch => { try { ch.destroy() } catch {} })
+    finCardCharts = {}
+    if (finCards.length === 0) { container.innerHTML = ''; return }
+    container.innerHTML = finCards.map(card => renderCardSectionHTML(card)).join('')
+    finCards.forEach(card => { if (finCardCollapsed[card.id] === false) drawCardDonut(card.id) })
+    wireCardEvents()
+  }
 
-    // wire up card tile tap to toggle mini donut
-    container.querySelectorAll('.card-tile').forEach(tile => {
-      tile.addEventListener('click', (e) => {
-        if (e.target.closest('.card-limit-tap') || e.target.closest('input')) return
-        const cardId = tile.dataset.cardId
-        const existing = tile.nextElementSibling
-        if (existing && existing.classList.contains('card-mini-donut')) {
-          existing.remove(); return
-        }
-        // remove any other open donuts
-        container.querySelectorAll('.card-mini-donut').forEach(d => d.remove())
-        const card = finCards.find(c => c.id === cardId)
-        if (!card) return
-        const txns = finAllTxns.filter(t => t.card_id === cardId)
-        const catTotals = {}
-        txns.filter(t => t.type === 'charge').forEach(t => {
-          catTotals[t.category || 'Other'] = (catTotals[t.category || 'Other'] || 0) + Number(t.amount)
-        })
-        const entries = Object.entries(catTotals).sort((a,b)=>b[1]-a[1])
-        if (!entries.length) return
-        const wrap = document.createElement('div')
-        wrap.className = 'card-mini-donut'
-        wrap.style.cssText = 'padding:14px;background:var(--bg2);border-radius:0 0 var(--radius) var(--radius);border:1px solid var(--border);border-top:none;margin-top:-8px'
-        const canvasId = 'mini-donut-' + cardId
-        wrap.innerHTML = `<div style="position:relative;height:160px;display:flex;align-items:center;justify-content:center"><canvas id="${canvasId}" style="max-width:160px;max-height:160px"></canvas></div><div id="mini-leg-${cardId}" style="margin-top:8px"></div>`
-        tile.after(wrap)
-        const palette = ['#f97316','#3b82f6','#22c55e','#a855f7','#ef4444','#eab308','#ec4899','#6b7280']
-        const colors = entries.map((_,i) => finCategories.find(c=>c.name===entries[i][0])?.color || palette[i%8])
-        const ctx = document.getElementById(canvasId).getContext('2d')
-        new Chart(ctx, { type:'doughnut', data:{ labels:entries.map(([n])=>n), datasets:[{ data:entries.map(([,v])=>v), backgroundColor:colors, borderWidth:2, borderColor:'var(--bg2)' }] }, options:{ cutout:'65%', plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>` BHD ${Number(c.raw).toFixed(3)}`}} } } })
-        document.getElementById('mini-leg-'+cardId).innerHTML = entries.map(([name,amt],i)=>`<div style="display:flex;align-items:center;gap:6px;padding:2px 0;font-size:12px"><div style="width:8px;height:8px;border-radius:50%;background:${colors[i]};flex-shrink:0"></div><span style="flex:1;color:var(--text)">${escHtml(name)}</span><span style="color:var(--text2);font-family:monospace">BHD ${amt.toFixed(3)}</span></div>`).join('')
+  function renderCardSectionHTML(card) {
+    const txns = finAllTxns.filter(t => t.card_id === card.id)
+    const monthTxns = finMonthTxns.filter(t => t.card_id === card.id)
+    const charged = txns.filter(t => t.type === 'charge').reduce((s,t) => s + Number(t.amount), 0)
+    const paid    = txns.filter(t => t.type === 'payment').reduce((s,t) => s + Number(t.amount), 0)
+    const balance = charged - paid
+    const limit   = Number(card.limit)
+    const available = Math.max(limit - balance, 0)
+    const pct = limit > 0 ? Math.min((balance / limit) * 100, 100) : 0
+    const collapsed = finCardCollapsed[card.id] !== false
+    const txnType = finCardTxnType[card.id] || 'charge'
+    const txnCat = finCardTxnCat[card.id]
+    return `<div class="fin-section card-section" data-card-id="${card.id}">
+      <div class="fin-section-row" style="align-items:flex-start">
+        <div style="flex:1;min-width:0">
+          <div class="card-tile-header">
+            <span class="card-tile-name">${escHtml(card.name)}</span>
+            <span class="card-tile-balance">${fmtAmount(balance)}</span>
+          </div>
+          <div class="card-tile-track" style="margin-bottom:4px"><div class="card-tile-fill${pct > 80 ? ' danger' : ''}" style="width:${pct.toFixed(1)}%"></div></div>
+          <div class="card-tile-meta">
+            <span class="card-limit-tap" data-card-id="${card.id}" data-limit="${limit}" title="Tap to edit">Limit <span class="card-limit-val">${fmtAmount(limit)}</span> ✎</span>
+            <span>Available ${fmtAmount(available)}</span>
+          </div>
+        </div>
+        <button class="expense-collapse-btn card-col-btn" data-card-id="${card.id}">${collapsed ? '▸' : '▾'}</button>
+      </div>
+      <div id="card-body-${card.id}" style="display:${collapsed ? 'none' : 'block'}">
+        <div id="card-donut-area-${card.id}"></div>
+        <div class="fin-section-row" style="margin-top:12px;margin-bottom:4px">
+          <span class="log-section-title" style="margin-bottom:0">Transactions</span>
+          <button class="fin-add-btn card-add-btn" data-card-id="${card.id}">+ Add</button>
+        </div>
+        <div class="add-expense-form" id="card-form-${card.id}" style="display:none;margin-top:8px">
+          <div class="fin-form-row">
+            <span class="fin-form-label">Type</span>
+            <div class="txn-type-toggle">
+              <button class="txn-type-btn charge${txnType==='charge'?' selected':''}" data-card-id="${card.id}" data-type="charge" type="button">Charge</button>
+              <button class="txn-type-btn payment${txnType==='payment'?' selected':''}" data-card-id="${card.id}" data-type="payment" type="button">Payment</button>
+            </div>
+          </div>
+          <div class="fin-form-row">
+            <span class="fin-form-label">Amount</span>
+            <input class="fin-form-input" id="card-amt-${card.id}" type="number" min="0" step="0.001" placeholder="0.000" inputmode="decimal">
+          </div>
+          <div class="fin-form-row">
+            <span class="fin-form-label">Label</span>
+            <input class="fin-form-input" id="card-lbl-${card.id}" type="text" placeholder="What was this?" maxlength="80">
+          </div>
+          <div class="fin-form-row">
+            <span class="fin-form-label">Category</span>
+            <div class="cat-picker-wrap" id="card-cat-wrap-${card.id}">
+              <button class="cat-picker-btn" id="card-cat-btn-${card.id}" type="button">
+                <span class="cat-picker-dot" id="card-cat-dot-${card.id}" style="background:${txnCat?.color || '#6b7280'}"></span>
+                <span id="card-cat-txt-${card.id}">${txnCat?.name || 'None'}</span>
+                <span class="cat-picker-chevron">▾</span>
+              </button>
+              <div class="cat-dropdown" id="card-cat-dd-${card.id}" style="display:none"></div>
+            </div>
+          </div>
+          <div class="fin-form-row">
+            <span class="fin-form-label">Date</span>
+            <input class="fin-form-input" id="card-date-${card.id}" type="date" value="${todayStr()}">
+          </div>
+          <div class="fin-form-row">
+            <span class="fin-form-label">Notes</span>
+            <textarea class="fin-form-input" id="card-notes-${card.id}" placeholder="Optional..." rows="2" style="resize:none"></textarea>
+          </div>
+          <div class="fin-form-actions">
+            <button class="fin-confirm-btn card-txn-save" id="card-save-${card.id}" data-card-id="${card.id}" disabled>Save</button>
+            <button class="fin-cancel-link card-txn-cancel" data-card-id="${card.id}" type="button">Cancel</button>
+          </div>
+        </div>
+        <div id="card-list-${card.id}" style="margin-top:8px">${cardTxnListHTML(card.id, monthTxns)}</div>
+      </div>
+    </div>`
+  }
+
+  function cardTxnListHTML(cardId, txns) {
+    if (!txns.length) return '<div class="fin-empty">No transactions this month</div>'
+    return `<div class="log-card">${txns.map(t => {
+      const isPayment = t.type === 'payment'
+      return `<div class="txn-row" data-id="${t.id}" data-card-id="${cardId}">
+        <span class="txn-sign ${t.type}">${isPayment ? '+' : '−'}</span>
+        <div class="txn-meta">
+          <div class="txn-label">${escHtml(t.label)}</div>
+          <div class="txn-sub">${t.category ? escHtml(t.category) + ' · ' : ''}${fmtDateShort(t.date)}</div>
+        </div>
+        <div class="txn-amount ${t.type}">${fmtAmount(t.amount)}</div>
+        <button class="txn-del-btn" data-del="${t.id}" aria-label="Delete">×</button>
+      </div>`
+    }).join('')}</div>`
+  }
+
+  function drawCardDonut(cardId) {
+    const area = $(`card-donut-area-${cardId}`)
+    if (!area) return
+    const txns = finAllTxns.filter(t => t.card_id === cardId)
+    const catTotals = {}
+    txns.filter(t => t.type === 'charge').forEach(t => {
+      catTotals[t.category || 'Other'] = (catTotals[t.category || 'Other'] || 0) + Number(t.amount)
+    })
+    const entries = Object.entries(catTotals).sort((a,b) => b[1]-a[1])
+    if (!entries.length) { area.innerHTML = ''; return }
+    const palette = ['#f97316','#3b82f6','#22c55e','#a855f7','#ef4444','#eab308','#ec4899','#6b7280']
+    const colors = entries.map(([name],i) => finCategories.find(c=>c.name===name)?.color || palette[i%8])
+    area.innerHTML = `<div style="position:relative;height:140px;display:flex;align-items:center;justify-content:center;margin-top:10px"><canvas id="card-donut-${cardId}" style="max-width:140px;max-height:140px"></canvas></div><div id="card-donut-leg-${cardId}" style="margin-top:8px"></div>`
+    const ctx = document.getElementById(`card-donut-${cardId}`).getContext('2d')
+    finCardCharts[cardId] = new Chart(ctx, { type:'doughnut', data:{ labels:entries.map(([n])=>n), datasets:[{ data:entries.map(([,v])=>v), backgroundColor:colors, borderWidth:2, borderColor:'var(--bg2)' }] }, options:{ cutout:'65%', plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>` BHD ${Number(c.raw).toFixed(3)}`}} } } })
+    document.getElementById(`card-donut-leg-${cardId}`).innerHTML = entries.map(([name,amt],i)=>`<div style="display:flex;align-items:center;gap:6px;padding:2px 0;font-size:12px"><div style="width:8px;height:8px;border-radius:50%;background:${colors[i]};flex-shrink:0"></div><span style="flex:1;color:var(--text)">${escHtml(name)}</span><span style="color:var(--text2);font-family:monospace">BHD ${amt.toFixed(3)}</span></div>`).join('')
+  }
+
+  function wireCardEvents() {
+    const container = $('fin-cards-container')
+    if (!container) return
+
+    container.querySelectorAll('.card-col-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cardId = btn.dataset.cardId
+        const body = $(`card-body-${cardId}`)
+        const isCollapsed = finCardCollapsed[cardId] !== false
+        finCardCollapsed[cardId] = !isCollapsed
+        if (body) body.style.display = isCollapsed ? 'block' : 'none'
+        btn.textContent = isCollapsed ? '▾' : '▸'
+        if (isCollapsed) drawCardDonut(cardId)
+        else { if (finCardCharts[cardId]) { finCardCharts[cardId].destroy(); delete finCardCharts[cardId] } }
       })
     })
 
-    // wire up limit tap-to-edit
     container.querySelectorAll('.card-limit-tap').forEach(el => {
       el.style.cursor = 'pointer'
       el.addEventListener('click', async () => {
         const cardId = el.dataset.cardId
-        const currentLimit = el.dataset.limit
         const inp = document.createElement('input')
         inp.type = 'number'; inp.step = '0.001'; inp.min = '0'
-        inp.value = Number(currentLimit).toFixed(3)
+        inp.value = Number(el.dataset.limit).toFixed(3)
         inp.style.cssText = 'width:100px;font-size:11px;padding:2px 5px;border-radius:4px;border:1px solid var(--accent);background:var(--bg);color:var(--text);font-family:inherit'
-        el.replaceWith(inp)
-        inp.focus(); inp.select()
+        el.replaceWith(inp); inp.focus(); inp.select()
         async function commitLimit() {
           const newVal = parseFloat(inp.value)
           if (!isNaN(newVal) && newVal >= 0) {
@@ -1105,52 +1182,149 @@
             const card = finCards.find(c => c.id === cardId)
             if (card) card.limit = newVal
           }
-          renderCardTiles()
+          renderCardSections()
         }
         inp.addEventListener('blur', commitLimit)
-        inp.addEventListener('keydown', e => { if (e.key === 'Enter') inp.blur(); if (e.key === 'Escape') renderCardTiles() })
+        inp.addEventListener('keydown', e => { if (e.key === 'Enter') inp.blur(); if (e.key === 'Escape') renderCardSections() })
       })
     })
-  }
 
-  function buildCardSelector() {
-    const sel = $('card-selector')
-    if (!sel) return
-    sel.innerHTML = finCards.map(c => `<div class="card-opt${c.id === selectedCardId ? ' selected' : ''}" data-id="${c.id}">${escHtml(c.name)}</div>`).join('')
-    sel.querySelectorAll('.card-opt').forEach(opt => {
-      opt.addEventListener('click', () => {
-        selectedCardId = opt.dataset.id
-        sel.querySelectorAll('.card-opt').forEach(o => o.classList.toggle('selected', o.dataset.id === selectedCardId))
+    container.querySelectorAll('.card-add-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cardId = btn.dataset.cardId
+        const form = $(`card-form-${cardId}`)
+        if (!form) return
+        container.querySelectorAll('.card-txn-form').forEach(f => {
+          if (f.id !== `card-form-${cardId}`) {
+            f.style.display = 'none'
+            const cid = f.id.replace('card-form-', '')
+            const ob = container.querySelector(`.card-add-btn[data-card-id="${cid}"]`)
+            if (ob) ob.style.display = ''
+          }
+        })
+        form.style.display = 'block'
+        btn.style.display = 'none'
+        const dateInp = $(`card-date-${cardId}`)
+        if (dateInp) dateInp.value = todayStr()
+        const amtInp = $(`card-amt-${cardId}`)
+        if (amtInp) amtInp.focus()
       })
     })
-  }
 
-  function renderTransactionList() {
-    const container = $('txn-list')
-    if (!container) return
-    if (finMonthTxns.length === 0) { container.innerHTML = '<div class="fin-empty">No transactions this month</div>'; return }
-    container.innerHTML = `<div class="log-card">${finMonthTxns.map(t => {
-      const card = finCards.find(c => c.id === t.card_id)
-      const isPayment = t.type === 'payment'
-      return `<div class="txn-row" data-id="${t.id}">
-        <span class="txn-sign ${t.type}">${isPayment ? '+' : '−'}</span>
-        <div class="txn-meta">
-          <div class="txn-label">${escHtml(t.label)}</div>
-          <div class="txn-sub">${escHtml(card ? card.name : '?')}${t.category ? ' · ' + escHtml(t.category) : ''} · ${fmtDateShort(t.date)}</div>
-        </div>
-        <div class="txn-amount ${t.type}">${fmtAmount(t.amount)}</div>
-        <button class="txn-del-btn" data-del="${t.id}" aria-label="Delete">×</button>
-      </div>`
-    }).join('')}</div>`
+    container.querySelectorAll('.card-txn-cancel').forEach(btn => {
+      btn.addEventListener('click', () => closeCardForm(btn.dataset.cardId))
+    })
+
+    container.querySelectorAll('.txn-type-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cardId = btn.dataset.cardId, type = btn.dataset.type
+        finCardTxnType[cardId] = type
+        const form = $(`card-form-${cardId}`)
+        if (form) form.querySelectorAll('.txn-type-btn').forEach(b => b.classList.toggle('selected', b.dataset.type === type))
+      })
+    })
+
+    container.querySelectorAll('.card-txn-form').forEach(form => {
+      const cardId = form.id.replace('card-form-', '')
+      const amtInp = $(`card-amt-${cardId}`), lblInp = $(`card-lbl-${cardId}`)
+      if (amtInp) amtInp.addEventListener('input', () => validateCardForm(cardId))
+      if (lblInp) lblInp.addEventListener('input', () => validateCardForm(cardId))
+    })
+
+    container.querySelectorAll('.card-txn-save').forEach(btn => {
+      btn.addEventListener('click', () => submitCardTransaction(btn.dataset.cardId))
+    })
+
+    container.querySelectorAll('[id^="card-cat-btn-"]').forEach(btn => {
+      const cardId = btn.id.replace('card-cat-btn-', '')
+      const dropdown = $(`card-cat-dd-${cardId}`)
+      if (!dropdown) return
+      btn.addEventListener('click', ev => {
+        ev.stopPropagation()
+        if (dropdown.style.display !== 'none') { dropdown.style.display = 'none'; return }
+        const currentCat = finCardTxnCat[cardId]?.name || null
+        let html = `<div class="cat-option${!currentCat?' selected':''}" data-cat="" data-color="#6b7280"><div class="cat-option-dot" style="background:#6b7280"></div>None</div>`
+        html += finCategories.map(cat => `<div class="cat-option${cat.name===currentCat?' selected':''}" data-cat="${escHtml(cat.name)}" data-color="${cat.color}"><div class="cat-option-dot" style="background:${cat.color}"></div>${escHtml(cat.name)}</div>`).join('')
+        dropdown.innerHTML = html
+        dropdown.querySelectorAll('.cat-option').forEach(opt => {
+          opt.addEventListener('click', () => {
+            finCardTxnCat[cardId] = { name: opt.dataset.cat || null, color: opt.dataset.color }
+            const dot = $(`card-cat-dot-${cardId}`), txt = $(`card-cat-txt-${cardId}`)
+            if (dot) dot.style.background = opt.dataset.color
+            if (txt) txt.textContent = opt.dataset.cat || 'None'
+            dropdown.style.display = 'none'
+          })
+        })
+        const rect = btn.getBoundingClientRect()
+        dropdown.style.display = 'block'
+        dropdown.style.width = rect.width + 'px'
+        const spaceBelow = window.innerHeight - rect.bottom
+        dropdown.style.top = (spaceBelow < 240 ? rect.top - dropdown.offsetHeight - 4 : rect.bottom + 4) + 'px'
+        dropdown.style.left = rect.left + 'px'
+      })
+    })
+
+    document.addEventListener('click', ev => {
+      container.querySelectorAll('[id^="card-cat-dd-"]').forEach(dd => {
+        const cid = dd.id.replace('card-cat-dd-', '')
+        const wrap = $(`card-cat-wrap-${cid}`)
+        if (wrap && !wrap.contains(ev.target)) dd.style.display = 'none'
+      })
+    })
+
     container.querySelectorAll('.txn-row').forEach(row => {
       row.addEventListener('click', ev => {
         if (ev.target.closest('.txn-del-btn')) return
         showTxnEditForm(row.dataset.id)
       })
     })
-    container.querySelectorAll('[data-del]').forEach(btn => {
+
+    container.querySelectorAll('.txn-del-btn').forEach(btn => {
       btn.addEventListener('click', ev => { ev.stopPropagation(); showTxnDeleteConfirm(btn.dataset.del) })
     })
+  }
+
+  function validateCardForm(cardId) {
+    const btn = $(`card-save-${cardId}`); if (!btn) return
+    const amt = parseFloat($(`card-amt-${cardId}`)?.value)
+    const lbl = $(`card-lbl-${cardId}`)?.value?.trim()
+    btn.disabled = !(amt > 0 && lbl)
+  }
+
+  function closeCardForm(cardId) {
+    const form = $(`card-form-${cardId}`)
+    const addBtn = document.querySelector(`.card-add-btn[data-card-id="${cardId}"]`)
+    if (form) form.style.display = 'none'
+    if (addBtn) addBtn.style.display = ''
+    const saveBtn = $(`card-save-${cardId}`)
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Save' }
+    ;[$(`card-amt-${cardId}`), $(`card-lbl-${cardId}`), $(`card-notes-${cardId}`)].forEach(el => { if (el) el.value = '' })
+    const dd = $(`card-cat-dd-${cardId}`); if (dd) dd.style.display = 'none'
+    finCardTxnCat[cardId] = null
+    const dot = $(`card-cat-dot-${cardId}`), txt = $(`card-cat-txt-${cardId}`)
+    if (dot) dot.style.background = '#6b7280'
+    if (txt) txt.textContent = 'None'
+  }
+
+  async function submitCardTransaction(cardId) {
+    const btn = $(`card-save-${cardId}`); if (!btn) return
+    btn.disabled = true; btn.textContent = 'Saving...'
+    const amount = Math.round(parseFloat($(`card-amt-${cardId}`)?.value) * 1000) / 1000
+    const label = $(`card-lbl-${cardId}`)?.value.trim()
+    const date = $(`card-date-${cardId}`)?.value || todayStr()
+    const notes = $(`card-notes-${cardId}`)?.value.trim() || null
+    const txnType = finCardTxnType[cardId] || 'charge'
+    const catName = finCardTxnCat[cardId]?.name || null
+    const { data, error } = await supabase.from('card_transactions')
+      .insert({ card_id: cardId, type: txnType, amount, label, category: catName, date, notes })
+      .select().maybeSingle()
+    if (error) { showToast('Could not add transaction', true); btn.disabled = false; btn.textContent = 'Save'; return }
+    finAllTxns.unshift(data)
+    finAllTxns.sort((a,b) => b.date.localeCompare(a.date))
+    finMonthTxns = finAllTxns.filter(t => t.date.startsWith(finMonth))
+    closeCardForm(cardId)
+    renderCardSections()
+    showToast('Transaction added ✓')
   }
 
   function showTxnEditForm(id) {
@@ -1184,7 +1358,7 @@
         </div>
       </div>`
     row.replaceWith(form)
-    form.querySelector('#te-cancel').addEventListener('click', () => renderTransactionList())
+    form.querySelector('#te-cancel').addEventListener('click', () => renderCardSections())
     form.querySelector('#te-save').addEventListener('click', async () => {
       const label = form.querySelector('#te-label').value.trim(); if (!label) return
       const amount = parseFloat(form.querySelector('#te-amount').value); if (isNaN(amount)) return
@@ -1198,7 +1372,7 @@
       const idx = finAllTxns.findIndex(x => x.id === id)
       if (idx !== -1) finAllTxns[idx] = { ...finAllTxns[idx], label, amount, date, card_id, type, category }
       finMonthTxns = finAllTxns.filter(t => t.date.startsWith(finMonth))
-      renderCardTiles(); renderTransactionList()
+      renderCardSections()
     })
   }
 
@@ -1211,14 +1385,14 @@
     conf.className = 'expense-confirm-row'; conf.id = `txn-conf-${id}`
     conf.innerHTML = `<span class="expense-confirm-text">Delete this transaction?</span><button class="expense-confirm-no">Cancel</button><button class="expense-confirm-yes">Delete</button>`
     row.replaceWith(conf)
-    conf.querySelector('.expense-confirm-no').addEventListener('click', () => { pendingTxnDeleteId = null; renderTransactionList() })
+    conf.querySelector('.expense-confirm-no').addEventListener('click', () => { pendingTxnDeleteId = null; renderCardSections() })
     conf.querySelector('.expense-confirm-yes').addEventListener('click', async () => {
       const { error } = await supabase.from('card_transactions').delete().eq('id', id)
       if (error) { showToast('Delete failed', true); return }
       finAllTxns = finAllTxns.filter(t => t.id !== id)
       finMonthTxns = finAllTxns.filter(t => t.date.startsWith(finMonth))
       pendingTxnDeleteId = null
-      renderCardTiles(); renderTransactionList()
+      renderCardSections()
     })
   }
 
@@ -1226,101 +1400,6 @@
     if (!pendingTxnDeleteId) return
     const el = $(`txn-conf-${pendingTxnDeleteId}`); if (el) el.remove()
     pendingTxnDeleteId = null
-  }
-
-  function renderTxnCatDropdown() {
-    const dd = $('txn-cat-dropdown'); if (!dd) return
-    let html = `<div class="cat-option${!selectedTxnCatName ? ' selected' : ''}" data-cat="" data-color="#6b7280"><div class="cat-option-dot" style="background:#6b7280"></div>None</div>`
-    html += finCategories.map(cat => `<div class="cat-option${cat.name === selectedTxnCatName ? ' selected' : ''}" data-cat="${escHtml(cat.name)}" data-color="${cat.color}"><div class="cat-option-dot" style="background:${cat.color}"></div>${escHtml(cat.name)}</div>`).join('')
-    dd.innerHTML = html
-    dd.querySelectorAll('.cat-option').forEach(opt => {
-      opt.addEventListener('click', () => { selectTxnCategory(opt.dataset.cat, opt.dataset.color); dd.style.display = 'none' })
-    })
-  }
-
-  function selectTxnCategory(name, color) {
-    selectedTxnCatName = name || null; selectedTxnCatColor = color || '#6b7280'
-    const dot = $('txn-cat-picker-dot'), txt = $('txn-cat-picker-text')
-    if (dot) dot.style.background = selectedTxnCatColor
-    if (txt) txt.textContent = name || 'None'
-  }
-
-  function bindTxnForm() {
-    const addBtn = $('fin-txn-add-btn'), form = $('add-txn-form'), cancelBtn = $('txn-cancel-btn')
-    if (!addBtn) return
-    addBtn.addEventListener('click', () => {
-      form.style.display = 'block'; addBtn.style.display = 'none'
-      $('txn-date').value = todayStr()
-      buildCardSelector(); renderTxnCatDropdown()
-      $('txn-amount').focus()
-    })
-    cancelBtn.addEventListener('click', closeTxnForm)
-    $('txn-type-charge').addEventListener('click', () => {
-      selectedTxnType = 'charge'
-      $('txn-type-charge').classList.add('selected'); $('txn-type-payment').classList.remove('selected')
-    })
-    $('txn-type-payment').addEventListener('click', () => {
-      selectedTxnType = 'payment'
-      $('txn-type-payment').classList.add('selected'); $('txn-type-charge').classList.remove('selected')
-    })
-    const pickerBtn = $('txn-cat-picker-btn'), dropdown = $('txn-cat-dropdown')
-    pickerBtn.addEventListener('click', ev => {
-      ev.stopPropagation()
-      const open = dropdown.style.display !== 'none'
-      if (open) { dropdown.style.display = 'none'; return }
-      renderTxnCatDropdown()
-      const rect = pickerBtn.getBoundingClientRect()
-      const spaceBelow = window.innerHeight - rect.bottom
-      dropdown.style.display = 'block'
-      dropdown.style.width = rect.width + 'px'
-      if (spaceBelow < 240) {
-        dropdown.style.top = (rect.top - dropdown.offsetHeight - 4) + 'px'
-      } else {
-        dropdown.style.top = (rect.bottom + 4) + 'px'
-      }
-      dropdown.style.left = rect.left + 'px'
-    })
-    document.addEventListener('click', ev => {
-      const wrap = $('txn-cat-picker-wrap')
-      if (wrap && !wrap.contains(ev.target) && dropdown) dropdown.style.display = 'none'
-    })
-    $('txn-amount').addEventListener('input', validateTxnForm)
-    $('txn-label').addEventListener('input', validateTxnForm)
-    $('txn-confirm-btn').addEventListener('click', submitTransaction)
-  }
-
-  function validateTxnForm() {
-    const btn = $('txn-confirm-btn'); if (!btn) return
-    const amt = parseFloat($('txn-amount')?.value), lbl = $('txn-label')?.value?.trim()
-    btn.disabled = !(amt > 0 && lbl && selectedCardId)
-  }
-
-  async function submitTransaction() {
-    const btn = $('txn-confirm-btn')
-    btn.disabled = true; btn.textContent = 'Saving...'
-    const amount = Math.round(parseFloat($('txn-amount').value) * 1000) / 1000
-    const label = $('txn-label').value.trim()
-    const date = $('txn-date').value || todayStr()
-    const notes = $('txn-notes').value.trim() || null
-    const { data, error } = await supabase.from('card_transactions')
-      .insert({ card_id: selectedCardId, type: selectedTxnType, amount, label, category: selectedTxnCatName || null, date, notes })
-      .select().maybeSingle()
-    if (error) { showToast('Could not add transaction', true); btn.disabled = false; btn.textContent = 'Save'; return }
-    finAllTxns.unshift(data)
-    finAllTxns.sort((a,b) => b.date.localeCompare(a.date))
-    finMonthTxns = finAllTxns.filter(t => t.date.startsWith(finMonth))
-    closeTxnForm(); renderCardTiles(); renderTransactionList()
-    showToast('Transaction added ✓')
-  }
-
-  function closeTxnForm() {
-    const form = $('add-txn-form'), addBtn = $('fin-txn-add-btn')
-    if (form) form.style.display = 'none'
-    if (addBtn) addBtn.style.display = ''
-    const btn = $('txn-confirm-btn')
-    if (btn) { btn.disabled = true; btn.textContent = 'Save' }
-    ;['txn-amount','txn-label','txn-notes'].forEach(id => { const el = $(id); if (el) el.value = '' })
-    const dd = $('txn-cat-dropdown'); if (dd) dd.style.display = 'none'
   }
 
   // ── HEALTH ────────────────────────────────────────────────
@@ -2191,7 +2270,7 @@
         btn.classList.toggle('on', newVis)
         el.querySelector(`[data-card-vis-lbl="${id}"]`).textContent = newVis ? 'Visible' : 'Hidden'
         const card = finCards.find(c => c.id === id)
-        if (card) { card.visible = newVis; if (finLoaded) renderCardTiles() }
+        if (card) { card.visible = newVis; if (finLoaded) renderCardSections() }
       })
     })
     el.querySelectorAll('[data-card-del]').forEach(btn => {
@@ -2203,7 +2282,7 @@
         await supabase.from('card_transactions').delete().eq('card_id', id)
         await supabase.from('cards').delete().eq('id', id)
         finCards = finCards.filter(c => c.id !== id)
-        if (finLoaded) renderCardTiles()
+        if (finLoaded) renderCardSections()
         await loadSettCards()
       })
     })
@@ -2294,7 +2373,7 @@
         finCards.push(data)
         cardNameInp.value = ''; cardLimitInp.value = ''
         await loadSettCards()
-        if (finLoaded) renderCardTiles()
+        if (finLoaded) renderCardSections()
       }
     })
   }

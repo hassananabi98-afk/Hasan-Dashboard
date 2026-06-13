@@ -251,128 +251,63 @@
         </button>
       </div>
 
-      <!-- Budget -->
-      <div class="fin-section">
-        <div class="log-section-title">Monthly Budget</div>
-        <div class="budget-wrap" id="budget-wrap"></div>
-      </div>
-
-      <!-- Donut chart -->
-      <div class="fin-section" id="fin-chart-section" style="display:none">
-        <div class="log-section-title">By Category</div>
-        <div class="donut-wrap">
-          <canvas id="fin-chart"></canvas>
-          <div class="donut-center" id="donut-center"></div>
-        </div>
-        <div class="fin-legend" id="fin-legend"></div>
-      </div>
-
-      <!-- Expenses -->
+      <!-- Cash Expenses (budget + donut + list all collapse together) -->
       <div class="fin-section">
         <div class="fin-section-row">
-          <div class="log-section-title" style="margin-bottom:0">Expenses</div>
+          <div class="log-section-title" style="margin-bottom:0">💵 Cash Expenses</div>
           <div style="display:flex;gap:6px;align-items:center">
-            <button class="expense-collapse-btn" id="expense-collapse-btn" title="Show/hide">▾</button>
+            <button class="expense-collapse-btn" id="budget-collapse-btn" title="Show/hide">▸</button>
             <button class="fin-add-btn" id="fin-add-btn">+ Add</button>
           </div>
         </div>
-
-        <!-- Inline add form -->
-        <div class="add-expense-form" id="add-expense-form" style="display:none;margin-top:10px">
-          <div class="fin-form-row">
-            <span class="fin-form-label">Amount</span>
-            <input class="fin-form-input" id="fin-amount" type="number" min="0" step="0.001" placeholder="0.000" inputmode="decimal">
+        <div id="budget-section-wrap" style="display:none">
+          <div class="budget-wrap" id="budget-wrap"></div>
+          <div id="fin-chart-section" style="display:none">
+            <div class="donut-wrap">
+              <canvas id="fin-chart"></canvas>
+              <div class="donut-center" id="donut-center"></div>
+            </div>
+            <div class="fin-legend" id="fin-legend"></div>
           </div>
-          <div class="fin-form-row">
-            <span class="fin-form-label">Label</span>
-            <input class="fin-form-input" id="fin-label" type="text" placeholder="What was this?" maxlength="80">
-          </div>
-          <div class="fin-form-row">
-            <span class="fin-form-label">Category</span>
-            <div class="cat-picker-wrap" id="cat-picker-wrap">
-              <button class="cat-picker-btn" id="cat-picker-btn" type="button">
-                <span class="cat-picker-dot" id="cat-picker-dot" style="background:#6b7280"></span>
-                <span id="cat-picker-text">Select category</span>
-                <span class="cat-picker-chevron">▾</span>
-              </button>
-              <div class="cat-dropdown" id="cat-dropdown" style="display:none"></div>
+          <div class="add-expense-form" id="add-expense-form" style="display:none;margin-top:10px">
+            <div class="fin-form-row">
+              <span class="fin-form-label">Amount</span>
+              <input class="fin-form-input" id="fin-amount" type="number" min="0" step="0.001" placeholder="0.000" inputmode="decimal">
+            </div>
+            <div class="fin-form-row">
+              <span class="fin-form-label">Label</span>
+              <input class="fin-form-input" id="fin-label" type="text" placeholder="What was this?" maxlength="80">
+            </div>
+            <div class="fin-form-row">
+              <span class="fin-form-label">Category</span>
+              <div class="cat-picker-wrap" id="cat-picker-wrap">
+                <button class="cat-picker-btn" id="cat-picker-btn" type="button">
+                  <span class="cat-picker-dot" id="cat-picker-dot" style="background:#6b7280"></span>
+                  <span id="cat-picker-text">Select category</span>
+                  <span class="cat-picker-chevron">▾</span>
+                </button>
+                <div class="cat-dropdown" id="cat-dropdown" style="display:none"></div>
+              </div>
+            </div>
+            <div class="fin-form-row">
+              <span class="fin-form-label">Date</span>
+              <input class="fin-form-input" id="fin-date" type="date">
+            </div>
+            <div class="fin-form-row">
+              <span class="fin-form-label">Notes</span>
+              <textarea class="fin-form-input" id="fin-notes" placeholder="Optional..." rows="2" style="resize:none"></textarea>
+            </div>
+            <div class="fin-form-actions">
+              <button class="fin-confirm-btn" id="fin-confirm-btn" disabled>Save</button>
+              <button class="fin-cancel-link" id="fin-cancel-btn" type="button">Cancel</button>
             </div>
           </div>
-          <div class="fin-form-row">
-            <span class="fin-form-label">Date</span>
-            <input class="fin-form-input" id="fin-date" type="date">
-          </div>
-          <div class="fin-form-row">
-            <span class="fin-form-label">Notes</span>
-            <textarea class="fin-form-input" id="fin-notes" placeholder="Optional..." rows="2" style="resize:none"></textarea>
-          </div>
-          <div class="fin-form-actions">
-            <button class="fin-confirm-btn" id="fin-confirm-btn" disabled>Save</button>
-            <button class="fin-cancel-link" id="fin-cancel-btn" type="button">Cancel</button>
-          </div>
+          <div id="expense-list" style="margin-top:10px"></div>
         </div>
-
-        <div id="expense-list" style="margin-top:10px"></div>
       </div>
 
-      <!-- Cards section -->
-      <div class="fin-section" id="fin-cards-section" style="display:none">
-        <div class="fin-section-divider"></div>
-        <div class="log-section-title">Cards</div>
-        <div id="fin-card-tiles"></div>
-
-        <div class="fin-section-row" style="margin-top:16px">
-          <div class="log-section-title" style="margin-bottom:0">Transactions</div>
-          <button class="fin-add-btn" id="fin-txn-add-btn">+ Add</button>
-        </div>
-
-        <div class="add-expense-form" id="add-txn-form" style="display:none;margin-top:10px">
-          <div class="fin-form-row">
-            <span class="fin-form-label">Card</span>
-            <div class="card-selector" id="card-selector"></div>
-          </div>
-          <div class="fin-form-row">
-            <span class="fin-form-label">Type</span>
-            <div class="txn-type-toggle">
-              <button class="txn-type-btn charge selected" id="txn-type-charge" type="button">Charge</button>
-              <button class="txn-type-btn payment" id="txn-type-payment" type="button">Payment</button>
-            </div>
-          </div>
-          <div class="fin-form-row">
-            <span class="fin-form-label">Amount</span>
-            <input class="fin-form-input" id="txn-amount" type="number" min="0" step="0.001" placeholder="0.000" inputmode="decimal">
-          </div>
-          <div class="fin-form-row">
-            <span class="fin-form-label">Label</span>
-            <input class="fin-form-input" id="txn-label" type="text" placeholder="What was this?" maxlength="80">
-          </div>
-          <div class="fin-form-row">
-            <span class="fin-form-label">Category</span>
-            <div class="cat-picker-wrap" id="txn-cat-picker-wrap">
-              <button class="cat-picker-btn" id="txn-cat-picker-btn" type="button">
-                <span class="cat-picker-dot" id="txn-cat-picker-dot" style="background:#6b7280"></span>
-                <span id="txn-cat-picker-text">None</span>
-                <span class="cat-picker-chevron">▾</span>
-              </button>
-              <div class="cat-dropdown" id="txn-cat-dropdown" style="display:none"></div>
-            </div>
-          </div>
-          <div class="fin-form-row">
-            <span class="fin-form-label">Date</span>
-            <input class="fin-form-input" id="txn-date" type="date">
-          </div>
-          <div class="fin-form-row">
-            <span class="fin-form-label">Notes</span>
-            <textarea class="fin-form-input" id="txn-notes" placeholder="Optional..." rows="2" style="resize:none"></textarea>
-          </div>
-          <div class="fin-form-actions">
-            <button class="fin-confirm-btn" id="txn-confirm-btn" disabled>Save</button>
-            <button class="fin-cancel-link" id="txn-cancel-btn" type="button">Cancel</button>
-          </div>
-        </div>
-
-        <div id="txn-list" style="margin-top:10px"></div>
-      </div>
+      <!-- Per-card sections (dynamically rendered) -->
+      <div id="fin-cards-container"></div>
 
       <div style="height:24px"></div>
     </div>
