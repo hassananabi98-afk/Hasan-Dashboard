@@ -1048,6 +1048,14 @@
     const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16)
     return `rgba(${r},${g},${b},${a})`
   }
+  // hex → dark solid tint for the card background (blend accent toward near-black navy)
+  function darkTint(hex, w) {
+    const h = hex.replace('#', '')
+    const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16)
+    const base = [8, 11, 18]
+    const mix = (c, i) => Math.round(base[i] * (1 - w) + c * w)
+    return `rgb(${mix(r,0)},${mix(g,1)},${mix(b,2)})`
+  }
   // Per-card accent: CREDIMAX→blue, ILA→green, others→stable palette pick by name
   function cardTheme(name) {
     const n = (name || '').trim().toLowerCase()
@@ -1078,7 +1086,7 @@
     const txnType = finCardTxnType[card.id] || 'charge'
     const txnCat = finCardTxnCat[card.id]
     const theme = cardTheme(card.name)
-    const cardVars = `--card-accent:${theme.accent};--card-accent-2:${theme.accent2};--card-border:${hexA(theme.accent,0.32)};--card-glow:${hexA(theme.accent,0.10)};--card-active:${hexA(theme.accent,0.16)}`
+    const cardVars = `--card-accent:${theme.accent};--card-accent-2:${theme.accent2};--card-bg:${darkTint(theme.accent,0.16)};--card-active:${darkTint(theme.accent,0.30)};--card-border:${hexA(theme.accent,0.32)};--card-glow:${hexA(theme.accent,0.12)}`
     return `<div class="fin-section card-section" data-card-id="${card.id}" style="${cardVars}">
       <div class="fin-section-row fin-toggle-row card-toggle-hdr" data-card-id="${card.id}" style="align-items:flex-start">
         <div style="flex:1;min-width:0">
