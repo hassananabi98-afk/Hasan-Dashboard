@@ -2157,7 +2157,7 @@
       const open = dropdown.style.display !== 'none'
       if (open) { dropdown.style.display = 'none'; return }
       renderTxnCatDropdown()
-      const rect = txnPickerBtn.getBoundingClientRect()
+      const rect = pickerBtn.getBoundingClientRect()
       const spaceBelow = window.innerHeight - rect.bottom
       dropdown.style.display = 'block'
       dropdown.style.width = rect.width + 'px'
@@ -2613,29 +2613,6 @@
     if (statEls[1]) statEls[1].className = 'anl-stat ' + (monthCount > 0 ? 'anl-smoke-free' : '')
   }
 
-
-  function renderGymStats(rows, month) {
-    // streak = consecutive days with gym session ending from most recent gym day
-    const gymDates = [...new Set(rows.map(r => r.date))].sort().reverse()
-    let streak = 0
-    if (gymDates.length > 0) {
-      const latest = new Date(gymDates[0])
-      const today = new Date(); today.setHours(0,0,0,0)
-      const diffDays = Math.round((today - latest) / 86400000)
-      if (diffDays <= 1) {
-        const gymSet = new Set(gymDates)
-        let d = new Date(gymDates[0])
-        while (gymSet.has(d.toISOString().slice(0,10))) {
-          streak++
-          d.setDate(d.getDate() - 1)
-        }
-      }
-    }
-    const monthSessions = rows.filter(r => r.date.startsWith(month)).length
-    $('anl-gym-streak').textContent = streak
-    $('anl-gym-month').textContent = monthSessions
-    $('anl-gym-total').textContent = rows.length
-  }
 
   function renderSpendChart(expenses, cats, month) {
     const monthExp = expenses.filter(e => e.date.startsWith(month))
