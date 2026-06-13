@@ -328,7 +328,7 @@
   .card-tile-name{font-size:14px;font-weight:600;color:var(--text)}
   .card-tile-balance{font-size:15px;font-weight:600;color:var(--text);font-family:ui-monospace,'Cascadia Code',monospace}
   .card-tile-track{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-bottom:6px}
-  .card-tile-fill{height:100%;border-radius:3px;background:var(--accent);transition:width .4s}
+  .card-tile-fill{height:100%;border-radius:3px;background:var(--card-accent,var(--accent));transition:width .4s}
   .card-tile-fill.danger{background:var(--danger)}
   .card-tile-meta{font-size:11px;color:var(--text3);display:flex;justify-content:space-between}
   .card-limit-tap{cursor:pointer;border-bottom:1px dashed var(--text3);transition:color .15s}
@@ -531,17 +531,17 @@
   .card-section{
     position:relative;overflow:hidden;
     background:#0d1526;
-    border:1px solid rgba(59,130,246,0.25);
+    border:1px solid var(--card-border,rgba(59,130,246,0.25));
     border-radius:var(--radius);
     padding:14px;
     margin-bottom:12px;
-    box-shadow:0 2px 12px rgba(59,130,246,0.08);
+    box-shadow:0 2px 12px var(--card-glow,rgba(59,130,246,0.08));
     transition:background .12s,border-color .12s
   }
-  .card-section::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#3b82f6,#8b5cf6);border-radius:var(--radius) var(--radius) 0 0}
+  .card-section::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--card-accent,#3b82f6),var(--card-accent-2,#8b5cf6));border-radius:var(--radius) var(--radius) 0 0}
   .card-col-btn{flex-shrink:0;margin-left:8px;align-self:flex-start}
   .fin-toggle-row{cursor:pointer;user-select:none}
   .fin-toggle-row:active{opacity:0.75}
   /* Card tap feedback — blue highlight instead of opacity dim */
   .card-section .fin-toggle-row:active{opacity:1}
-  .card-section:active{background:#15233f;border-color:rgba(59,130,246,0.55)}
+  .card-section:active{background:var(--card-active,#15233f);border-color:var(--card-accent,#3b82f6)}

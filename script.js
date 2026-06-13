@@ -535,6 +535,7 @@
   let finCardTxnType = {}
   let finCardTxnCat = {}
   let finCardCharts = {}
+  let cardDocClickBound = false
 
   function finMonthLabel(ym) {
     const [y, m] = ym.split('-').map(Number)
@@ -1041,6 +1042,29 @@
     wireCardEvents()
   }
 
+  // hex → rgba string for translucent borders/glows
+  function hexA(hex, a) {
+    const h = hex.replace('#', '')
+    const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16)
+    return `rgba(${r},${g},${b},${a})`
+  }
+  // Per-card accent: CREDIMAX→blue, ILA→green, others→stable palette pick by name
+  function cardTheme(name) {
+    const n = (name || '').trim().toLowerCase()
+    if (n === 'credimax') return { accent:'#3b82f6', accent2:'#2563eb' } // blue
+    if (n === 'ila')      return { accent:'#22c55e', accent2:'#16a34a' } // green
+    const palette = [
+      { accent:'#3b82f6', accent2:'#2563eb' },
+      { accent:'#a855f7', accent2:'#7c3aed' },
+      { accent:'#f97316', accent2:'#ea580c' },
+      { accent:'#ec4899', accent2:'#db2777' },
+      { accent:'#14b8a6', accent2:'#0d9488' }
+    ]
+    let h = 0
+    for (const c of n) h = (h * 31 + c.charCodeAt(0)) >>> 0
+    return palette[h % palette.length]
+  }
+
   function renderCardSectionHTML(card) {
     const txns = finAllTxns.filter(t => t.card_id === card.id)
     const monthTxns = finMonthTxns.filter(t => t.card_id === card.id)
@@ -1053,7 +1077,9 @@
     const collapsed = finCardCollapsed[card.id] !== false
     const txnType = finCardTxnType[card.id] || 'charge'
     const txnCat = finCardTxnCat[card.id]
-    return `<div class="fin-section card-section" data-card-id="${card.id}">
+    const theme = cardTheme(card.name)
+    const cardVars = `--card-accent:${theme.accent};--card-accent-2:${theme.accent2};--card-border:${hexA(theme.accent,0.32)};--card-glow:${hexA(theme.accent,0.10)};--card-active:${hexA(theme.accent,0.16)}`
+    return `<div class="fin-section card-section" data-card-id="${card.id}" style="${cardVars}">
       <div class="fin-section-row fin-toggle-row card-toggle-hdr" data-card-id="${card.id}" style="align-items:flex-start">
         <div style="flex:1;min-width:0">
           <div class="card-tile-header">
@@ -1267,13 +1293,19 @@
       })
     })
 
-    document.addEventListener('click', ev => {
-      container.querySelectorAll('[id^="card-cat-dd-"]').forEach(dd => {
-        const cid = dd.id.replace('card-cat-dd-', '')
-        const wrap = $(`card-cat-wrap-${cid}`)
-        if (wrap && !wrap.contains(ev.target)) dd.style.display = 'none'
+    // bind the outside-click dropdown-closer ONCE (wireCardEvents runs on every render)
+    if (!cardDocClickBound) {
+      cardDocClickBound = true
+      document.addEventListener('click', ev => {
+        const c = $('fin-cards-container')
+        if (!c) return
+        c.querySelectorAll('[id^="card-cat-dd-"]').forEach(dd => {
+          const cid = dd.id.replace('card-cat-dd-', '')
+          const wrap = $(`card-cat-wrap-${cid}`)
+          if (wrap && !wrap.contains(ev.target)) dd.style.display = 'none'
+        })
       })
-    })
+    }
 
     container.querySelectorAll('.txn-row').forEach(row => {
       row.addEventListener('click', ev => {
