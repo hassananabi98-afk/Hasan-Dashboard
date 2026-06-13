@@ -671,7 +671,7 @@
   }
 
   // ── EXPENSE LIST ─────────────────────────────────────────
-  let finBudgetCollapsed = true
+  let finBudgetCollapsed = false
   let finExpensesCollapsed = true
 
   function renderExpenseList() {
