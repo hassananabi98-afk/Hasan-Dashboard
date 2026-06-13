@@ -1035,14 +1035,14 @@
       // reload dots if data changed since last render
       if (calNeedsRefresh) { calNeedsRefresh = false; renderCalendar() }
     }
-    if (name === 'today') {
-      loadTodayTab()
+    if (name === 'today' && todayNeedsRefresh) {
+      todayNeedsRefresh = false; loadTodayTab()
     }
-    if (name === 'health' && hlthLoaded) {
-      loadHlthData()
+    if (name === 'health' && hlthLoaded && hlthNeedsRefresh) {
+      hlthNeedsRefresh = false; loadHlthData()
     }
-    if (name === 'analytics' && anlLoaded) {
-      loadAnalytics()
+    if (name === 'analytics' && anlLoaded && anlNeedsRefresh) {
+      anlNeedsRefresh = false; loadAnalytics()
     }
   }
 
@@ -1244,6 +1244,8 @@
 
 
       calNeedsRefresh = true
+      todayNeedsRefresh = true
+      anlNeedsRefresh = true
       if (!silent) showToast('Saved ✓')
     } catch (e) {
       if (!silent) showToast('Save failed', true)
@@ -1257,7 +1259,10 @@
   const DAYS = ['S','M','T','W','T','F','S']
   let calYear, calMonth
   let calDotData = {} // key: 'YYYY-MM-DD', value: { prayers, meals, smoke, reading }
-  let calNeedsRefresh = false // set true after any day save
+  let calNeedsRefresh = false   // set true after any day save
+  let todayNeedsRefresh = false  // set true after any day save
+  let hlthNeedsRefresh = false   // set true after health session add/delete
+  let anlNeedsRefresh = false    // set true after any day save
 
   // ── AUTO-SAVE ─────────────────────────────────────────────
   const autoSaveTimers = {}
@@ -1266,7 +1271,7 @@
     clearTimeout(autoSaveTimers[key])
     autoSaveTimers[key] = setTimeout(() => {
       saveDayData(dateStr, prefix, stepperCtrl, stateRef, true)
-    }, 800)
+    }, 100)
   }
 
   async function loadCalDots(year, month) {
@@ -2271,6 +2276,7 @@
       const { error } = await supabase.from('health_sessions').delete().eq('id', id)
       if (error) { showToast('Delete failed', true); return }
       hlthSessions = hlthSessions.filter(s => s.id !== id)
+      hlthNeedsRefresh = true; anlNeedsRefresh = true
       pendingHlthDeleteId = null; renderHlthTypes(); renderHlthList()
     })
   }
@@ -2317,6 +2323,7 @@
     if (date.startsWith(hlthMonth)) {
       hlthSessions.unshift(data); hlthSessions.sort((a,b) => b.date.localeCompare(a.date))
     }
+    hlthNeedsRefresh = true; anlNeedsRefresh = true
     closeHlthForm(); renderHlthTypes(); renderHlthList(); showToast('Session added ✓')
   }
 
@@ -2813,6 +2820,7 @@
 
   document.querySelector('#settings-btn').addEventListener('click', () => {
     if (!settLoaded) { settLoaded = true; initSettings() }
+    else { loadSettCategories(); loadSettSupplements(); loadSettCards() }
   })
 
   document.querySelector('.nav-item[data-tab="analytics"]').addEventListener('click', () => {
