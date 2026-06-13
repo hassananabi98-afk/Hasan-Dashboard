@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Dashboard</title>
-<link rel="stylesheet" href="style.css?v=8">
+<link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
 
@@ -253,9 +253,8 @@
 
       <!-- Section 1: Monthly Budget -->
       <div class="fin-section">
-        <div class="fin-section-row">
+        <div class="fin-section-row fin-toggle-row" id="budget-toggle">
           <div class="log-section-title" style="margin-bottom:0">💰 Monthly Budget</div>
-          <button class="expense-collapse-btn" id="budget-collapse-btn" title="Show/hide">▸</button>
         </div>
         <div id="budget-section-wrap" style="display:none">
           <div class="budget-wrap" id="budget-wrap"></div>
@@ -264,12 +263,9 @@
 
       <!-- Section 2: Cash Expenses + Donut -->
       <div class="fin-section">
-        <div class="fin-section-row">
+        <div class="fin-section-row fin-toggle-row" id="expense-toggle">
           <div class="log-section-title" style="margin-bottom:0">💵 Cash Expenses</div>
-          <div style="display:flex;gap:6px;align-items:center">
-            <button class="expense-collapse-btn" id="expense-collapse-btn" title="Show/hide">▸</button>
-            <button class="fin-add-btn" id="fin-add-btn">+ Add</button>
-          </div>
+          <button class="fin-add-btn" id="fin-add-btn">+ Add</button>
         </div>
         <div id="expense-section-wrap" style="display:none">
           <div id="fin-chart-section" style="display:none">
@@ -558,6 +554,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<script type="module" src="script.js?v=8"></script>
+<script type="module" src="script.js?v=9"></script>
 </body>
 </html>

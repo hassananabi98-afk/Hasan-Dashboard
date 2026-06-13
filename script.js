@@ -868,21 +868,22 @@
     const pickerBtn = $('cat-picker-btn'), dropdown = $('cat-dropdown')
     if (!addBtn) return
 
-    const colBtn = $('expense-collapse-btn')
-    if (colBtn) colBtn.addEventListener('click', () => {
-      finExpensesCollapsed = !finExpensesCollapsed
-      const wrap = $('expense-section-wrap')
-      if (wrap) wrap.style.display = finExpensesCollapsed ? 'none' : ''
-      colBtn.textContent = finExpensesCollapsed ? '▸' : '▾'
-      if (!finExpensesCollapsed) renderDonutChart()
-    })
+    const expToggle = $('expense-toggle')
+    if (expToggle) {
+      expToggle.addEventListener('click', ev => {
+        if (ev.target.closest('.fin-add-btn')) return
+        finExpensesCollapsed = !finExpensesCollapsed
+        const wrap = $('expense-section-wrap')
+        if (wrap) wrap.style.display = finExpensesCollapsed ? 'none' : ''
+        if (!finExpensesCollapsed) renderDonutChart()
+      })
+    }
 
     addBtn.addEventListener('click', () => {
       if (finExpensesCollapsed) {
         finExpensesCollapsed = false
         const wrap = $('expense-section-wrap')
         if (wrap) wrap.style.display = ''
-        if (colBtn) colBtn.textContent = '▾'
         renderDonutChart()
       }
       form.style.display = 'block'
@@ -1020,13 +1021,12 @@
   async function initFinanceTab() {
     setFinMonth(currentYM())
     bindExpenseForm()
-    const budgetColBtn = $('budget-collapse-btn')
-    if (budgetColBtn) {
-      budgetColBtn.addEventListener('click', () => {
+    const budgetToggle = $('budget-toggle')
+    if (budgetToggle) {
+      budgetToggle.addEventListener('click', () => {
         finBudgetCollapsed = !finBudgetCollapsed
         const wrap = $('budget-section-wrap')
         if (wrap) wrap.style.display = finBudgetCollapsed ? 'none' : ''
-        budgetColBtn.textContent = finBudgetCollapsed ? '▸' : '▾'
       })
     }
     await loadFinanceData()
@@ -1061,7 +1061,7 @@
     const txnType = finCardTxnType[card.id] || 'charge'
     const txnCat = finCardTxnCat[card.id]
     return `<div class="fin-section card-section" data-card-id="${card.id}">
-      <div class="fin-section-row" style="align-items:flex-start">
+      <div class="fin-section-row fin-toggle-row card-toggle-hdr" data-card-id="${card.id}" style="align-items:flex-start">
         <div style="flex:1;min-width:0">
           <div class="card-tile-header">
             <span class="card-tile-name">${escHtml(card.name)}</span>
@@ -1073,7 +1073,6 @@
             <span>Available ${fmtAmount(available)}</span>
           </div>
         </div>
-        <button class="expense-collapse-btn card-col-btn" data-card-id="${card.id}">${collapsed ? '▸' : '▾'}</button>
       </div>
       <div id="card-body-${card.id}" style="display:${collapsed ? 'none' : 'block'}">
         <div id="card-donut-area-${card.id}"></div>
@@ -1164,14 +1163,14 @@
     const container = $('fin-cards-container')
     if (!container) return
 
-    container.querySelectorAll('.card-col-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const cardId = btn.dataset.cardId
+    container.querySelectorAll('.card-toggle-hdr').forEach(hdr => {
+      hdr.addEventListener('click', ev => {
+        if (ev.target.closest('.card-limit-tap') || ev.target.closest('input')) return
+        const cardId = hdr.dataset.cardId
         const body = $(`card-body-${cardId}`)
         const isCollapsed = finCardCollapsed[cardId] !== false
         finCardCollapsed[cardId] = !isCollapsed
         if (body) body.style.display = isCollapsed ? 'block' : 'none'
-        btn.textContent = isCollapsed ? '▾' : '▸'
         if (isCollapsed) drawCardDonut(cardId)
         else { if (finCardCharts[cardId]) { finCardCharts[cardId].destroy(); delete finCardCharts[cardId] } }
       })

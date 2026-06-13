@@ -531,4 +531,5 @@
   .card-section{position:relative;overflow:hidden}
   .card-section::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#3b82f6,#8b5cf6);border-radius:var(--radius) var(--radius) 0 0}
   .card-col-btn{flex-shrink:0;margin-left:8px;align-self:flex-start}
-
+  .fin-toggle-row{cursor:pointer;user-select:none}
+  .fin-toggle-row:active{opacity:0.75}
