@@ -258,7 +258,7 @@
   .cat-picker-btn:focus{border-color:var(--accent);outline:none}
   .cat-picker-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
   .cat-picker-chevron{margin-left:auto;font-size:11px;color:var(--text3)}
-  .cat-dropdown{position:fixed;background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius);box-shadow:0 4px 20px rgba(0,0,0,.3);z-index:999;max-height:220px;overflow-y:auto;min-width:180px}
+  .cat-dropdown{position:absolute;top:100%;left:0;right:0;background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius);box-shadow:0 4px 20px rgba(0,0,0,.3);z-index:999;max-height:220px;overflow-y:auto;min-width:180px}
   .cat-option{display:flex;align-items:center;gap:8px;padding:10px 12px;font-size:14px;color:var(--text);cursor:pointer}
   .cat-option:active,.cat-option:hover{background:var(--bg2)}
   .cat-option.selected{color:var(--accent)}
