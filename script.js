@@ -902,16 +902,7 @@
       const open = dropdown.style.display !== 'none'
       if (open) { dropdown.style.display = 'none'; return }
       renderCatDropdown()
-      const rect = pickerBtn.getBoundingClientRect()
-      const spaceBelow = window.innerHeight - rect.bottom
       dropdown.style.display = 'block'
-      dropdown.style.width = rect.width + 'px'
-      if (spaceBelow < 240) {
-        dropdown.style.top = (rect.top - dropdown.offsetHeight - 4) + 'px'
-      } else {
-        dropdown.style.top = (rect.bottom + 4) + 'px'
-      }
-      dropdown.style.left = rect.left + 'px'
     })
 
     document.addEventListener('click', ev => {
@@ -1292,12 +1283,7 @@
             dropdown.style.display = 'none'
           })
         })
-        const rect = btn.getBoundingClientRect()
         dropdown.style.display = 'block'
-        dropdown.style.width = rect.width + 'px'
-        const spaceBelow = window.innerHeight - rect.bottom
-        dropdown.style.top = (spaceBelow < 240 ? rect.top - dropdown.offsetHeight - 4 : rect.bottom + 4) + 'px'
-        dropdown.style.left = rect.left + 'px'
       })
     })
 
