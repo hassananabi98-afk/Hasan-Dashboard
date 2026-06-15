@@ -109,6 +109,53 @@
   document.querySelectorAll('.nav-item').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)))
   $('settings-btn').addEventListener('click', () => switchTab('settings'))
 
+  // ── PULL-TO-REFRESH ──────────────────────────────────────
+  ;(function() {
+    const content = $('content'), bar = $('ptr-bar'), msg = $('ptr-msg')
+    const THRESHOLD = 65
+    let startY = 0, pulling = false
+
+    function refreshCurrentTab() {
+      switch (activeTab) {
+        case 'calendar':   renderCalendar(); break
+        case 'today':      loadTodayTab(); break
+        case 'finance':    loadFinanceData(); break
+        case 'health':     loadHlthData(); break
+        case 'analytics':  loadAnalytics(); break
+        case 'settings':   loadSettCategories(); loadSettCards(); loadSettSupplements(); break
+      }
+    }
+
+    content.addEventListener('touchstart', e => {
+      if (content.scrollTop === 0) { startY = e.touches[0].clientY; pulling = true }
+    }, { passive: true })
+
+    content.addEventListener('touchmove', e => {
+      if (!pulling) return
+      const delta = e.touches[0].clientY - startY
+      if (delta <= 0) { pulling = false; bar.style.height = '0'; bar.className = ''; return }
+      const h = Math.min(delta * 0.5, THRESHOLD * 0.8)
+      bar.style.height = h + 'px'
+      bar.className = delta >= THRESHOLD ? 'ptr-ready' : ''
+      msg.textContent = delta >= THRESHOLD ? '↑ Release to refresh' : '↓ Pull to refresh'
+    }, { passive: true })
+
+    content.addEventListener('touchend', e => {
+      if (!pulling) return
+      pulling = false
+      const delta = e.changedTouches[0].clientY - startY
+      if (delta >= THRESHOLD) {
+        bar.style.height = '42px'
+        bar.className = 'ptr-loading'
+        msg.textContent = 'Refreshing…'
+        refreshCurrentTab()
+        setTimeout(() => { bar.style.height = '0'; bar.className = ''; msg.textContent = '↓ Pull to refresh' }, 800)
+      } else {
+        bar.style.height = '0'; bar.className = ''
+      }
+    }, { passive: true })
+  })()
+
   // ── DATE UTILS ───────────────────────────────────────────
   function toDateStr(y, m, d) {
     return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
