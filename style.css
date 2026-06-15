@@ -81,6 +81,10 @@
   .top-icon-btn:active { background: var(--bg2); }
 
   .content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; background: var(--bg); }
+  #ptr-bar { display:flex; align-items:center; justify-content:center; height:0; overflow:hidden; font-size:13px; color:var(--text3); transition:height .15s; }
+  #ptr-bar.ptr-ready { color:var(--accent); }
+  #ptr-bar.ptr-loading #ptr-msg::before { content:''; display:inline-block; width:13px; height:13px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:ptr-spin .7s linear infinite; vertical-align:middle; margin-right:6px; }
+  @keyframes ptr-spin { to { transform:rotate(360deg); } }
 
   .bottom-nav { height: var(--nav-h); display: flex; border-top: 0.5px solid var(--border); background: var(--bg); flex-shrink: 0; padding-bottom: env(safe-area-inset-bottom); }
   .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 10px; color: var(--text3); cursor: pointer; border: none; background: none; padding: 0; transition: color 0.15s; }
