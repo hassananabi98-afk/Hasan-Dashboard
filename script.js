@@ -515,7 +515,7 @@
 
   // ── FINANCE ──────────────────────────────────────────────
   const FIN_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
-  const CAT_COLORS = ['#f97316','#3b82f6','#22c55e','#a855f7','#ef4444','#eab308','#ec4899','#6b7280']
+  const CAT_COLORS = ['#f97316','#3b82f6','#22c55e','#a855f7','#ef4444','#eab308','#ec4899','#6b7280','#14b8a6','#f59e0b','#06b6d4','#10b981','#f43f5e','#8b5cf6','#84cc16','#0ea5e9']
 
   let finMonth = ''
   let finCategories = []
@@ -1178,8 +1178,8 @@
     })
     const entries = Object.entries(catTotals).sort((a,b) => b[1]-a[1])
     if (!entries.length) { area.innerHTML = ''; return }
-    const palette = ['#f97316','#3b82f6','#22c55e','#a855f7','#ef4444','#eab308','#ec4899','#6b7280']
-    const colors = entries.map(([name],i) => finCategories.find(c=>c.name===name)?.color || palette[i%8])
+    const palette = ['#f97316','#3b82f6','#22c55e','#a855f7','#ef4444','#eab308','#ec4899','#6b7280','#14b8a6','#f59e0b','#06b6d4','#10b981','#f43f5e','#8b5cf6','#84cc16','#0ea5e9']
+    const colors = entries.map(([name],i) => finCategories.find(c=>c.name===name)?.color || palette[i%palette.length])
     area.innerHTML = `<div style="position:relative;height:140px;display:flex;align-items:center;justify-content:center;margin-top:10px"><canvas id="card-donut-${cardId}" style="max-width:140px;max-height:140px"></canvas></div><div id="card-donut-leg-${cardId}" style="margin-top:8px"></div>`
     const ctx = document.getElementById(`card-donut-${cardId}`).getContext('2d')
     finCardCharts[cardId] = new Chart(ctx, { type:'doughnut', data:{ labels:entries.map(([n])=>n), datasets:[{ data:entries.map(([,v])=>v), backgroundColor:colors, borderWidth:2, borderColor:'var(--bg2)' }] }, options:{ cutout:'65%', plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>` BHD ${Number(c.raw).toFixed(3)}`}} } } })
@@ -2169,7 +2169,7 @@
     }
   }
 
-  const SETT_CAT_PALETTE = ['#f97316','#3b82f6','#22c55e','#a855f7','#ef4444','#eab308','#ec4899','#6b7280']
+  const SETT_CAT_PALETTE = ['#f97316','#3b82f6','#22c55e','#a855f7','#ef4444','#eab308','#ec4899','#6b7280','#14b8a6','#f59e0b','#06b6d4','#10b981','#f43f5e','#8b5cf6','#84cc16','#0ea5e9']
 
   function renderSettCatList(cats) {
     const el = document.getElementById('sett-cat-list')
@@ -2386,7 +2386,7 @@
       }
       catErr.textContent = ''
       // use a default color, cycling through palette
-      const palette = ['#f97316','#3b82f6','#22c55e','#a855f7','#ef4444','#eab308','#ec4899','#6b7280']
+      const palette = ['#f97316','#3b82f6','#22c55e','#a855f7','#ef4444','#eab308','#ec4899','#6b7280','#14b8a6','#f59e0b','#06b6d4','#10b981','#f43f5e','#8b5cf6','#84cc16','#0ea5e9']
       const color = palette[finCategories.length % palette.length]
       const { data, error } = await supabase.from('categories').insert({ name, color }).select().maybeSingle()
       if (error || !data) { catErr.textContent = 'Could not add category'; return }
