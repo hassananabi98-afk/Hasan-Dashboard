@@ -1993,7 +1993,7 @@
       options: {
         responsive: true, maintainAspectRatio: false,
         scales: {
-          x: { grid: { display: false }, ticks: { color: textColor, font: { size: 12 } } },
+          x: { grid: { display: false }, ticks: { color: textColor, font: { size: 9 }, autoSkip: false, maxRotation: 0 } },
           y: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 11 }, callback: v => v === 0 ? '0' : 'BD '+v } }
         },
         plugins: {
