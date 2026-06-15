@@ -1756,8 +1756,7 @@
   // ── ANALYTICS ────────────────────────────────────────────
   let anlLoaded = false
   let anlMonth = new Date().toISOString().slice(0,7)
-  let anlSpendChart = null, anlTrendChart = null, anlQtrChart = null
-  let anlQtrYear = new Date().getFullYear()
+  let anlSpendChart = null, anlTrendChart = null
   let anlExpensesAll = [], anlPrayersAll = []
 
   const PRAYER_KEYS = ['fajr','dhuhr','asr','maghrib','isha']
@@ -1839,16 +1838,6 @@
       anlMonth = `${ny}-${String(nm).padStart(2,'0')}`
       loadAnalytics()
     })
-    // quarterly year nav
-    $('anl-qtr-prev').addEventListener('click', () => {
-      anlQtrYear--
-      renderQuarterlyAnalytics(anlExpensesAll)
-    })
-    $('anl-qtr-next').addEventListener('click', () => {
-      if (anlQtrYear >= new Date().getFullYear()) return
-      anlQtrYear++
-      renderQuarterlyAnalytics(anlExpensesAll)
-    })
     await loadAnalytics()
   }
 
@@ -1875,7 +1864,6 @@
     renderReadingStats(dtAll.data || [], anlMonth)
     renderSpendChart(anlExpensesAll, cats.data || [], anlMonth)
     renderTrendChart(anlExpensesAll, cats.data || [])
-    renderQuarterlyAnalytics(anlExpensesAll)
   }
 
   function get6mStart() {
@@ -1979,12 +1967,9 @@
   }
 
   function renderTrendChart(expenses, cats) {
-    // simple total spend per month — one bar per month
-    const months = []
-    for (let i=5; i>=0; i--) {
-      const d = new Date(); d.setDate(1); d.setMonth(d.getMonth()-i)
-      months.push(d.toISOString().slice(0,7))
-    }
+    // one bar per month — full current year Jan–Dec
+    const year = new Date().getFullYear()
+    const months = Array.from({length:12}, (_,i) => `${year}-${String(i+1).padStart(2,'0')}`)
     const labels = months.map(m => { const [y,mo] = m.split('-'); return new Date(y,mo-1,1).toLocaleDateString('en-US',{month:'short'}) })
     const totals = months.map(m => parseFloat(expenses.filter(e => e.date.startsWith(m)).reduce((s,e)=>s+Number(e.amount),0).toFixed(3)))
 
@@ -2020,73 +2005,6 @@
   }
 
 
-  // ── QUARTERLY ANALYTICS ───────────────────────────────────
-  function renderQuarterlyAnalytics(expenses) {
-    const yearLabel = $('anl-qtr-year')
-    if (yearLabel) yearLabel.textContent = anlQtrYear
-    const nextBtn = $('anl-qtr-next')
-    if (nextBtn) nextBtn.disabled = anlQtrYear >= new Date().getFullYear()
-
-    const quarters = [
-      { label: 'Q1', months: ['01','02','03'], name: 'Jan · Feb · Mar' },
-      { label: 'Q2', months: ['04','05','06'], name: 'Apr · May · Jun' },
-      { label: 'Q3', months: ['07','08','09'], name: 'Jul · Aug · Sep' },
-      { label: 'Q4', months: ['10','11','12'], name: 'Oct · Nov · Dec' },
-    ]
-    const yearStr = String(anlQtrYear)
-    const qTotals = quarters.map(q =>
-      expenses
-        .filter(e => e.date.startsWith(yearStr) && q.months.some(m => e.date.startsWith(`${yearStr}-${m}`)))
-        .reduce((s, e) => s + Number(e.amount), 0)
-    )
-
-    const grid = $('anl-quarter-grid')
-    if (grid) {
-      const curQ = Math.floor(new Date().getMonth() / 3)
-      grid.innerHTML = quarters.map((q, i) => {
-        const isCurrent = i === curQ && anlQtrYear === new Date().getFullYear()
-        return `<div class="anl-quarter-tile${isCurrent ? '" style="outline:2px solid var(--accent)' : ''}">
-          <div class="anl-quarter-label">${q.label}</div>
-          <div class="anl-quarter-amount">BHD ${qTotals[i].toFixed(3)}</div>
-          <div class="anl-quarter-sub">${q.name}</div>
-        </div>`
-      }).join('')
-    }
-
-    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    const textColor = isDark ? '#999999' : '#666666'
-    const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'
-
-    if (anlQtrChart) { anlQtrChart.destroy(); anlQtrChart = null }
-    const canvas = $('anl-qtr-canvas')
-    if (!canvas) return
-    const curQ = Math.floor(new Date().getMonth() / 3)
-    anlQtrChart = new Chart(canvas.getContext('2d'), {
-      type: 'bar',
-      data: {
-        labels: quarters.map(q => q.label),
-        datasets: [{
-          data: qTotals,
-          backgroundColor: qTotals.map((_, i) =>
-            i === curQ && anlQtrYear === new Date().getFullYear() ? '#3b82f6' : 'rgba(59,130,246,0.35)'
-          ),
-          borderRadius: 5,
-          borderSkipped: false,
-        }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        scales: {
-          x: { grid: { display: false }, ticks: { color: textColor, font: { size: 12 } } },
-          y: { grid: { color: gridColor }, ticks: { color: textColor, callback: v => v === 0 ? '0' : 'BD '+v } }
-        },
-        plugins: {
-          legend: { display: false },
-          tooltip: { callbacks: { label: ctx => ` BHD ${Number(ctx.raw).toFixed(3)}` } }
-        }
-      }
-    })
-  }
 
   // ── EXPORT (CSV + ZIP) ───────────────────────────────────
   function tableToCSV(rows, columns) {
