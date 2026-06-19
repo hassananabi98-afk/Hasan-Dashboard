@@ -1920,14 +1920,19 @@
     return d.toISOString().slice(0,10)
   }
 
+  function localDateStr(d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+  }
+
   function renderSmokeStats(rows, month) {
-    // streak = consecutive smoke-free days ending today going backwards
     const smokeSet = new Set(rows.filter(r => r.smoked).map(r => r.date))
     const loggedSet = new Set(rows.map(r => r.date))
     let streak = 0
     const d = new Date()
+    // if today isn't logged yet don't break the streak — start from yesterday
+    if (!loggedSet.has(localDateStr(d))) d.setDate(d.getDate() - 1)
     while (true) {
-      const ds = d.toISOString().slice(0,10)
+      const ds = localDateStr(d)
       if (!loggedSet.has(ds)) break
       if (smokeSet.has(ds)) break
       streak++
@@ -1957,8 +1962,9 @@
     // streak: consecutive days with reading=true going back from today
     let streak = 0
     const d = new Date()
+    if (!loggedSet.has(localDateStr(d))) d.setDate(d.getDate() - 1)
     while (true) {
-      const ds = d.toISOString().slice(0,10)
+      const ds = localDateStr(d)
       if (!loggedSet.has(ds)) break
       if (!readSet.has(ds)) break
       streak++
@@ -2053,12 +2059,7 @@
 
 
 
-  // ── EXPORT (CSV + ZIP) ───────────────────────────────────
-  function tableToCSV(rows, columns) {
-    const esc = v => { const s = String(v ?? ''); return (s.includes(',') || s.includes('"') || s.includes('\n')) ? `"${s.replace(/"/g,'""')}"` : s }
-    return [columns.join(','), ...(rows.map(r => columns.map(c => esc(r[c])).join(',')))].join('\n')
-  }
-
+  // ── EXPORT (Excel / multi-sheet) ─────────────────────────
   async function exportData() {
     const btn = $('sett-export-btn')
     if (!btn) return
@@ -2076,29 +2077,67 @@
         supabase.from('supplement_list').select('*').order('name'),
         supabase.from('supplements').select('*').order('date'),
       ])
-      const zip = new JSZip()
-      zip.file('expenses.csv',         tableToCSV(expenses.data || [],  ['id','date','label','amount','category','notes','created_at']))
-      zip.file('card_transactions.csv',tableToCSV(txns.data || [],      ['id','card_id','date','type','label','amount','category','notes']))
-      zip.file('daily_tracking.csv',   tableToCSV(dt.data || [],        ['id','date','smoked','patches','reading','notes','notes_tomorrow','created_at']))
-      zip.file('prayers.csv',          tableToCSV(prayersD.data || [],  ['id','date','fajr','dhuhr','asr','maghrib','isha']))
-      zip.file('meals.csv',            tableToCSV(meals.data || [],     ['id','date','breakfast','lunch','dinner']))
-      zip.file('health_sessions.csv',  tableToCSV(health.data || [],    ['id','date','type','notes']))
-      zip.file('supplement_list.csv',  tableToCSV(suppList.data || [],  ['id','name','active']))
-      zip.file('supplements.csv',      tableToCSV(supps.data || [],     ['id','date','supplement_id','taken']))
-      zip.file('cards.csv',            tableToCSV(cards.data || [],     ['id','name','limit','visible']))
-      const blob = await zip.generateAsync({ type: 'blob' })
+
+      const cardName = {}; (cards.data || []).forEach(c => cardName[c.id] = c.name)
+      const suppName = {}; (suppList.data || []).forEach(s => suppName[s.id] = s.name)
+      const yn = v => v == null ? '' : (v ? 'Yes' : 'No')
+      const addSheet = (wb, rows, name) =>
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows.length ? rows : [{}]), name)
+
+      const wb = XLSX.utils.book_new()
+
+      addSheet(wb, (expenses.data || []).map(r => ({
+        Date: r.date, Label: r.label, Amount: r.amount, Category: r.category || '', Notes: r.notes || ''
+      })), 'Expenses')
+
+      addSheet(wb, (txns.data || []).map(r => ({
+        Card: cardName[r.card_id] || '', Date: r.date, Type: r.type, Label: r.label,
+        Amount: r.amount, Category: r.category || '', Notes: r.notes || ''
+      })), 'Card Transactions')
+
+      addSheet(wb, (dt.data || []).map(r => ({
+        Date: r.date, Smoked: yn(r.smoked), Patches: yn(r.patches), Reading: yn(r.reading),
+        Notes: r.notes || '', 'Notes Tomorrow': r.notes_tomorrow || ''
+      })), 'Daily Tracking')
+
+      addSheet(wb, (prayersD.data || []).map(r => ({
+        Date: r.date, Fajr: yn(r.fajr), Dhuhr: yn(r.dhuhr), Asr: yn(r.asr),
+        Maghrib: yn(r.maghrib), Isha: yn(r.isha)
+      })), 'Prayers')
+
+      addSheet(wb, (meals.data || []).map(r => ({
+        Date: r.date, Breakfast: r.breakfast || '', Lunch: r.lunch || '', Dinner: r.dinner || ''
+      })), 'Meals')
+
+      addSheet(wb, (health.data || []).map(r => ({
+        Date: r.date, Type: r.type, Notes: r.notes || ''
+      })), 'Health')
+
+      addSheet(wb, (supps.data || []).map(r => ({
+        Date: r.date, Supplement: suppName[r.supplement_id] || '', Taken: yn(r.taken)
+      })), 'Supplements')
+
+      addSheet(wb, (suppList.data || []).map(r => ({
+        Name: r.name, Active: yn(r.active)
+      })), 'Supplement List')
+
+      addSheet(wb, (cards.data || []).map(r => ({
+        Name: r.name, Limit: r.limit, Visible: yn(r.visible)
+      })), 'Cards')
+
+      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+      const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
-      a.href = url
-      a.download = `dashboard-${new Date().toISOString().slice(0,10)}.zip`
+      a.href = url; a.download = `dashboard-${localDateStr(new Date())}.xlsx`
       document.body.appendChild(a); a.click(); document.body.removeChild(a)
       URL.revokeObjectURL(url)
-      showToast('CSV export downloaded ✓')
+      showToast('Excel export downloaded ✓')
     } catch (e) {
       console.error(e)
       showToast('Export failed', true)
     }
-    btn.textContent = 'Export All Data (CSV)'
+    btn.textContent = 'Export All Data (Excel)'
     btn.disabled = false
   }
 
