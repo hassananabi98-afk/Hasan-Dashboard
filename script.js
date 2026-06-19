@@ -625,10 +625,11 @@
 
     const pct = Math.min((totalSpent / finBudget) * 100, 100)
     const over = totalSpent > finBudget
+    const remaining = finBudget - totalSpent
     wrap.innerHTML = `
       <div class="budget-header">
-        <span>Spent</span>
-        <span>${fmtAmount(totalSpent)}</span>
+        <span>Remaining</span>
+        <span style="${over ? 'color:var(--danger)' : ''}">${fmtAmount(Math.abs(remaining))}</span>
       </div>
       <div class="budget-track"><div class="budget-fill${over ? ' over' : ''}" style="width:${pct.toFixed(1)}%"></div></div>
       <div class="budget-sub">
