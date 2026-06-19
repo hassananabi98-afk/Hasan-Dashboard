@@ -1,6 +1,6 @@
 # Hasan Personal Dashboard — Developer Reference
 
-**Stack:** Vanilla HTML / CSS / JS (ES module) · Supabase (PostgreSQL + anon auth) · Chart.js 4 · GitHub Pages  
+**Stack:** Vanilla HTML / CSS / JS (ES module) · Supabase (PostgreSQL + anon auth) · Chart.js 4 · SheetJS (xlsx) · GitHub Pages  
 **Deploy:** Push to `main` → GitHub Actions builds to Pages  
 **Cache-bust:** bump `?v=N` on `style.css` and `script.js` in `index.html` after every JS/CSS change
 
@@ -9,9 +9,9 @@
 ## File Layout
 
 ```
-index.html   550 lines   HTML shell + inline Finance/Health/Settings markup  (cache-bust v=17)
-style.css    547 lines   All CSS (light + dark variables, iOS HIG palette)   (cache-bust v=17)
-script.js   2434 lines   All logic (ES module, single IIFE-like block)       (cache-bust v=17)
+index.html   536 lines   HTML shell + inline Finance/Health/Settings markup
+style.css    545 lines   All CSS (light + dark variables, iOS HIG palette)
+script.js   2416 lines   All logic (ES module, single IIFE-like block)
 ```
 
 ---
@@ -20,13 +20,17 @@ script.js   2434 lines   All logic (ES module, single IIFE-like block)       (ca
 
 Single-page app, no bundler. Everything is in one ES module loaded by `<script type="module" src="script.js?v=N">`.  
 Supabase is imported from CDN (`@supabase/supabase-js@2`) as an ES module.  
-Chart.js is loaded as a UMD `<script>` before the module, so `Chart` is a global.
+Chart.js is loaded as a UMD `<script>` before the module, so `Chart` is a global.  
+SheetJS (`xlsx.js`) is loaded as a UMD `<script>` before the module, so `XLSX` is a global.
 
 ### Auth
 Anonymous Supabase auth (`signInAnonymously`). Session persisted in `localStorage` under key `hd_session`. PIN gate (`SHA-256` hash compared to `PIN_HASH` constant) guards the app shell.
 
 ### Routing / Tabs
 `switchTab(name)` swaps `.tab.active` and `.nav-item.active`. Tabs are lazy-loaded — finance/health/analytics only initialise once (`finLoaded`, `hlthLoaded`, `anlLoaded` guards).
+
+### Pull-to-refresh
+A `#ptr-bar` div sits at the top of `.content`. Touch handlers on `.content` detect a downward swipe from `scrollTop === 0`. The bar expands as the user pulls; releasing past 65 px threshold shows a spinner and calls `refreshCurrentTab()`, which dispatches to the correct load function for `activeTab`. After 800 ms the bar collapses.
 
 ### State pattern
 Module-level `let` variables hold all runtime state. No framework, no stores. Each section has its own set:
@@ -91,6 +95,29 @@ fin-cards-container                ← injected by renderCardSections()
 | `showTxnEditForm(id)` | replaces txn row with inline edit grid |
 | `showTxnDeleteConfirm(id)` | inline confirm; deletes on confirm |
 
+#### Category color palette
+16 colours spread evenly around the hue wheel. Defined in four places that must stay in sync:
+
+```js
+CAT_COLORS          // Finance tab color picker (buildColorPalette)
+SETT_CAT_PALETTE    // Settings tab color picker
+palette             // drawCardDonut fallback (inline const)
+palette             // saveNewCategory default assignment (inline const)
+```
+
+Current palette (ordered by hue angle):
+```
+#ef4444  Red        #f97316  Orange     #f59e0b  Amber      #eab308  Yellow
+#84cc16  Lime       #22c55e  Green      #14b8a6  Teal       #06b6d4  Cyan
+#3b82f6  Blue       #6366f1  Indigo     #8b5cf6  Violet     #a855f7  Purple
+#d946ef  Fuchsia    #ec4899  Pink       #f43f5e  Rose       #6b7280  Gray
+```
+
+New categories are auto-assigned `palette[finCategories.length % palette.length]`. Existing categories store their colour in the `categories` table and are not affected by palette changes.
+
+#### Category dropdown
+`.cat-dropdown` uses `position:absolute; top:100%; left:0; right:0` anchored to `.cat-picker-wrap` (`position:relative`). No JS positioning needed. Avoids the mobile Safari `position:fixed` + `getBoundingClientRect` bug where the dropdown floated over the chart.
+
 #### Per-card accent colors (CSS custom properties)
 Each `.card-section` gets inline style vars computed by `cardTheme()`:
 ```
@@ -127,12 +154,41 @@ Month nav, session list, type tiles (tap to hide/show). Hidden types persisted i
 **Supabase tables:** `health_sessions`
 
 ### Analytics
-Smoke-free streak, reading streak, spending donut (per month), 6-month bar trend, quarterly breakdown. All computed client-side from loaded data.
+
+#### Spending
+Month-nav donut chart (`renderSpendChart`) — category breakdown for selected month.
+
+#### Monthly Spending bar chart (`renderTrendChart`)
+Shows all 12 months of the **current year** (Jan–Dec). Empty future months render as zero-height bars. X-axis: `autoSkip: false`, font 9 px so all 12 labels fit on mobile without rotation.
+
+#### Streaks
+`renderSmokeStats` and `renderReadingStats` both use the same pattern:
+1. Build a `loggedSet` (all dates with any entry) and a `goodSet` (dates with the positive attribute).
+2. Sort `loggedSet` descending (most recent first).
+3. Walk through it — increment streak while the date is in `goodSet`; break on the first date that isn't.
+4. **Unlogged days are skipped entirely** — they do not break the streak. Only an actual bad log (smoked=true / reading=false) resets it.
+
+`localDateStr(d)` is used everywhere date strings are generated to avoid UTC-offset bugs from `toISOString()`.
 
 **Supabase tables:** `daily_tracking`, `expenses`, `categories`
 
 ### Settings
-Manage categories (add / rename / recolor / delete), supplements (add / delete), cards (add with limit / delete), analytics visibility toggles. Export button generates CSV + ZIP via `exportData()`.
+Manage categories (add / rename / recolor / delete), supplements (add / delete), cards (add with limit / delete), analytics visibility toggles.
+
+#### Export — `exportData()`
+Downloads a single **Excel `.xlsx`** file (via SheetJS `XLSX.write`) containing 9 sheets:
+
+| Sheet | Notable transforms |
+|---|---|
+| Expenses | no IDs |
+| Card Transactions | `card_id` → card name |
+| Daily Tracking | `smoked`, `patches`, `reading` → Yes/No |
+| Prayers | `fajr`, `dhuhr`, `asr`, `maghrib`, `isha` → Yes/No |
+| Meals | — |
+| Health | — |
+| Supplements | `supplement_id` → supplement name; `taken` → Yes/No |
+| Supplement List | `active` → Yes/No |
+| Cards | `visible` → Yes/No |
 
 **Supabase tables:** `categories`, `supplement_list`, `cards`
 
@@ -177,7 +233,7 @@ Manage categories (add / rename / recolor / delete), supplements (add / delete),
 
 ## Adding a New Card Color
 
-Edit `cardTheme()` in `script.js` around line 1060:
+Edit `cardTheme()` in `script.js`:
 ```js
 if (n === 'mycard') return { accent: '#f97316', accent2: '#ea580c' } // orange
 ```
@@ -199,7 +255,6 @@ Name matching is `.toLowerCase().trim()`. No CSS change needed.
 - **Double edit form**: tapping two transaction rows before saving spawns two edit forms. Any save/cancel triggers `renderCardSections()` which cleans up. Low priority.
 - **Budget donut**: `finChartInstance` is reused (not destroyed on collapse), unlike per-card charts which are properly destroyed. No memory leak in practice — only one instance exists.
 - **Progress bar danger threshold**: bars turn red at >80% utilisation (class `danger`). This is intentional; to remove per-card just drop the `.card-tile-fill.danger` override in style.css.
-- **Queued GitHub Actions run**: Run #39 is stuck in "queued" state and cannot be cancelled via API. It will time out on its own and will NOT re-deploy (newer runs supersede it).
 
 ---
 
@@ -207,5 +262,6 @@ Name matching is `.toLowerCase().trim()`. No CSS change needed.
 
 | Version | What changed |
 |---|---|
+| v=18 | Pull-to-refresh on all tabs; streak logic rewritten (unlogged days no longer break streak, local date used instead of UTC); Excel export replaces ZIP+CSV (9 sheets, names not IDs, Yes/No booleans); Monthly Spending shows full year Jan–Dec; Quarterly Spending removed; category dropdown fixed for mobile Safari (absolute not fixed positioning); 16-colour hue-wheel palette for categories |
 | v=17 | Fix: card Save button permanently disabled — form div was missing `card-txn-form` class so `wireCardEvents()` never attached input validation listeners |
 | v=16 | Per-card accent theming (`darkTint`, `hexA`, `cardTheme`); CREDIMAX→blue, ILA→green; budget box tap-toggle for Cash Expenses; `cardDocClickBound` listener leak guard |
