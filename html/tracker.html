@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Build Tracker</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #111111;
+    --bg2:     #1c1c1c;
+    --bg3:     #2a2a2a;
+    --text:    #f0f0f0;
+    --text2:   #999999;
+    --text3:   #444444;
+    --border:  rgba(255,255,255,0.08);
+    --accent:  #3b82f6;
+    --success: #22c55e;
+    --radius:  12px;
+    --mono:    ui-monospace, 'Cascadia Code', 'Fira Mono', 'Courier New', monospace;
+  }
+
+  html, body {
+    min-height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  /* ── TOP PROGRESS BAR ── */
+  #top-bar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--bg3);
+    z-index: 100;
+  }
+  #top-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--success));
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+
+  /* ── LAYOUT ── */
+  .page {
+    max-width: 660px;
+    margin: 0 auto;
+    padding: 48px 20px 80px;
+  }
+
+  /* ── HEADER ── */
+  .page-header {
+    margin-bottom: 40px;
+  }
+  .page-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .page-title {
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 16px;
+  }
+  .overall-progress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .overall-track {
+    flex: 1;
+    height: 5px;
+    background: var(--bg3);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .overall-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--success));
+    border-radius: 3px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+  .overall-label {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text2);
+    white-space: nowrap;
+    min-width: 60px;
+    text-align: right;
+  }
+
+  /* ── SESSION CARD ── */
+  .session {
+    background: var(--bg2);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    margin-bottom: 12px;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .session.done {
+    border-color: rgba(34, 197, 94, 0.2);
+  }
+
+  .session-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .session-header:hover { background: rgba(255,255,255,0.02); }
+
+  .session-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    background: var(--bg3);
+    border-radius: 6px;
+    padding: 3px 7px;
+    flex-shrink: 0;
+    letter-spacing: 0.04em;
+  }
+  .session.done .session-num {
+    background: rgba(34,197,94,0.12);
+    color: var(--success);
+  }
+
+  .session-title {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .session-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .session-count {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text2);
+  }
+  .session-badge {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+  .badge-done     { background: rgba(34,197,94,0.12);  color: var(--success); }
+  .badge-next     { background: rgba(59,130,246,0.15); color: var(--accent); }
+  .badge-upcoming { background: var(--bg3);            color: var(--text3); }
+
+  .session-chevron {
+    color: var(--text3);
+    font-size: 12px;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+  .session.open .session-chevron { transform: rotate(180deg); }
+
+  /* mini progress bar under header */
+  .session-progress-bar {
+    height: 2px;
+    background: var(--bg3);
+    margin: 0 16px;
+  }
+  .session-progress-fill {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.3s ease;
+  }
+  .session.done .session-progress-fill { background: var(--success); }
+
+  /* ── CHECKLIST ── */
+  .checklist {
+    padding: 10px 16px 14px;
+    display: none;
+  }
+  .session.open .checklist { display: block; }
+
+  .check-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .check-item:last-child { border-bottom: none; }
+
+  /* hide native checkbox */
+  .check-item input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0; height: 0;
+  }
+
+  .check-box {
+    width: 17px;
+    height: 17px;
+    border: 1.5px solid var(--text3);
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .check-box svg {
+    width: 10px;
+    height: 10px;
+    stroke: #fff;
+    fill: none;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0;
+    transition: opacity 0.1s;
+  }
+  input[type="checkbox"]:checked + .check-box {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  input[type="checkbox"]:checked + .check-box svg { opacity: 1; }
+
+  .check-label {
+    font-size: 13.5px;
+    color: var(--text2);
+    line-height: 1.5;
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+  input[type="checkbox"]:checked ~ .check-label {
+    color: var(--text3);
+    text-decoration: line-through;
+    text-decoration-color: var(--text3);
+  }
+
+  .check-item label {
+    display: contents;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div id="top-bar"><div id="top-bar-fill"></div></div>
+
+<div class="page">
+
+  <div class="page-header">
+    <div class="page-eyebrow">Hassan Personal Dashboard v2</div>
+    <div class="page-title">Build Tracker</div>
+    <div class="overall-progress">
+      <div class="overall-track"><div class="overall-fill" id="overall-fill"></div></div>
+      <div class="overall-label" id="overall-label">0 / 0</div>
+    </div>
+  </div>
+
+  <!-- ── SESSION 1 ── -->
+  <div class="session open" id="s1" data-session="1">
+    <div class="session-header" onclick="toggleSession('s1')">
+      <span class="session-num">S01</span>
+      <span class="session-title">Supabase Setup + Calendar Shell</span>
+      <div class="session-meta">
+        <span class="session-count" id="s1-count"></span>
+        <span class="session-badge badge-done">Done</span>
+        <span class="session-chevron">▾</span>
+      </div>
+    </div>
+    <div class="session-progress-bar"><div class="session-progress-fill" id="s1-bar"></div></div>
+    <div class="checklist" id="s1-list">
+      <div class="check-item"><label for="s1-1"><input type="checkbox" id="s1-1"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Supabase project created</span></label></div>
+      <div class="check-item"><label for="s1-2"><input type="checkbox" id="s1-2"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">All 11 tables created (daily_tracking, prayers, meals, expenses, cards, card_transactions, health_sessions, categories, budget_settings, supplement_list, supplements)</span></label></div>
+      <div class="check-item"><label for="s1-3"><input type="checkbox" id="s1-3"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">RLS policies configured (allow_auth for all tables)</span></label></div>
+      <div class="check-item"><label for="s1-4"><input type="checkbox" id="s1-4"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Grants applied to authenticated role</span></label></div>
+      <div class="check-item"><label for="s1-5"><input type="checkbox" id="s1-5"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Anonymous sign-in enabled in Supabase auth settings</span></label></div>
+      <div class="check-item"><label for="s1-6"><input type="checkbox" id="s1-6"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Calendar shell — monthly grid renders, prev/next navigation works</span></label></div>
+      <div class="check-item"><label for="s1-7"><input type="checkbox" id="s1-7"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">PIN screen with SHA-256 auth</span></label></div>
+      <div class="check-item"><label for="s1-8"><input type="checkbox" id="s1-8"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Bottom nav — 5 tabs switch correctly</span></label></div>
+    </div>
+  </div>
+
+  <!-- ── SESSION 2 ── -->
+  <div class="session" id="s2" data-session="2">
+    <div class="session-header" onclick="toggleSession('s2')">
+      <span class="session-num">S02</span>
+      <span class="session-title">Daily Logging</span>
+      <div class="session-meta">
+        <span class="session-count" id="s2-count"></span>
+        <span class="session-badge badge-done">Done</span>
+        <span class="session-chevron">▾</span>
+      </div>
+    </div>
+    <div class="session-progress-bar"><div class="session-progress-fill" id="s2-bar"></div></div>
+    <div class="checklist" id="s2-list">
+      <div class="check-item"><label for="s2-1"><input type="checkbox" id="s2-1"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Today tab — prayers (5 individual toggles)</span></label></div>
+      <div class="check-item"><label for="s2-2"><input type="checkbox" id="s2-2"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Today tab — meals (Breakfast, Lunch, Dinner)</span></label></div>
+      <div class="check-item"><label for="s2-3"><input type="checkbox" id="s2-3"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Today tab — smoking toggle + patches stepper</span></label></div>
+      <div class="check-item"><label for="s2-4"><input type="checkbox" id="s2-4"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Today tab — supplements dynamic list from DB</span></label></div>
+      <div class="check-item"><label for="s2-5"><input type="checkbox" id="s2-5"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Today tab — notes + note for tomorrow</span></label></div>
+      <div class="check-item"><label for="s2-6"><input type="checkbox" id="s2-6"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Today tab — save writes to all 4 tables with toast</span></label></div>
+      <div class="check-item"><label for="s2-7"><input type="checkbox" id="s2-7"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Calendar day view — same logging UI, loads for any tapped date</span></label></div>
+      <div class="check-item"><label for="s2-8"><input type="checkbox" id="s2-8"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Supplement inline add — persists to supplement_list in DB</span></label></div>
+      <div class="check-item"><label for="s2-9"><input type="checkbox" id="s2-9"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Today tab reloads data on every tab switch</span></label></div>
+    </div>
+  </div>
+
+  <!-- ── SESSION 3 ── -->
+  <div class="session" id="s3" data-session="3">
+    <div class="session-header" onclick="toggleSession('s3')">
+      <span class="session-num">S03</span>
+      <span class="session-title">Finance — Expenses, Budget, Categories</span>
+      <div class="session-meta">
+        <span class="session-count" id="s3-count"></span>
+        <span class="session-badge badge-done">Done</span>
+        <span class="session-chevron">▾</span>
+      </div>
+    </div>
+    <div class="session-progress-bar"><div class="session-progress-fill" id="s3-bar"></div></div>
+    <div class="checklist" id="s3-list">
+      <div class="check-item"><label for="s3-1"><input type="checkbox" id="s3-1"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Month navigation (prev/next, blocks future months)</span></label></div>
+      <div class="check-item"><label for="s3-2"><input type="checkbox" id="s3-2"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Budget bar — set, edit, turns red when over budget</span></label></div>
+      <div class="check-item"><label for="s3-3"><input type="checkbox" id="s3-3"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Add expense — amount, label, category, date, notes</span></label></div>
+      <div class="check-item"><label for="s3-4"><input type="checkbox" id="s3-4"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Expense list renders sorted by date desc</span></label></div>
+      <div class="check-item"><label for="s3-5"><input type="checkbox" id="s3-5"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Delete expense — inline confirm (no browser alert)</span></label></div>
+      <div class="check-item"><label for="s3-6"><input type="checkbox" id="s3-6"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Donut chart by category with legend</span></label></div>
+      <div class="check-item"><label for="s3-7"><input type="checkbox" id="s3-7"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Category seeding SQL run (7 defaults)</span></label></div>
+      <div class="check-item"><label for="s3-8"><input type="checkbox" id="s3-8"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Inline category add with name + color picker</span></label></div>
+      <div class="check-item"><label for="s3-9"><input type="checkbox" id="s3-9"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Finance lazy-loads on first tab switch only</span></label></div>
+    </div>
+  </div>
+
+  <!-- ── SESSION 4 ── -->
+  <div class="session" id="s4" data-session="4">
+    <div class="session-header" onclick="toggleSession('s4')">
+      <span class="session-num">S04</span>
+      <span class="session-title">Health Sessions + Cards</span>
+      <div class="session-meta">
+        <span class="session-count" id="s4-count"></span>
+        <span class="session-badge badge-next">Next</span>
+        <span class="session-chevron">▾</span>
+      </div>
+    </div>
+    <div class="session-progress-bar"><div class="session-progress-fill" id="s4-bar"></div></div>
+    <div class="checklist" id="s4-list">
+      <div class="check-item"><label for="s4-1"><input type="checkbox" id="s4-1"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Health: log session (type, date, notes)</span></label></div>
+      <div class="check-item"><label for="s4-2"><input type="checkbox" id="s4-2"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Health: session list for current month</span></label></div>
+      <div class="check-item"><label for="s4-3"><input type="checkbox" id="s4-3"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Health: delete session</span></label></div>
+      <div class="check-item"><label for="s4-4"><input type="checkbox" id="s4-4"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Health: privacy toggle per session type</span></label></div>
+      <div class="check-item"><label for="s4-5"><input type="checkbox" id="s4-5"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Health: monthly session count per type</span></label></div>
+      <div class="check-item"><label for="s4-6"><input type="checkbox" id="s4-6"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Cards: view card list with limit and balance</span></label></div>
+      <div class="check-item"><label for="s4-7"><input type="checkbox" id="s4-7"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Cards: add transaction (charge/payment, label, amount, date)</span></label></div>
+      <div class="check-item"><label for="s4-8"><input type="checkbox" id="s4-8"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Cards: delete transaction</span></label></div>
+      <div class="check-item"><label for="s4-9"><input type="checkbox" id="s4-9"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Cards: month navigation</span></label></div>
+      <div class="check-item"><label for="s4-10"><input type="checkbox" id="s4-10"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Cards: seed Ila and CrediMax in cards table</span></label></div>
+    </div>
+  </div>
+
+  <!-- ── SESSION 5 ── -->
+  <div class="session" id="s5" data-session="5">
+    <div class="session-header" onclick="toggleSession('s5')">
+      <span class="session-num">S05</span>
+      <span class="session-title">Analytics</span>
+      <div class="session-meta">
+        <span class="session-count" id="s5-count"></span>
+        <span class="session-badge badge-upcoming">Upcoming</span>
+        <span class="session-chevron">▾</span>
+      </div>
+    </div>
+    <div class="session-progress-bar"><div class="session-progress-fill" id="s5-bar"></div></div>
+    <div class="checklist" id="s5-list">
+      <div class="check-item"><label for="s5-1"><input type="checkbox" id="s5-1"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Monthly spending bar chart by category</span></label></div>
+      <div class="check-item"><label for="s5-2"><input type="checkbox" id="s5-2"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Category spending trend over multiple months</span></label></div>
+      <div class="check-item"><label for="s5-3"><input type="checkbox" id="s5-3"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Prayer completion rate (% per month)</span></label></div>
+      <div class="check-item"><label for="s5-4"><input type="checkbox" id="s5-4"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Gym sessions per month</span></label></div>
+      <div class="check-item"><label for="s5-5"><input type="checkbox" id="s5-5"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Smoking-free days counter</span></label></div>
+      <div class="check-item"><label for="s5-6"><input type="checkbox" id="s5-6"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Quarterly expense summary</span></label></div>
+      <div class="check-item"><label for="s5-7"><input type="checkbox" id="s5-7"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Best prayer streak</span></label></div>
+      <div class="check-item"><label for="s5-8"><input type="checkbox" id="s5-8"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Supplement adherence rate</span></label></div>
+    </div>
+  </div>
+
+  <!-- ── SESSION 6 ── -->
+  <div class="session" id="s6" data-session="6">
+    <div class="session-header" onclick="toggleSession('s6')">
+      <span class="session-num">S06</span>
+      <span class="session-title">Polish + Settings</span>
+      <div class="session-meta">
+        <span class="session-count" id="s6-count"></span>
+        <span class="session-badge badge-upcoming">Upcoming</span>
+        <span class="session-chevron">▾</span>
+      </div>
+    </div>
+    <div class="session-progress-bar"><div class="session-progress-fill" id="s6-bar"></div></div>
+    <div class="checklist" id="s6-list">
+      <div class="check-item"><label for="s6-1"><input type="checkbox" id="s6-1"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Settings: manage categories (rename, delete)</span></label></div>
+      <div class="check-item"><label for="s6-2"><input type="checkbox" id="s6-2"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Settings: manage supplement list (toggle active/inactive)</span></label></div>
+      <div class="check-item"><label for="s6-3"><input type="checkbox" id="s6-3"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Settings: manage cards (add new, hide/show)</span></label></div>
+      <div class="check-item"><label for="s6-4"><input type="checkbox" id="s6-4"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Settings: privacy toggles for health tracker types</span></label></div>
+      <div class="check-item"><label for="s6-5"><input type="checkbox" id="s6-5"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Settings: monthly budget presets</span></label></div>
+      <div class="check-item"><label for="s6-6"><input type="checkbox" id="s6-6"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Calendar dot indicators (prayers, meals, gym, smoking)</span></label></div>
+      <div class="check-item"><label for="s6-7"><input type="checkbox" id="s6-7"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">iPhone Shortcuts integration</span></label></div>
+      <div class="check-item"><label for="s6-8"><input type="checkbox" id="s6-8"><div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div><span class="check-label">Export data to CSV / JSON</span></label></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const SESSIONS = ['s1','s2','s3','s4','s5','s6']
+  const STORAGE_KEY = 'hassan-tracker-v1'
+
+  function getAllCheckboxes() {
+    return document.querySelectorAll('.checklist input[type="checkbox"]')
+  }
+
+  function getSessionCheckboxes(sessionId) {
+    return document.querySelectorAll(`#${sessionId}-list input[type="checkbox"]`)
+  }
+
+  function saveState() {
+    const state = {}
+    getAllCheckboxes().forEach(cb => { state[cb.id] = cb.checked })
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  }
+
+  function loadState() {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return null
+    try { return JSON.parse(raw) } catch { return null }
+  }
+
+  function updateSession(sessionId) {
+    const cbs = getSessionCheckboxes(sessionId)
+    const total = cbs.length
+    const checked = [...cbs].filter(c => c.checked).length
+    const pct = total > 0 ? (checked / total) * 100 : 0
+
+    const countEl = document.getElementById(`${sessionId}-count`)
+    const barEl = document.getElementById(`${sessionId}-bar`)
+    const cardEl = document.getElementById(sessionId)
+
+    if (countEl) countEl.textContent = `${checked}/${total}`
+    if (barEl) barEl.style.width = `${pct}%`
+    if (cardEl) cardEl.classList.toggle('done', checked === total && total > 0)
+  }
+
+  function updateOverall() {
+    const all = [...getAllCheckboxes()]
+    const total = all.length
+    const checked = all.filter(c => c.checked).length
+    const pct = total > 0 ? (checked / total) * 100 : 0
+
+    document.getElementById('overall-fill').style.width = `${pct}%`
+    document.getElementById('top-bar-fill').style.width = `${pct}%`
+    document.getElementById('overall-label').textContent = `${checked} / ${total}`
+  }
+
+  function toggleSession(sessionId) {
+    const el = document.getElementById(sessionId)
+    el.classList.toggle('open')
+  }
+
+  // init
+  const state = loadState()
+
+  // pre-check sessions 1-3 if no saved state
+  const firstRun = !state
+  if (firstRun) {
+    ['s1','s2','s3'].forEach(sid => {
+      getSessionCheckboxes(sid).forEach(cb => { cb.checked = true })
+    })
+  } else {
+    getAllCheckboxes().forEach(cb => {
+      if (state[cb.id] !== undefined) cb.checked = state[cb.id]
+    })
+  }
+
+  // bind change events
+  getAllCheckboxes().forEach(cb => {
+    cb.addEventListener('change', () => {
+      const sessionId = cb.closest('.session').id
+      updateSession(sessionId)
+      updateOverall()
+      saveState()
+    })
+  })
+
+  // initial render
+  SESSIONS.forEach(updateSession)
+  updateOverall()
+  if (firstRun) saveState()
+</script>
+</body>
+</html>

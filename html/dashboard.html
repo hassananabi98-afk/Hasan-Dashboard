@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dashboard">
+<title>Hassan Dashboard</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: #080d1a; color: #e0e8ff; font-family: 'DM Mono', 'Courier New', monospace; min-height: 100vh; padding-bottom: 100px; }
+  
+  /* Header */
+  .header { background: linear-gradient(135deg,#0d1a2e,#0a1628); border-bottom: 1px solid #1a2a4a; padding: 20px 16px 14px; position: sticky; top: 0; z-index: 10; }
+  .header-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .header-name { font-size: 11px; letter-spacing: 4px; color: #4fc3f7; text-transform: uppercase; margin-bottom: 4px; }
+  .header-title { font-size: 20px; font-weight: bold; color: #e0f0ff; letter-spacing: 1px; }
+  .date-chip { background: #0f2040; border: 1px solid #1e3a5f; border-radius: 8px; padding: 6px 12px; font-size: 11px; color: #7fb3d3; letter-spacing: 2px; }
+  .tabs { display: flex; gap: 4px; margin-top: 14px; }
+  .tab { flex: 1; padding: 8px 0; background: transparent; border: 1px solid transparent; border-radius: 8px; color: #4a6a8a; font-size: 10px; letter-spacing: 2px; cursor: pointer; text-transform: uppercase; transition: all 0.2s; font-family: inherit; }
+  .tab.active { background: #1a3a5c; border-color: #2a5a8c; color: #4fc3f7; }
+
+  /* Body */
+  .body { padding: 16px 16px 0; }
+  .section { background: linear-gradient(135deg,#0d1a2e,#0a1525); border: 1px solid #1a2a4a; border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+  .section-title { font-size: 10px; letter-spacing: 3px; color: #4fc3f7; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .big-num { font-size: 32px; font-weight: bold; letter-spacing: -1px; }
+  .sub-text { font-size: 11px; color: #4a6a9a; letter-spacing: 1px; margin-top: 2px; }
+
+  /* Progress bar */
+  .progress-wrap { height: 6px; background: #0f2040; border-radius: 3px; overflow: hidden; margin-top: 8px; }
+  .progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+
+  /* Meal buttons */
+  .meal-row { display: flex; gap: 8px; }
+  .meal-btn { flex: 1; padding: 10px 6px; background: #0a1525; border: 1px solid #1a2a4a; border-radius: 10px; color: #3a5a7a; font-size: 10px; letter-spacing: 1px; cursor: pointer; text-align: center; transition: all 0.2s; font-family: inherit; }
+  .meal-btn.done { background: #0d3a1a; border-color: #2a7a3a; color: #4caf50; }
+  .meal-icon { font-size: 18px; margin-bottom: 4px; }
+  .meal-check { color: #4caf50; margin-top: 2px; }
+
+  /* Appointment buttons */
+  .appt-row { display: flex; gap: 8px; }
+  .appt-btn { flex: 1; padding: 12px 8px; background: #0a1525; border: 1px solid #1a2a4a; border-radius: 10px; color: #3a5a7a; font-size: 10px; letter-spacing: 1px; cursor: pointer; text-align: center; transition: all 0.2s; font-family: inherit; }
+  .appt-btn.done { background: #1a2a0d; border-color: #3a6a1a; color: #8bc34a; }
+  .appt-icon { font-size: 20px; margin-bottom: 4px; }
+  .appt-dots { margin-top: 4px; font-size: 14px; }
+  .appt-count { font-size: 9px; color: #4a6a4a; margin-top: 2px; }
+
+  /* Input / form */
+  .input { background: #0a1828; border: 1px solid #1a3a5a; border-radius: 8px; color: #e0e8ff; padding: 10px 12px; font-size: 13px; font-family: inherit; width: 100%; }
+  .input:focus { outline: none; border-color: #2a5a8a; }
+  select.input { appearance: none; }
+  .form-col { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .btn-row { display: flex; gap: 8px; }
+  .btn { border-radius: 8px; padding: 10px; font-size: 12px; cursor: pointer; width: 100%; letter-spacing: 2px; font-family: inherit; border: 1px solid; }
+  .btn-primary { background: #0d3a5a; border-color: #1a6a9a; color: #4fc3f7; }
+  .btn-danger { background: #1a0d0d; border-color: #4a1a1a; color: #7a3a3a; }
+  .btn-add { width: 100%; padding: 10px; background: #0d2a3a; border: 1px dashed #1a4a6a; border-radius: 10px; color: #4fc3f7; font-size: 11px; letter-spacing: 2px; cursor: pointer; margin-top: 8px; font-family: inherit; }
+  .btn-edit { background: none; border: 1px solid #1a3a5a; border-radius: 6px; color: #4a7aaa; font-size: 10px; cursor: pointer; padding: 2px 8px; font-family: inherit; margin-left: auto; }
+
+  /* Expense list */
+  .expense-row { display: flex; align-items: center; padding: 6px 0; border-bottom: 1px solid #0f1e35; font-size: 11px; gap: 6px; }
+  .expense-cat { font-size: 9px; }
+  .expense-label { color: #8aabcc; flex: 1; }
+  .expense-type { color: #6a8aaa; font-size: 10px; margin-right: 4px; }
+  .expense-amt { margin-right: 6px; }
+  .btn-del { background: none; border: 1px solid #3a1a1a; border-radius: 6px; color: #7a3a3a; font-size: 11px; cursor: pointer; padding: 2px 7px; font-family: inherit; }
+
+  /* Card total box */
+  .card-total { padding: 10px; background: #0a1a0a; border-radius: 8px; border: 1px solid #1a3a1a; margin-top: 4px; }
+
+  /* Donut */
+  .donut-row { display: flex; align-items: center; gap: 16px; }
+  .legend-row { display: flex; align-items: center; gap: 6px; margin-bottom: 7px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+  .legend-label { color: #8aabcc; font-size: 11px; flex: 1; }
+  .legend-pct { color: #e0a060; font-size: 11px; }
+
+  /* Toggle btns */
+  .toggle-row { display: flex; gap: 8px; }
+  .toggle-btn { flex: 1; padding: 9px; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 11px; letter-spacing: 1px; transition: all 0.2s; border: 1px solid #1a2a4a; background: #0a1525; color: #3a5a7a; }
+  .toggle-btn.charge.active { background: #2a0d0d; border-color: #7a2a2a; color: #e07a5f; }
+  .toggle-btn.payment.active { background: #0d3a1a; border-color: #2a7a3a; color: #4caf50; }
+
+  /* Health log btn */
+  .log-btn { width: 100%; padding: 12px; border-radius: 10px; font-size: 12px; letter-spacing: 2px; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+  .date-tag { padding: 3px 8px; background: #0d2a1a; border: 1px solid #1a4a2a; border-radius: 6px; font-size: 10px; color: #4a8a5a; }
+  .date-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 10px; }
+
+  /* Spine box */
+  .spine-box { font-size: 11px; color: #6a5a3a; line-height: 1.8; letter-spacing: 0.5px; }
+
+  /* Bottom bar */
+  .bottom-bar { padding: 12px 16px; display: flex; gap: 8px; }
+  .btn-export { flex: 1; padding: 12px; border-radius: 10px; background: #0a1a2a; border: 1px solid #1a3a5a; color: #4fc3f7; font-size: 11px; letter-spacing: 3px; cursor: pointer; font-family: inherit; }
+  .btn-save { flex: 1; padding: 12px; border-radius: 10px; background: #0a2a1a; border: 1px solid #1a5a3a; color: #4caf50; font-size: 11px; letter-spacing: 3px; cursor: pointer; font-family: inherit; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: #0d3a2a; border: 1px solid #2a7a5a; border-radius: 20px; padding: 10px 20px; color: #4caf50; font-size: 12px; letter-spacing: 2px; z-index: 100; pointer-events: none; white-space: nowrap; }
+
+  /* Setup screen */
+  .setup { padding: 30px 20px; text-align: center; }
+  .setup h2 { color: #4fc3f7; font-size: 16px; margin-bottom: 16px; letter-spacing: 2px; }
+  .setup p { color: #4a6a8a; font-size: 12px; line-height: 1.8; margin-bottom: 20px; }
+  .setup .input { margin-bottom: 12px; text-align: left; }
+  .setup-label { font-size: 10px; color: #3a5a7a; letter-spacing: 2px; margin-bottom: 6px; text-align: left; }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+const SCRIPT_URL_KEY = 'hassan_script_url';
+let SCRIPT_URL = localStorage.getItem(SCRIPT_URL_KEY) || 'https://script.google.com/macros/s/AKfycbye3RjzwfgI3jbYKZdQOSDliltSTP_e8f-cZvo-Y5VnMkc0DQbGb3Vyfpk_Y4pttIy-/exec';
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const CAT_COLORS = {"Food":"#e07a5f","Groceries":"#3d9a5b","Transport":"#81b29a","Shopping":"#f2cc8f","Health":"#4fc3f7","Entertainment":"#b07fe0","Other":"#4a6a8a"};
+const CATEGORIES = ["Food","Groceries","Transport","Shopping","Health","Entertainment","Other"];
+
+let data = null;
+let activeTab = 'today';
+let showExpenseForm = false;
+let expenseInput = { label:'', amount:'', category:'Other' };
+let showCardForm = null;
+let cardExpenseInput = { label:'', amount:'', category:'Other', type:'charge' };
+let editBudget = false;
+let budgetInput = '';
+let editCard = null;
+let cardInput = { limit:'', paid:'', name:'' };
+let toastTimer = null;
+let saving = false;
+
+function defaultState() {
+  return {
+    month: new Date().toISOString().slice(0,7),
+    budget: { total: 300, spent: 0, expenses: [] },
+    creditCards: {
+      card1: { limit: 300, paid: 50, name: 'Ila', expenses: [], spent: 0 },
+      card2: { limit: 300, paid: 50, name: 'CrediMax', expenses: [], spent: 0 },
+    },
+    meals: {},
+    appointments: { physio: [], psycho: [], gym: [] },
+  };
+}
+
+function getTodayKey() { return new Date().toISOString().slice(0,10); }
+function getWeekKey() {
+  const d = new Date(); const day = d.getDay();
+  const diff = d.getDate() - day + (day===0?-6:1);
+  return new Date(new Date().setDate(diff)).toISOString().slice(0,10);
+}
+
+// ─── STORAGE ──────────────────────────────────────────────────────────────────
+const SECRET_PIN = '191298';
+
+async function loadFromDrive() {
+  if (!SCRIPT_URL) return null;
+  try {
+    const res = await fetch(SCRIPT_URL + '?action=load&pin=' + SECRET_PIN, { method: 'GET', mode: 'cors' });
+    const json = await res.json();
+    if (json.status === 'ok' && json.data) return JSON.parse(json.data);
+  } catch(e) { console.error('Load error:', e); }
+  return null;
+}
+
+async function saveToDrive(d) {
+  if (!SCRIPT_URL) return false;
+  try {
+    const encoded = encodeURIComponent(JSON.stringify(d));
+    const res = await fetch(SCRIPT_URL + '?action=save&pin=' + SECRET_PIN + '&data=' + encoded, { mode: 'cors' });
+    const json = await res.json();
+    return json.status === 'saved';
+  } catch(e) {
+    try {
+      const encoded = encodeURIComponent(JSON.stringify(d));
+      await fetch(SCRIPT_URL + '?action=save&pin=' + SECRET_PIN + '&data=' + encoded, { mode: 'no-cors' });
+      return true;
+    } catch(e2) { console.error('Save error:', e2); return false; }
+  }
+}
+
+function saveLocal(d) {
+  try { localStorage.setItem('hassan_dashboard_v1', JSON.stringify(d)); } catch {}
+}
+
+function loadLocal() {
+  try { const v = localStorage.getItem('hassan_dashboard_v1'); return v ? JSON.parse(v) : null; } catch { return null; }
+}
+
+// ─── ACTIONS ──────────────────────────────────────────────────────────────────
+function setState(newData, skipDriveSave) {
+  data = newData;
+  saveLocal(newData);
+  if (!skipDriveSave) saveToDrive(newData);
+  render();
+}
+
+function toggleMeal(meal) {
+  const today = getTodayKey();
+  const d = JSON.parse(JSON.stringify(data));
+  if (!d.meals[today]) d.meals[today] = {};
+  d.meals[today][meal] = !d.meals[today][meal];
+  setState(d);
+}
+
+function logAppointment(type) {
+  const today = getTodayKey();
+  const d = JSON.parse(JSON.stringify(data));
+  if (d.appointments[type].includes(today)) {
+    d.appointments[type] = d.appointments[type].filter(x => x !== today);
+    showToast('Removed ✓');
+  } else {
+    d.appointments[type].push(today);
+    showToast('Logged ✓');
+  }
+  setState(d);
+}
+
+function addExpense() {
+  if (!expenseInput.label || !expenseInput.amount) return;
+  const d = JSON.parse(JSON.stringify(data));
+  const amt = parseFloat(expenseInput.amount);
+  d.budget.expenses.push({ label: expenseInput.label, amount: amt, category: expenseInput.category||'Other', date: getTodayKey() });
+  d.budget.spent = (d.budget.spent||0) + amt;
+  expenseInput = { label:'', amount:'', category:'Other' };
+  showExpenseForm = false;
+  setState(d);
+  showToast('Expense added ✓');
+}
+
+function deleteExpense(idx) {
+  const d = JSON.parse(JSON.stringify(data));
+  const removed = d.budget.expenses[idx];
+  d.budget.expenses.splice(idx, 1);
+  d.budget.spent = Math.max(0, (d.budget.spent||0) - removed.amount);
+  setState(d);
+  showToast('Deleted ✓');
+}
+
+function updateBudgetTotal() {
+  const d = JSON.parse(JSON.stringify(data));
+  d.budget.total = parseFloat(budgetInput)||300;
+  editBudget = false;
+  setState(d);
+  showToast('Budget updated ✓');
+}
+
+function addCardExpense(cardKey) {
+  if (!cardExpenseInput.label || !cardExpenseInput.amount) return;
+  const d = JSON.parse(JSON.stringify(data));
+  const amt = parseFloat(cardExpenseInput.amount);
+  const isPayment = cardExpenseInput.type === 'payment';
+  if (!d.creditCards[cardKey].expenses) d.creditCards[cardKey].expenses = [];
+  d.creditCards[cardKey].expenses.push({
+    label: cardExpenseInput.label, amount: amt,
+    category: cardExpenseInput.category||'Other',
+    type: cardExpenseInput.type||'charge', date: getTodayKey()
+  });
+  if (isPayment) {
+    d.creditCards[cardKey].paid = Math.min(d.creditCards[cardKey].limit, (d.creditCards[cardKey].paid||0) + amt);
+  } else {
+    d.creditCards[cardKey].paid = Math.max(0, (d.creditCards[cardKey].paid||0) - amt);
+    d.creditCards[cardKey].spent = (d.creditCards[cardKey].spent||0) + amt;
+  }
+  cardExpenseInput = { label:'', amount:'', category:'Other', type:'charge' };
+  showCardForm = null;
+  setState(d);
+  showToast(isPayment ? 'Payment logged ✓' : 'Charge logged ✓');
+}
+
+function deleteCardExpense(cardKey, idx) {
+  const d = JSON.parse(JSON.stringify(data));
+  const removed = d.creditCards[cardKey].expenses[idx];
+  d.creditCards[cardKey].expenses.splice(idx, 1);
+  if (removed.type === 'payment') {
+    d.creditCards[cardKey].paid = Math.max(0, (d.creditCards[cardKey].paid||0) - removed.amount);
+  } else {
+    d.creditCards[cardKey].paid = Math.min(d.creditCards[cardKey].limit, (d.creditCards[cardKey].paid||0) + removed.amount);
+    d.creditCards[cardKey].spent = Math.max(0, (d.creditCards[cardKey].spent||0) - removed.amount);
+  }
+  setState(d);
+  showToast('Deleted ✓');
+}
+
+function saveCardEdit(cardKey) {
+  const d = JSON.parse(JSON.stringify(data));
+  d.creditCards[cardKey].limit = parseFloat(cardInput.limit)||0;
+  d.creditCards[cardKey].paid = Math.min(parseFloat(cardInput.paid)||0, parseFloat(cardInput.limit)||0);
+  if (cardInput.name) d.creditCards[cardKey].name = cardInput.name;
+  editCard = null;
+  setState(d);
+  showToast('Card updated ✓');
+}
+
+async function forceSave() {
+  if (!data) return;
+  saving = true; render();
+  saveLocal(data);
+  const ok = await saveToDrive(data);
+  saving = false;
+  showToast(ok ? '💾 Saved to Drive ✓' : ok === false && !SCRIPT_URL ? '⚠️ No Drive URL set' : '⚠️ Save failed');
+  render();
+}
+
+function exportSummary() {
+  const today = getTodayKey();
+  const monthKey = data.month;
+  const mName = MONTHS[new Date().getMonth()];
+
+  // --- HEALTH ---
+  const physioSessions = data.appointments.physio.filter(d=>d.startsWith(monthKey)).sort();
+  const psychoSessions = data.appointments.psycho.filter(d=>d.startsWith(monthKey)).sort();
+  const gymSessions = data.appointments.gym.filter(d=>d.startsWith(monthKey)).sort();
+
+  // --- MEALS this month ---
+  const mealDates = Object.keys(data.meals).filter(d=>d.startsWith(monthKey)).sort();
+  const mealLines = mealDates.map(d=>{
+    const m = data.meals[d]||{};
+    const eaten = [m.breakfast?'B':'_', m.lunch?'L':'_', m.dinner?'D':'_'].join('');
+    return `  ${d}  ${eaten}`;
+  }).join('\n');
+
+  // --- BUDGET expenses ---
+  const expLines = (data.budget.expenses||[]).map(e=>`  ${e.date||'?'}  ${e.label} [${e.category||'Other'}]  ${e.amount.toFixed(3)} BD`).join('\n');
+  const budgetLeft = data.budget.total-(data.budget.spent||0);
+
+  // --- CARDS ---
+  const c1 = data.creditCards.card1, c2 = data.creditCards.card2;
+  const c1Left = c1.limit-c1.paid, c2Left = c2.limit-c2.paid;
+  const cardLines = (key, card) => (card.expenses||[]).map(e=>`  ${e.date||'?'}  ${e.type==='payment'?'▲':'▼'} ${e.label}  ${e.amount.toFixed(3)} BD`).join('\n');
+
+  const summary = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 DASHBOARD EXPORT — ${mName}
+Generated: ${today}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🏥 HEALTH
+
+🦴 Physiotherapy (${physioSessions.length}x)
+${physioSessions.map(d=>`  ✓ ${d}`).join('\n')||'  None'}
+
+🧠 Psychotherapy (${psychoSessions.length}x)
+${psychoSessions.map(d=>`  ✓ ${d}`).join('\n')||'  None'}
+
+🏋️ Gym (${gymSessions.length}x)
+${gymSessions.map(d=>`  ✓ ${d}`).join('\n')||'  None'}
+
+🍽️ MEALS (B=Breakfast L=Lunch D=Dinner _=Missed)
+${mealLines||'  No data'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💰 BUDGET
+  Total: ${data.budget.total} BD
+  Spent: ${(data.budget.spent||0).toFixed(3)} BD
+  Remaining: ${budgetLeft.toFixed(3)} BD
+
+Expenses:
+${expLines||'  None'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💳 ${c1.name||'Card 1'}
+  Limit: ${c1.limit} BD  Paid: ${c1.paid} BD  Remaining: ${c1Left.toFixed(0)} BD
+${cardLines('card1',c1)||'  No transactions'}
+
+💳 ${c2.name||'Card 2'}
+  Limit: ${c2.limit} BD  Paid: ${c2.paid} BD  Remaining: ${c2Left.toFixed(0)} BD
+${cardLines('card2',c2)||'  No transactions'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+
+  navigator.clipboard.writeText(summary).then(()=>showToast('Copied ✓')).catch(()=>alert(summary));
+}
+
+function showToast(msg) {
+  if (toastTimer) clearTimeout(toastTimer);
+  const t = document.getElementById('toast');
+  if (t) { t.textContent = msg; t.style.display='block'; }
+  toastTimer = setTimeout(()=>{ const t=document.getElementById('toast'); if(t) t.style.display='none'; }, 2500);
+}
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+function progressBar(pct, color) {
+  return `<div class="progress-wrap"><div class="progress-fill" style="width:${Math.min(100,Math.max(0,pct))}%;background:${color}"></div></div>`;
+}
+
+function donutSVG(sorted, totalSpent, size, R, r) {
+  if (!sorted.length) return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${size/2}" cy="${size/2}" r="${R}" fill="#0f2040"/><circle cx="${size/2}" cy="${size/2}" r="${r-2}" fill="#0a1525"/></svg>`;
+  const cx=size/2, cy=size/2;
+  let paths='', cumAngle=-Math.PI/2;
+  sorted.forEach(([cat,amt])=>{
+    const frac=totalSpent>0?amt/totalSpent:0;
+    const color=CAT_COLORS[cat]||'#4a6a8a';
+    if(frac>=0.9999){ paths+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="${color}" opacity="0.9"/>`; return; }
+    const angle=frac*2*Math.PI;
+    const x1=cx+R*Math.cos(cumAngle),y1=cy+R*Math.sin(cumAngle);
+    const x2=cx+R*Math.cos(cumAngle+angle),y2=cy+R*Math.sin(cumAngle+angle);
+    const ix1=cx+r*Math.cos(cumAngle),iy1=cy+r*Math.sin(cumAngle);
+    const ix2=cx+r*Math.cos(cumAngle+angle),iy2=cy+r*Math.sin(cumAngle+angle);
+    const large=angle>Math.PI?1:0;
+    paths+=`<path d="M ${x1} ${y1} A ${R} ${R} 0 ${large} 1 ${x2} ${y2} L ${ix2} ${iy2} A ${r} ${r} 0 ${large} 0 ${ix1} ${iy1} Z" fill="${color}" opacity="0.9"/>`;
+    cumAngle+=angle;
+  });
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${paths}<circle cx="${cx}" cy="${cy}" r="${r-2}" fill="#0a1525"/><text x="${cx}" y="${cy-4}" text-anchor="middle" fill="#4fc3f7" font-size="${size===140?11:9}" font-family="monospace">${totalSpent.toFixed(1)}</text><text x="${cx}" y="${cy+9}" text-anchor="middle" fill="#3a5a7a" font-size="8" font-family="monospace">BD</text></svg>`;
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function renderSetup() {
+  return `<div class="setup">
+    <h2>⚙️ SETUP REQUIRED</h2>
+    <p>Paste your Google Apps Script URL below to enable cloud saving. You only do this once.</p>
+    <div class="setup-label">APPS SCRIPT WEB APP URL</div>
+    <input class="input" id="scriptUrlInput" type="url" placeholder="https://script.google.com/macros/s/..." value="${SCRIPT_URL}">
+    <button class="btn btn-primary" style="margin-top:8px" onclick="saveScriptUrl()">SAVE URL & CONTINUE</button>
+    <br><br>
+    <button class="btn" style="background:none;border-color:#1a2a4a;color:#3a5a7a;margin-top:8px" onclick="skipSetup()">SKIP — USE WITHOUT CLOUD SAVE</button>
+  </div>`;
+}
+
+function renderToday() {
+  const today = getTodayKey();
+  const todayMeals = data.meals[today]||{};
+  const mealsCount = ['breakfast','lunch','dinner'].filter(m=>todayMeals[m]).length;
+  const budgetLeft = data.budget.total-(data.budget.spent||0);
+  const budgetPct = Math.max(0,(budgetLeft/data.budget.total)*100);
+  const budgetColor = budgetLeft<50?'#f44336':budgetLeft<100?'#ff9800':'#1a7a9a';
+  const weekKey = getWeekKey();
+
+  const mealBtns = ['breakfast','lunch','dinner'].map(m=>{
+    const done = !!todayMeals[m];
+    const icon = m==='breakfast'?'🌅':m==='lunch'?'☀️':'🌙';
+    return `<button class="meal-btn${done?' done':''}" onclick="toggleMeal('${m}')">
+      <div class="meal-icon">${icon}</div>
+      <div>${m.charAt(0).toUpperCase()+m.slice(1)}</div>
+      ${done?'<div class="meal-check">✓</div>':''}
+    </button>`;
+  }).join('');
+
+  const apptBtns = [
+    {key:'physio',label:'Physio',icon:'🦴'},
+    {key:'psycho',label:'Psycho',icon:'🧠'},
+    {key:'gym',label:'Gym',icon:'🏋️'}
+  ].map(({key,label,icon})=>{
+    const done = data.appointments[key].includes(today);
+    return `<button class="appt-btn${done?' done':''}" onclick="logAppointment('${key}')">
+      <div class="appt-icon">${icon}</div>
+      <div>${label}</div>
+      <div style="margin-top:6px;font-size:16px">${done?'✓':''}</div>
+      <div class="appt-count">${done?'Done today':'Not yet'}</div>
+    </button>`;
+  }).join('');
+
+  return `
+  <div class="section">
+    <div class="section-title">🍽️ <span>Meals Today</span> <span style="margin-left:auto;color:${mealsCount===3?'#4caf50':'#7a5a2a'}">${mealsCount}/3</span></div>
+    <div class="meal-row">${mealBtns}</div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">💰 <span>Budget</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end">
+      <div><div class="big-num" style="color:${budgetColor}">${budgetLeft.toFixed(0)} <span style="font-size:14px;color:#3a5a7a">BD</span></div>
+      <div class="sub-text">of ${data.budget.total} BD remaining</div></div>
+      <div style="font-size:11px;color:#4a6a8a">spent ${(data.budget.spent||0).toFixed(1)} BD</div>
+    </div>
+    ${progressBar(budgetPct, budgetColor)}
+  </div>`;
+}
+
+function renderFinance() {
+  const budgetLeft = data.budget.total-(data.budget.spent||0);
+  const budgetPct = Math.max(0,(budgetLeft/data.budget.total)*100);
+  const budgetColor = budgetLeft<50?'#f44336':budgetLeft<100?'#ff9800':'#1a7a9a';
+  const expenses = data.budget.expenses||[];
+  const totalSpent = data.budget.spent||0;
+
+  // Donut
+  const totals = {};
+  expenses.forEach(e=>{ const c=e.category||'Other'; totals[c]=(totals[c]||0)+e.amount; });
+  const sorted = Object.entries(totals).sort((a,b)=>b[1]-a[1]);
+
+  const donut = sorted.length ? `
+    <div style="margin-top:14px">
+      <div style="font-size:10px;letter-spacing:2px;color:#3a5a7a;margin-bottom:12px">BY CATEGORY</div>
+      <div class="donut-row">
+        ${donutSVG(sorted, totalSpent, 140, 54, 34)}
+        <div style="flex:1">${sorted.map(([cat,amt])=>`
+          <div class="legend-row">
+            <div class="legend-dot" style="background:${CAT_COLORS[cat]||'#4a6a8a'}"></div>
+            <span class="legend-label">${cat}</span>
+            <span class="legend-pct">${totalSpent>0?Math.round(amt/totalSpent*100):0}%</span>
+          </div>`).join('')}
+        </div>
+      </div>
+      <div style="margin-top:12px">
+        <div style="font-size:10px;letter-spacing:2px;color:#3a5a7a;margin-bottom:8px">ALL EXPENSES</div>
+        ${[...expenses].map((e,i)=>({...e,ri:i})).reverse().map(e=>`
+          <div class="expense-row">
+            <span class="expense-cat" style="color:${CAT_COLORS[e.category]||'#4a6a8a'}">■</span>
+            <span class="expense-label">${e.label}<span style="color:#3a5a7a;font-size:9px;display:block">${e.date||''}</span></span>
+            <span class="expense-type">${e.category||'Other'}</span>
+            <span class="expense-amt" style="color:#e0a060">${e.amount.toFixed(3)}</span>
+            <button class="btn-del" onclick="deleteExpense(${e.ri})">✕</button>
+          </div>`).join('')}
+      </div>
+    </div>` : '';
+
+  const form = showExpenseForm ? `
+    <div class="form-col">
+      <input class="input" placeholder="What for?" value="${expenseInput.label}" oninput="expenseInput.label=this.value">
+      <select class="input" onchange="expenseInput.category=this.value">${CATEGORIES.map(c=>`<option${c===expenseInput.category?' selected':''}>${c}</option>`).join('')}</select>
+      <input class="input" type="number" placeholder="Amount (BD)" value="${expenseInput.amount}" oninput="expenseInput.amount=this.value">
+      <div class="btn-row">
+        <button class="btn btn-primary" style="flex:1" onclick="addExpense()">ADD</button>
+        <button class="btn btn-danger" style="flex:1" onclick="showExpenseForm=false;render()">CANCEL</button>
+      </div>
+    </div>` : `<button class="btn-add" onclick="showExpenseForm=true;render()">+ LOG EXPENSE</button>`;
+
+  // Cards
+  const cards = ['card1','card2'].map(key=>{
+    const card = data.creditCards[key];
+    const remaining = card.limit-card.paid;
+    const pct = card.limit>0?(card.paid/card.limit)*100:0;
+    const cardExp = card.expenses||[];
+    const cardSpent = card.spent||0;
+    const cardTotals={};
+    cardExp.forEach(e=>{const c=e.category||'Other';cardTotals[c]=(cardTotals[c]||0)+e.amount;});
+    const cardSorted=Object.entries(cardTotals).sort((a,b)=>b[1]-a[1]);
+
+    const cardDonut = cardSorted.length ? `
+      <div style="margin-top:12px">
+        <div style="font-size:10px;letter-spacing:2px;color:#3a5a7a;margin-bottom:8px">SPENDING — ${cardSpent.toFixed(3)} BD</div>
+        <div class="donut-row">
+          ${donutSVG(cardSorted,cardSpent,100,40,26)}
+          <div style="flex:1">${cardSorted.map(([cat,amt])=>`
+            <div class="legend-row" style="margin-bottom:5px">
+              <div style="width:7px;height:7px;border-radius:2px;background:${CAT_COLORS[cat]||'#4a6a8a'};flex-shrink:0"></div>
+              <span style="color:#8aabcc;font-size:10px;flex:1">${cat}</span>
+              <span style="color:#e0a060;font-size:10px">${cardSpent>0?Math.round(amt/cardSpent*100):0}%</span>
+            </div>`).join('')}
+          </div>
+        </div>
+        ${[...cardExp].map((e,i)=>({...e,ri:i})).reverse().map(e=>`
+          <div class="expense-row">
+            <span style="font-size:9px;color:${e.type==='payment'?'#4caf50':'#e07a5f'}">${e.type==='payment'?'▲':'▼'}</span>
+            <span class="expense-label">${e.label}<span style="color:#3a5a7a;font-size:9px;display:block">${e.date||''}</span></span>
+            <span class="expense-type">${e.type==='payment'?'Payment':(e.category||'Other')}</span>
+            <span class="expense-amt" style="color:${e.type==='payment'?'#4caf50':'#e0a060'}">${e.type==='payment'?'+':'-'}${e.amount.toFixed(3)}</span>
+            <button class="btn-del" onclick="deleteCardExpense('${key}',${e.ri})">✕</button>
+          </div>`).join('')}
+      </div>` : '';
+
+    const editForm = editCard===key ? `
+      <div class="form-col" style="margin-bottom:12px">
+        <div style="display:flex;gap:8px">
+          <div style="flex:1"><div style="font-size:9px;color:#3a5a7a;margin-bottom:4px;letter-spacing:1px">NAME</div>
+            <input class="input" style="padding:8px 10px" placeholder="Card name" value="${card.name||''}" oninput="cardInput.name=this.value"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1"><div style="font-size:9px;color:#3a5a7a;margin-bottom:4px;letter-spacing:1px">LIMIT</div>
+            <input class="input" style="padding:8px 10px" type="number" value="${cardInput.limit}" oninput="cardInput.limit=this.value"></div>
+          <div style="flex:1"><div style="font-size:9px;color:#3a5a7a;margin-bottom:4px;letter-spacing:1px">PAID</div>
+            <input class="input" style="padding:8px 10px" type="number" value="${cardInput.paid}" oninput="cardInput.paid=this.value"></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" style="flex:1" onclick="saveCardEdit('${key}')">SAVE</button>
+          <button class="btn btn-danger" style="flex:1" onclick="editCard=null;render()">CANCEL</button>
+        </div>
+      </div>` : `
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
+        <span style="color:#4a7a8a">Remaining: <span style="color:#4fc3f7">${remaining.toFixed(0)} BD</span></span>
+        <span style="color:#4a7a8a">Limit: ${card.limit} BD</span>
+      </div>
+      ${progressBar(pct,'#2a7a4a')}
+      <div style="font-size:10px;color:#3a5a7a;margin-top:4px">Paid: ${card.paid} BD</div>`;
+
+    const txForm = showCardForm===key ? `
+      <div class="form-col" style="margin-top:10px">
+        <div class="toggle-row">
+          <button class="toggle-btn charge${cardExpenseInput.type==='charge'?' active':''}" onclick="cardExpenseInput.type='charge';render()">▼ CHARGE</button>
+          <button class="toggle-btn payment${cardExpenseInput.type==='payment'?' active':''}" onclick="cardExpenseInput.type='payment';render()">▲ PAYMENT</button>
+        </div>
+        <input class="input" placeholder="Description" value="${cardExpenseInput.label}" oninput="cardExpenseInput.label=this.value">
+        ${cardExpenseInput.type==='charge'?`<select class="input" onchange="cardExpenseInput.category=this.value">${CATEGORIES.map(c=>`<option${c===cardExpenseInput.category?' selected':''}>${c}</option>`).join('')}</select>`:''}
+        <input class="input" type="number" placeholder="Amount (BD)" value="${cardExpenseInput.amount}" oninput="cardExpenseInput.amount=this.value">
+        <div class="btn-row">
+          <button class="btn btn-primary" style="flex:1" onclick="addCardExpense('${key}')">ADD</button>
+          <button class="btn btn-danger" style="flex:1" onclick="showCardForm=null;render()">CANCEL</button>
+        </div>
+      </div>` : `<button class="btn-add" style="margin-top:10px" onclick="showCardForm='${key}';cardExpenseInput={label:'',amount:'',category:'Other',type:'charge'};render()">+ LOG TRANSACTION</button>`;
+
+    return `<div class="section">
+      <div class="section-title">💳 <span>${card.name||key}</span>
+        <button class="btn-edit" onclick="editCard='${key}';cardInput={limit:${card.limit},paid:${card.paid},name:'${card.name||''}'};render()">EDIT</button>
+      </div>
+      ${editForm}
+      ${cardDonut}
+      ${txForm}
+    </div>`;
+  }).join('');
+
+  const c1=data.creditCards.card1, c2=data.creditCards.card2;
+  const c1Left=c1.limit-c1.paid, c2Left=c2.limit-c2.paid;
+
+  return `
+  <div class="section">
+    <div class="section-title">💰 <span>Monthly Budget</span>
+      <button class="btn-edit" onclick="editBudget=true;budgetInput=${data.budget.total};render()">EDIT</button>
+    </div>
+    ${editBudget ? `
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <input class="input" style="flex:1" type="number" value="${budgetInput}" oninput="budgetInput=this.value">
+        <button class="btn btn-primary" style="padding:8px 14px;width:auto" onclick="updateBudgetTotal()">SAVE</button>
+        <button class="btn btn-danger" style="padding:8px 14px;width:auto" onclick="editBudget=false;render()">✕</button>
+      </div>` : `
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:4px">
+        <div><div class="big-num" style="color:${budgetColor}">${budgetLeft.toFixed(1)} <span style="font-size:16px;color:#3a5a7a">BD</span></div>
+        <div class="sub-text">Remaining of ${data.budget.total} BD</div></div>
+        <div style="font-size:11px;color:#4a6a8a">Spent: ${(data.budget.spent||0).toFixed(1)} BD</div>
+      </div>
+      ${progressBar(budgetPct, budgetColor)}`}
+    ${donut}
+    ${form}
+  </div>
+  ${cards}
+  <div class="card-total">
+    <div style="font-size:10px;color:#3a6a3a;letter-spacing:2px">TOTAL CARD DEBT</div>
+    <div style="font-size:22px;color:#4caf50;margin-top:4px">${(c1Left+c2Left).toFixed(0)} BD</div>
+    <div style="font-size:10px;color:#2a4a2a;margin-top:2px">~${Math.ceil((c1Left+c2Left)/100)} months at 100 BD/mo</div>
+  </div>`;
+}
+
+function renderHealth() {
+  const today = getTodayKey();
+  const monthKey = data.month;
+
+  const appts = [
+    {key:'physio',label:'Physiotherapy',icon:'🦴',color:'#1a6a9a'},
+    {key:'psycho',label:'Psychotherapy',icon:'🧠',color:'#6a1a9a'},
+    {key:'gym',label:'Gym',icon:'🏋️',color:'#1a9a4a'}
+  ].map(({key,label,icon,color})=>{
+    const sessions = data.appointments[key];
+    const thisMonth = sessions.filter(d=>d.startsWith(monthKey));
+    const done = sessions.includes(today);
+    const tags = thisMonth.map(d=>`<span class="date-tag">${d.slice(5)}</span>`).join('');
+    return `<div class="section" style="border-color:${done?color+'60':'#1a2a4a'}">
+      <div class="section-title">${icon} <span>${label}</span>
+        <span style="margin-left:auto;font-size:11px;color:${thisMonth.length>0?'#4caf50':'#3a3a3a'}">${thisMonth.length}x this month</span>
+      </div>
+      <button class="log-btn" style="background:${done?'#0d2a0d':'#0a1525'};border:${done?`1px solid ${color}`:'1px dashed #1a2a4a'};color:${done?'#4caf50':'#3a5a7a'}" onclick="logAppointment('${key}')">
+        ${done?'✓ ATTENDED TODAY — TAP TO UNDO':'TAP TO LOG TODAY\'S SESSION'}
+      </button>
+      ${thisMonth.length?`<div class="date-tags">${tags}</div>`:''}
+    </div>`;
+  }).join('');
+
+  return `${appts}`;
+}
+
+function render() {
+  if (false && !SCRIPT_URL && localStorage.getItem('hassan_skip_setup') !== '1') {
+    document.getElementById('app').innerHTML = `
+      <div class="header"><div class="header-top"><div><div class="header-name">Hassan · SULB</div><div class="header-title">Personal Dashboard</div></div></div></div>
+      <div class="body">${renderSetup()}</div>
+      <div id="toast" class="toast" style="display:none"></div>`;
+    return;
+  }
+
+  const today = getTodayKey();
+  const tabContent = activeTab==='today'?renderToday():activeTab==='finance'?renderFinance():renderHealth();
+
+  document.getElementById('app').innerHTML = `
+    <div class="header">
+      <div class="header-top">
+        <div><div class="header-name">Hassan · SULB</div><div class="header-title">Personal Dashboard</div></div>
+        <div class="date-chip">${today}</div>
+      </div>
+      <div class="tabs">
+        <button class="tab${activeTab==='today'?' active':''}" onclick="activeTab='today';render()">TODAY</button>
+        <button class="tab${activeTab==='finance'?' active':''}" onclick="activeTab='finance';render()">FINANCE</button>
+        <button class="tab${activeTab==='health'?' active':''}" onclick="activeTab='health';render()">HEALTH</button>
+      </div>
+    </div>
+    <div class="body">${tabContent}</div>
+    <div class="bottom-bar">
+      <button class="btn-export" onclick="exportSummary()">📋 EXPORT</button>
+      <button class="btn-save" onclick="forceSave()">${saving?'SAVING...':'💾 SAVE'}</button>
+    </div>
+    <div id="toast" class="toast" style="display:none"></div>`;
+}
+
+function saveScriptUrl() {
+  const val = document.getElementById('scriptUrlInput').value.trim();
+  if (!val) { showToast('⚠️ Enter a URL first'); return; }
+  SCRIPT_URL = val;
+  localStorage.setItem(SCRIPT_URL_KEY, val);
+  localStorage.setItem('hassan_skip_setup','1');
+  init();
+}
+
+function skipSetup() {
+  localStorage.setItem('hassan_skip_setup','1');
+  init();
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+async function init() {
+  // Show loading
+  document.getElementById('app').innerHTML = `
+    <div style="background:#0a0f1e;min-height:100vh;display:flex;align-items:center;justify-content:center">
+      <div style="color:#4fc3f7;font-family:monospace;font-size:18px;letter-spacing:4px">LOADING...</div>
+    </div>`;
+
+  let saved = null;
+
+  // Try Drive first
+  if (SCRIPT_URL) saved = await loadFromDrive();
+
+  // Fall back to localStorage
+  if (!saved) saved = loadLocal();
+
+  if (saved) {
+    const currentMonth = new Date().toISOString().slice(0,7);
+    if (saved.month !== currentMonth) {
+      data = defaultState();
+      data.creditCards = saved.creditCards;
+    } else {
+      data = saved;
+    }
+  } else {
+    data = defaultState();
+  }
+
+  render();
+}
+
+init();
+</script>
+</body>
+</html>
