@@ -1927,16 +1927,12 @@
   function renderSmokeStats(rows, month) {
     const smokeSet = new Set(rows.filter(r => r.smoked).map(r => r.date))
     const loggedSet = new Set(rows.map(r => r.date))
+    // streak = logged smoke-free days in a row from most recent — gaps (unlogged days) don't break it
+    const sortedDates = [...loggedSet].sort().reverse()
     let streak = 0
-    const d = new Date()
-    // if today isn't logged yet don't break the streak — start from yesterday
-    if (!loggedSet.has(localDateStr(d))) d.setDate(d.getDate() - 1)
-    while (true) {
-      const ds = localDateStr(d)
-      if (!loggedSet.has(ds)) break
+    for (const ds of sortedDates) {
       if (smokeSet.has(ds)) break
       streak++
-      d.setDate(d.getDate() - 1)
     }
 
     const monthRows = rows.filter(r => r.date.startsWith(month))
@@ -1959,16 +1955,12 @@
     const readSet = new Set(readRows.map(r => r.date))
     const loggedSet = new Set(rows.map(r => r.date))
 
-    // streak: consecutive days with reading=true going back from today
+    // streak = logged reading days in a row from most recent — gaps (unlogged days) don't break it
+    const sortedDates = [...loggedSet].sort().reverse()
     let streak = 0
-    const d = new Date()
-    if (!loggedSet.has(localDateStr(d))) d.setDate(d.getDate() - 1)
-    while (true) {
-      const ds = localDateStr(d)
-      if (!loggedSet.has(ds)) break
+    for (const ds of sortedDates) {
       if (!readSet.has(ds)) break
       streak++
-      d.setDate(d.getDate() - 1)
     }
 
     const monthCount = rows.filter(r => r.date.startsWith(month) && r.reading).length
