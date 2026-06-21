@@ -651,7 +651,7 @@
     wrap.innerHTML = `
       <div class="budget-header">
         <span>Remaining</span>
-        <span style="${over ? 'color:var(--danger)' : ''}">${fmtAmount(Math.abs(remaining))}</span>
+        <span class="card-tile-balance" style="${over ? 'color:var(--danger)' : ''}">${fmtAmount(Math.abs(remaining))}</span>
       </div>
       <div class="budget-track"><div class="budget-fill${over ? ' over' : ''}" style="width:${pct.toFixed(1)}%"></div></div>
       <div class="budget-sub">
