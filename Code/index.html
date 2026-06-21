@@ -254,7 +254,10 @@
 
       <!-- Monthly Budget — gray box always visible; tap it to expand Cash Expenses -->
       <div class="fin-section">
-        <div class="log-section-title" style="margin-bottom:8px">💰 Monthly Budget</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div class="log-section-title" style="margin-bottom:0">💰 Monthly Budget</div>
+          <button class="fin-add-btn" id="fin-cycle-start-btn" style="display:none;font-size:12px;padding:5px 12px">▶ Start</button>
+        </div>
         <div class="budget-wrap fin-toggle-row" id="budget-wrap"></div>
         <div id="budget-section-wrap" style="display:none">
           <div class="fin-section-row" style="margin-top:14px">
@@ -491,19 +494,6 @@
 
 
 
-
-        <!-- Finance Settings -->
-        <div class="sett-section">
-          <div class="sett-section-title">Finance</div>
-          <div class="sett-row" style="border-bottom:none;flex-wrap:wrap;gap:8px">
-            <div style="flex:1">
-              <div class="sett-row-label">Salary Day</div>
-              <div class="sett-row-sub" id="sett-salary-day-sub">Budget cycle starts on this day each month</div>
-            </div>
-            <input class="sett-add-input" id="sett-salary-day-inp" type="number" min="1" max="31" placeholder="1–31" style="width:64px;text-align:center;flex:none">
-            <button class="sett-add-btn" id="sett-salary-day-save">Set</button>
-          </div>
-        </div>
 
         <!-- Export -->
         <div class="sett-section">
