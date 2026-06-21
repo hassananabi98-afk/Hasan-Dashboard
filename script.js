@@ -570,6 +570,7 @@
   let finExpenses = []
   let finChartInstance = null
   let finLoaded = false
+  let finCycles = [] // { month, started_at } sorted by started_at asc
   let selectedCatName = null
   let selectedCatColor = '#6b7280'
   let newCatColor = CAT_COLORS[0]
@@ -592,6 +593,20 @@
     const n = new Date()
     return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`
   }
+  function currentPeriodYM() {
+    if (!finCycles.length) return currentYM()
+    const today = new Date().toISOString().slice(0, 10)
+    const active = finCycles.filter(c => c.started_at <= today)
+    if (!active.length) return currentYM()
+    return active[active.length - 1].month
+  }
+  function getPeriodDates(ym) {
+    const cycle = finCycles.find(c => c.month === ym)
+    if (!cycle || !cycle.started_at) return { start: `${ym}-01`, end: firstDayOfNextMonth(ym), open: false }
+    const idx = finCycles.indexOf(cycle)
+    const next = finCycles[idx + 1]
+    return { start: cycle.started_at, end: next ? next.started_at : null, open: !next }
+  }
   function fmtAmount(n) { return `BHD ${Number(n).toFixed(3)}` }
   function fmtDateShort(ds) {
     const [y,m,d] = ds.split('-').map(Number)
@@ -606,9 +621,15 @@
   }
 
   // ── BUDGET ───────────────────────────────────────────────
+  const BUDGET_COLOR = '#8b5cf6'
   function renderBudgetBar() {
     const wrap = $('budget-wrap')
     if (!wrap) return
+    wrap.style.background = darkTint(BUDGET_COLOR, 0.16)
+    wrap.style.border = `1.5px solid ${hexA(BUDGET_COLOR, 0.55)}`
+    wrap.style.borderRadius = 'var(--radius)'
+    wrap.style.padding = '14px'
+    wrap.style.boxShadow = `0 0 0 3px ${hexA(BUDGET_COLOR, 0.10)}`
     const totalSpent = finExpenses.reduce((s,e) => s + Number(e.amount), 0)
 
     if (finBudget === null) {
@@ -1005,16 +1026,26 @@
   }
 
   // ── LOAD FINANCE DATA ────────────────────────────────────
+  async function loadFinanceCycles() {
+    const { data } = await supabase.from('budget_settings')
+      .select('month, started_at')
+      .not('started_at', 'is', null)
+      .order('started_at', { ascending: true })
+    finCycles = data || []
+  }
+
   async function loadFinanceData() {
     if (finCategories.length === 0) {
       const { data } = await supabase.from('categories').select('*').order('name')
       finCategories = data || []
     }
+    await loadFinanceCycles()
     const { data: budget } = await supabase.from('budget_settings').select('*').eq('month', finMonth).maybeSingle()
     finBudget = budget ? Number(budget.total) : null
-    const { data: expenses } = await supabase.from('expenses').select('*')
-      .gte('date', `${finMonth}-01`)
-      .lt('date', firstDayOfNextMonth(finMonth))
+    const { start: periodStart, end: periodEnd, open } = getPeriodDates(finMonth)
+    let expQuery = supabase.from('expenses').select('*').gte('date', periodStart)
+    if (!open) expQuery = expQuery.lt('date', periodEnd)
+    const { data: expenses } = await expQuery
       .order('date', { ascending: false })
       .order('created_at', { ascending: false })
     finExpenses = expenses || []
@@ -1038,7 +1069,9 @@
     const lbl = $('fin-month-label')
     if (lbl) lbl.textContent = finMonthLabel(ym)
     const nextBtn = $('fin-next')
-    if (nextBtn) nextBtn.disabled = ym >= currentYM()
+    if (nextBtn) nextBtn.disabled = ym >= currentPeriodYM()
+    const startBtn = $('fin-cycle-start-btn')
+    if (startBtn) startBtn.style.display = ym === currentPeriodYM() ? '' : 'none'
     cancelDeleteConfirm()
     closeExpenseForm()
     finMonthTxns = finAllTxns.filter(t => t.date.startsWith(ym))
@@ -1055,14 +1088,37 @@
     if (!finMonth) return
     const [y,m] = finMonth.split('-').map(Number)
     const next = m === 12 ? `${y+1}-01` : `${y}-${String(m+1).padStart(2,'0')}`
-    if (next > currentYM()) return
+    if (next > currentPeriodYM()) return
     setFinMonth(next); loadFinanceData()
   })
 
   async function initFinanceTab() {
-    setFinMonth(currentYM())
+    await loadFinanceCycles()
+    setFinMonth(currentPeriodYM())
     bindExpenseForm()
+    bindCycleStartBtn()
     await loadFinanceData()
+  }
+
+  function bindCycleStartBtn() {
+    const btn = $('fin-cycle-start-btn')
+    if (!btn) return
+    btn.addEventListener('click', async () => {
+      const [y, m] = finMonth.split('-').map(Number)
+      const nextM = m === 12 ? 1 : m + 1
+      const nextY = m === 12 ? y + 1 : y
+      const nextYM = `${nextY}-${String(nextM).padStart(2,'0')}`
+      const today = new Date().toISOString().slice(0, 10)
+      const { data: existing } = await supabase.from('budget_settings').select('*').eq('month', nextYM).maybeSingle()
+      if (existing) {
+        await supabase.from('budget_settings').update({ started_at: today }).eq('month', nextYM)
+      } else {
+        await supabase.from('budget_settings').insert({ month: nextYM, started_at: today, total: null })
+      }
+      await loadFinanceCycles()
+      setFinMonth(nextYM)
+      await loadFinanceData()
+    })
   }
 
   document.querySelector('.nav-item[data-tab="finance"]').addEventListener('click', () => {
