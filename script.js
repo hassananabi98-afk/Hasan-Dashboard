@@ -627,10 +627,11 @@
     const wrap = $('budget-wrap')
     if (!wrap) return
     wrap.style.background = darkTint(BUDGET_COLOR, 0.16)
-    wrap.style.border = `1.5px solid ${hexA(BUDGET_COLOR, 0.55)}`
+    wrap.style.border = `1px solid ${hexA(BUDGET_COLOR, 0.25)}`
     wrap.style.borderRadius = 'var(--radius)'
     wrap.style.padding = '14px'
-    wrap.style.boxShadow = `0 0 0 3px ${hexA(BUDGET_COLOR, 0.10)}`
+    wrap.style.boxShadow = `0 2px 12px ${hexA(BUDGET_COLOR, 0.08)}`
+    wrap.style.transition = 'background .12s, border-color .12s'
     const totalSpent = finExpenses.reduce((s,e) => s + Number(e.amount), 0)
 
     if (finBudget === null) {
