@@ -570,6 +570,7 @@
   let finExpenses = []
   let finChartInstance = null
   let finLoaded = false
+  let finSalaryDay = Number(localStorage.getItem('finSalaryDay')) || null
   let selectedCatName = null
   let selectedCatColor = '#6b7280'
   let newCatColor = CAT_COLORS[0]
@@ -586,11 +587,35 @@
 
   function finMonthLabel(ym) {
     const [y, m] = ym.split('-').map(Number)
-    return `${FIN_MONTHS[m - 1]} ${y}`
+    if (!finSalaryDay) return `${FIN_MONTHS[m - 1]} ${y}`
+    const endDate = new Date(y, m, finSalaryDay) // next month's salary day (0-indexed month, so m = next month)
+    endDate.setDate(endDate.getDate() - 1)
+    const startLabel = `${FIN_MONTHS[m - 1].slice(0,3)} ${finSalaryDay}`
+    const endYear = endDate.getFullYear()
+    const endLabel = `${FIN_MONTHS[endDate.getMonth()].slice(0,3)} ${endDate.getDate()}${endYear !== y ? ` ${endYear}` : ''}`
+    return `${startLabel} – ${endLabel}, ${y}`
   }
   function currentYM() {
     const n = new Date()
     return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`
+  }
+  function currentPeriodYM() {
+    if (!finSalaryDay) return currentYM()
+    const n = new Date()
+    const day = n.getDate(), m = n.getMonth() + 1, y = n.getFullYear()
+    if (day >= finSalaryDay) return `${y}-${String(m).padStart(2,'0')}`
+    const prevM = m === 1 ? 12 : m - 1
+    const prevY = m === 1 ? y - 1 : y
+    return `${prevY}-${String(prevM).padStart(2,'0')}`
+  }
+  function getPeriodDates(ym) {
+    if (!finSalaryDay) return { start: `${ym}-01`, end: firstDayOfNextMonth(ym) }
+    const [y, m] = ym.split('-').map(Number)
+    const pad = n => String(n).padStart(2,'0')
+    const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`
+    const start = new Date(y, m - 1, finSalaryDay)
+    const end = new Date(y, m, finSalaryDay) // exclusive: next month's salary day
+    return { start: fmt(start), end: fmt(end) }
   }
   function fmtAmount(n) { return `BHD ${Number(n).toFixed(3)}` }
   function fmtDateShort(ds) {
@@ -1012,9 +1037,10 @@
     }
     const { data: budget } = await supabase.from('budget_settings').select('*').eq('month', finMonth).maybeSingle()
     finBudget = budget ? Number(budget.total) : null
+    const { start: periodStart, end: periodEnd } = getPeriodDates(finMonth)
     const { data: expenses } = await supabase.from('expenses').select('*')
-      .gte('date', `${finMonth}-01`)
-      .lt('date', firstDayOfNextMonth(finMonth))
+      .gte('date', periodStart)
+      .lt('date', periodEnd)
       .order('date', { ascending: false })
       .order('created_at', { ascending: false })
     finExpenses = expenses || []
@@ -1038,7 +1064,7 @@
     const lbl = $('fin-month-label')
     if (lbl) lbl.textContent = finMonthLabel(ym)
     const nextBtn = $('fin-next')
-    if (nextBtn) nextBtn.disabled = ym >= currentYM()
+    if (nextBtn) nextBtn.disabled = ym >= currentPeriodYM()
     cancelDeleteConfirm()
     closeExpenseForm()
     finMonthTxns = finAllTxns.filter(t => t.date.startsWith(ym))
@@ -1055,12 +1081,12 @@
     if (!finMonth) return
     const [y,m] = finMonth.split('-').map(Number)
     const next = m === 12 ? `${y+1}-01` : `${y}-${String(m+1).padStart(2,'0')}`
-    if (next > currentYM()) return
+    if (next > currentPeriodYM()) return
     setFinMonth(next); loadFinanceData()
   })
 
   async function initFinanceTab() {
-    setFinMonth(currentYM())
+    setFinMonth(currentPeriodYM())
     bindExpenseForm()
     await loadFinanceData()
   }
@@ -2352,6 +2378,26 @@
   // ── Wire add buttons ──
   function wireSettEvents() {
     renderSettAnalytics()
+
+    // Salary day
+    const salaryDayInp = document.getElementById('sett-salary-day-inp')
+    const salaryDaySaveBtn = document.getElementById('sett-salary-day-save')
+    const salaryDaySub = document.getElementById('sett-salary-day-sub')
+    function salaryDayOrdinal(d) { return d+(d===1?'st':d===2?'nd':d===3?'rd':'th') }
+    if (salaryDayInp && finSalaryDay) {
+      salaryDayInp.value = finSalaryDay
+      if (salaryDaySub) salaryDaySub.textContent = `Currently: ${salaryDayOrdinal(finSalaryDay)} of each month`
+    }
+    if (salaryDaySaveBtn) {
+      salaryDaySaveBtn.addEventListener('click', () => {
+        const val = parseInt(salaryDayInp.value)
+        if (!val || val < 1 || val > 31) return
+        finSalaryDay = val
+        localStorage.setItem('finSalaryDay', val)
+        if (salaryDaySub) salaryDaySub.textContent = `Currently: ${salaryDayOrdinal(val)} of each month`
+        if (finLoaded) { setFinMonth(currentPeriodYM()); loadFinanceData() }
+      })
+    }
 
     // Export
     const exportBtn = document.getElementById('sett-export-btn')
