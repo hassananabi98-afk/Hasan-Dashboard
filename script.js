@@ -631,7 +631,6 @@
     wrap.style.borderRadius = 'var(--radius)'
     wrap.style.padding = '14px'
     wrap.style.boxShadow = `0 0 0 3px ${hexA(BUDGET_COLOR, 0.10)}`
-    wrap.style.borderTop = `3px solid ${BUDGET_COLOR}`
     const totalSpent = finExpenses.reduce((s,e) => s + Number(e.amount), 0)
 
     if (finBudget === null) {
