@@ -571,6 +571,7 @@
   let finChartInstance = null
   let finLoaded = false
   let finCycles = [] // { month, started_at } sorted by started_at asc
+  let finCycleStartConfirming = false
   let selectedCatName = null
   let selectedCatColor = '#6b7280'
   let newCatColor = CAT_COLORS[0]
@@ -630,16 +631,11 @@
     wrap.style.borderRadius = 'var(--radius)'
     wrap.style.padding = '14px'
     wrap.style.boxShadow = `0 0 0 3px ${hexA(BUDGET_COLOR, 0.10)}`
+    wrap.style.borderTop = `3px solid ${BUDGET_COLOR}`
     const totalSpent = finExpenses.reduce((s,e) => s + Number(e.amount), 0)
-    const isCurrentPeriod = finMonth === currentPeriodYM()
-    const startBtnHtml = `<button class="fin-add-btn" id="fin-cycle-start-btn" style="${isCurrentPeriod ? '' : 'display:none;'}font-size:12px;padding:5px 12px">▶ Start</button>`
-    const cardHeader = `<div class="card-tile-header" style="margin-bottom:12px">
-      <span class="card-tile-name">💰 Monthly Budget</span>
-      ${startBtnHtml}
-    </div>`
 
     if (finBudget === null) {
-      wrap.innerHTML = `${cardHeader}
+      wrap.innerHTML = `
         <div class="budget-not-set" id="budget-not-set">Budget not set — tap to set</div>
         <div class="budget-edit-row" id="budget-input-row" style="display:none">
           <input class="budget-edit-input" id="budget-input" type="number" min="0" step="0.001" placeholder="0.000" inputmode="decimal">
@@ -647,14 +643,13 @@
         </div>`
       $('budget-not-set').addEventListener('click', showBudgetInput)
       bindBudgetSave()
-      bindCycleStartBtn()
       return
     }
 
     const pct = Math.min((totalSpent / finBudget) * 100, 100)
     const over = totalSpent > finBudget
     const remaining = finBudget - totalSpent
-    wrap.innerHTML = `${cardHeader}
+    wrap.innerHTML = `
       <div class="budget-header">
         <span>Remaining</span>
         <span style="${over ? 'color:var(--danger)' : ''}">${fmtAmount(Math.abs(remaining))}</span>
@@ -670,7 +665,6 @@
     const lbl = $('budget-limit-lbl')
     if (lbl) lbl.addEventListener('click', showBudgetInput)
     bindBudgetSave()
-    bindCycleStartBtn()
   }
 
   function showBudgetInput() {
@@ -1078,6 +1072,8 @@
     if (lbl) lbl.textContent = finMonthLabel(ym)
     const nextBtn = $('fin-next')
     if (nextBtn) nextBtn.disabled = ym >= currentPeriodYM()
+    const startBtn = $('fin-cycle-start-btn')
+    if (startBtn) startBtn.style.display = ym === currentPeriodYM() ? '' : 'none'
     cancelDeleteConfirm()
     closeExpenseForm()
     finMonthTxns = finAllTxns.filter(t => t.date.startsWith(ym))
@@ -1102,13 +1098,25 @@
     await loadFinanceCycles()
     setFinMonth(currentPeriodYM())
     bindExpenseForm()
+    bindCycleStartBtn()
     await loadFinanceData()
   }
 
   function bindCycleStartBtn() {
     const btn = $('fin-cycle-start-btn')
     if (!btn) return
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation()
+      if (!finCycleStartConfirming) {
+        finCycleStartConfirming = true
+        btn.textContent = 'Confirm?'
+        btn.style.background = 'var(--danger)'
+        return
+      }
+      finCycleStartConfirming = false
+      btn.textContent = 'Start New Month'
+      btn.style.background = ''
+      btn.disabled = true
       const [y, m] = finMonth.split('-').map(Number)
       const nextM = m === 12 ? 1 : m + 1
       const nextY = m === 12 ? y + 1 : y
@@ -1120,9 +1128,16 @@
       } else {
         await supabase.from('budget_settings').insert({ month: nextYM, started_at: today, total: null })
       }
+      btn.disabled = false
       await loadFinanceCycles()
       setFinMonth(nextYM)
       await loadFinanceData()
+    })
+    document.addEventListener('click', () => {
+      if (!finCycleStartConfirming) return
+      finCycleStartConfirming = false
+      btn.textContent = 'Start New Month'
+      btn.style.background = ''
     })
   }
 
