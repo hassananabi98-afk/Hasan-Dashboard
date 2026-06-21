@@ -631,9 +631,15 @@
     wrap.style.padding = '14px'
     wrap.style.boxShadow = `0 0 0 3px ${hexA(BUDGET_COLOR, 0.10)}`
     const totalSpent = finExpenses.reduce((s,e) => s + Number(e.amount), 0)
+    const isCurrentPeriod = finMonth === currentPeriodYM()
+    const startBtnHtml = `<button class="fin-add-btn" id="fin-cycle-start-btn" style="${isCurrentPeriod ? '' : 'display:none;'}font-size:12px;padding:5px 12px">▶ Start</button>`
+    const cardHeader = `<div class="card-tile-header" style="margin-bottom:12px">
+      <span class="card-tile-name">💰 Monthly Budget</span>
+      ${startBtnHtml}
+    </div>`
 
     if (finBudget === null) {
-      wrap.innerHTML = `
+      wrap.innerHTML = `${cardHeader}
         <div class="budget-not-set" id="budget-not-set">Budget not set — tap to set</div>
         <div class="budget-edit-row" id="budget-input-row" style="display:none">
           <input class="budget-edit-input" id="budget-input" type="number" min="0" step="0.001" placeholder="0.000" inputmode="decimal">
@@ -641,13 +647,14 @@
         </div>`
       $('budget-not-set').addEventListener('click', showBudgetInput)
       bindBudgetSave()
+      bindCycleStartBtn()
       return
     }
 
     const pct = Math.min((totalSpent / finBudget) * 100, 100)
     const over = totalSpent > finBudget
     const remaining = finBudget - totalSpent
-    wrap.innerHTML = `
+    wrap.innerHTML = `${cardHeader}
       <div class="budget-header">
         <span>Remaining</span>
         <span style="${over ? 'color:var(--danger)' : ''}">${fmtAmount(Math.abs(remaining))}</span>
@@ -663,6 +670,7 @@
     const lbl = $('budget-limit-lbl')
     if (lbl) lbl.addEventListener('click', showBudgetInput)
     bindBudgetSave()
+    bindCycleStartBtn()
   }
 
   function showBudgetInput() {
@@ -1070,8 +1078,6 @@
     if (lbl) lbl.textContent = finMonthLabel(ym)
     const nextBtn = $('fin-next')
     if (nextBtn) nextBtn.disabled = ym >= currentPeriodYM()
-    const startBtn = $('fin-cycle-start-btn')
-    if (startBtn) startBtn.style.display = ym === currentPeriodYM() ? '' : 'none'
     cancelDeleteConfirm()
     closeExpenseForm()
     finMonthTxns = finAllTxns.filter(t => t.date.startsWith(ym))
@@ -1096,7 +1102,6 @@
     await loadFinanceCycles()
     setFinMonth(currentPeriodYM())
     bindExpenseForm()
-    bindCycleStartBtn()
     await loadFinanceData()
   }
 

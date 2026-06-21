@@ -1,7 +1,7 @@
 # Hassan Personal Dashboard v2 — Project Log
 
 ## Overview
-A personal life management dashboard. Full calendar-based logging for daily health, finance, prayers, meals, supplements, and wellness tracking. Built as a standalone HTML web app backed by Supabase.
+A personal life management dashboard. Full calendar-based logging for daily health, finance, prayers, meals, supplements, and wellness tracking. Built as a standalone HTML/CSS/JS web app backed by Supabase.
 
 ---
 
@@ -9,7 +9,7 @@ A personal life management dashboard. Full calendar-based logging for daily heal
 
 | Component | Technology |
 |---|---|
-| Frontend | Vanilla HTML/CSS/JS (single file) |
+| Frontend | Vanilla HTML/CSS/JS (single file at repo root) |
 | Database | Supabase (PostgreSQL) |
 | Hosting | GitHub Pages (`hassananabi98-afk.github.io`) |
 | Auth | PIN screen (SHA-256 hash) |
@@ -19,9 +19,23 @@ A personal life management dashboard. Full calendar-based logging for daily heal
 ## Access
 
 - **Live URL:** `https://hassananabi98-afk.github.io`
+- **Repo:** `https://github.com/hassananabi98-afk/Hasan-Dashboard`
+- **Supabase URL:** `https://wrsqsrouliceqewkxvpw.supabase.co`
 - **Old Dashboard URL (v1):** `https://script.google.com/macros/s/AKfycbye3RjzwfgI3jbYKZdQOSDliltSTP_e8f-cZvo-Y5VnMkc0DQbGb3Vyfpk_Y4pttIy-/exec`
 - **Old Sheet ID (v1):** `1lhWfuTcP2bbqfMA-ih5JLcaP3VVczpBZMtI5PLOciP4`
-- **Supabase URL:** `https://wrsqsrouliceqewkxvpw.supabase.co`
+
+---
+
+## Repo Structure
+
+```
+index.html      ← served by GitHub Pages (main app)
+script.js
+style.css
+README.md
+docs/
+  project-log.md
+```
 
 ---
 
@@ -74,9 +88,9 @@ A personal life management dashboard. Full calendar-based logging for daily heal
 | Column | Type | Notes |
 |--------|------|-------|
 | id | UUID | Primary key |
-| name | TEXT | e.g. 'Ila', 'CrediMax' |
+| name | TEXT | e.g. 'ILA', 'CREDIMAX' |
 | limit | DECIMAL | Card limit (reserved word — quoted in SQL) |
-| paid | DECIMAL | Not used for balance calc; balance derived from transactions |
+| paid | DECIMAL | Not used for balance; balance derived from transactions |
 | visible | BOOLEAN | Show/hide card |
 
 ### card_transactions
@@ -111,8 +125,9 @@ A personal life management dashboard. Full calendar-based logging for daily heal
 | Column | Type | Notes |
 |--------|------|-------|
 | id | UUID | Primary key |
-| month | TEXT | Format: 'YYYY-MM' |
-| total | DECIMAL | Monthly budget |
+| month | TEXT | Format: 'YYYY-MM' (label month of cycle) |
+| total | DECIMAL | Monthly budget amount |
+| started_at | DATE | Date user pressed ▶ Start — added S7 |
 
 ### supplement_list
 | Column | Type | Notes |
@@ -129,7 +144,7 @@ A personal life management dashboard. Full calendar-based logging for daily heal
 | supplement_id | UUID | FK → supplement_list.id |
 | taken | BOOLEAN | |
 
-### custom_log_types *(reserved for future use — not active in UI)*
+### custom_log_types *(reserved — not active in UI)*
 | Column | Type | Notes |
 |--------|------|-------|
 | id | UUID | Primary key |
@@ -139,7 +154,7 @@ A personal life management dashboard. Full calendar-based logging for daily heal
 | show_in_analytics | BOOLEAN | |
 | created_at | TIMESTAMP | |
 
-### custom_log_entries *(reserved for future use — not active in UI)*
+### custom_log_entries *(reserved — not active in UI)*
 | Column | Type | Notes |
 |--------|------|-------|
 | id | UUID | Primary key |
@@ -155,28 +170,32 @@ A personal life management dashboard. Full calendar-based logging for daily heal
 ### CALENDAR
 - Full monthly calendar with prev/next navigation
 - Tap any day to open day view
-- Segmented ring per day — one ring divided into arcs: 🟣 Prayers, 🟠 Meals, 🔴 Smoking, 🔵 Reading
-- Single log = full circle; 2–4 logs = arc segments with gaps
-- Ring data loads per month; auto-refreshes when returning to Calendar after any save
+- Segmented ring per day — 1 log = full circle; 2–4 logs = arc segments with gaps
+  - 🟣 Prayers, 🟠 Meals, 🔴 Smoking, 🔵 Reading
+- Ring data loads per month; auto-refreshes when returning after any save
 - Day view: log/edit prayers, meals, smoking, reading, supplements, notes
 - Auto-saves 100ms after last change
 
 ### TODAY
 - Shortcut to today's day view (same UI as Calendar day view)
 - Auto-saves 100ms after any toggle/stepper/notes/supplement change
-- Save button still present for manual trigger
 - Reloads only when data was changed since last visit (dirty flag)
 
 ### FINANCE
 - Month navigation (prev/next, blocks future)
-- Monthly budget — set/edit with progress bar, turns red over budget
-- Expense log — add (label, amount, category, date, notes) + delete
+- Monthly Budget box — styled violet (#8b5cf6), card-like with header inside
+  - Shows "💰 Monthly Budget" header + ▶ Start button (visible on current period only)
+  - Displays Remaining (budget − spent), progress bar, total budget
+  - Budget amount entered manually each cycle by tapping the amount
+- Salary cycle: press ▶ Start when salary arrives → creates next month's cycle
+  - Cycle runs from `started_at` date until next Start is pressed (open-ended)
+  - e.g. press in late June → creates July 2026 cycle; period: Jun 26 → whenever July Start is pressed
+- Cash expense log — add (label, amount, category, date, notes) + delete + edit
 - Donut chart by category with manual legend
-- Inline category add with color picker (8 presets)
-- Cards section — add cards; balance computed from all-time transactions
-- Card limit editable inline — tap "Limit BHD X.XXX ✎" → input → blur/Enter commits
+- Cards section (CREDIMAX blue, ILA green) — balance from all-time transactions
+  - Card limit editable inline — tap "Limit BHD X.XXX ✎" → input → blur/Enter commits
+  - Tap card tile to expand per-card spending donut
 - Card transactions — add (charge/payment, label, amount, category, date) + delete
-- Tap card tile to expand per-card spending donut by category
 
 ### HEALTH
 - Month navigation; reloads only when a session was added/deleted (dirty flag)
@@ -189,19 +208,19 @@ A personal life management dashboard. Full calendar-based logging for daily heal
 - Reading: day streak, days this month, days total
 - Smoking: smoke-free streak, smoke-free days this month, smoked days this month
 - Spending donut: per-category breakdown for selected month + legend; month nav
-- Monthly spending: bar chart last 6 months, selected month highlighted solid blue
+- Monthly spending bar: total spend per month, last 6 months; selected month highlighted solid blue
 - Analytics Visibility: toggle Reading/Smoking in Settings
 
 ### SETTINGS
 - Opens via gear icon; re-fetches all data on every open
-- **Categories** — inline rename, delete (2-tap), add new (auto color)
-- **Supplements** — active/inactive toggle, delete (2-tap), add new; syncs with daily log
-- **Cards** — visible/hidden toggle, delete (3-tap + cascades transactions), add new
-- **Analytics Visibility** — toggle Reading and Smoking; persisted in localStorage
+- Categories — inline rename, delete (2-tap), add new (auto color)
+- Supplements — active/inactive toggle, delete (2-tap), add new; syncs with daily log
+- Cards — visible/hidden toggle, delete (3-tap + cascades transactions), add new
+- Analytics Visibility — toggle Reading and Smoking; persisted in localStorage
 
 ---
 
-## Build Sessions Plan
+## Build Sessions
 
 | Session | Focus | Status |
 |---------|-------|--------|
@@ -211,15 +230,14 @@ A personal life management dashboard. Full calendar-based logging for daily heal
 | 4 | Health sessions + cards + card transactions | ✅ Done |
 | 5 | Analytics — smoking, spending, monthly trends | ✅ Done |
 | 6 | Settings + calendar rings + Reading + polish + bug fixes | ✅ Done |
-| 7 | Pending — see below | 🔜 Next |
+| 7 | Finance UX improvements + repo cleanup | ✅ Done |
 
 ---
 
-## Pending / Planned (Session 7+)
+## Pending / Planned
 
 | Item | Notes |
 |------|-------|
-| Edit existing expenses | Currently delete + re-add only |
 | Edit existing card transactions | Currently delete + re-add only |
 | Edit existing health sessions | Currently delete + re-add only |
 | Quarterly analytics view | Spending grouped by quarter |
@@ -238,11 +256,18 @@ A personal life management dashboard. Full calendar-based logging for daily heal
 - RLS policy wrong role context → replaced with `using (true) with check (true)`
 - Missing GRANT permissions → `grant select, insert, update, delete on all tables in schema public to authenticated`
 
+---
+
 ### Session 2 — Daily Logging
-- `.single()` throws on empty rows → replaced with `.maybeSingle()`
+- `.single()` throws on empty rows (PGRST116) → replaced with `.maybeSingle()`
 - Auth session not ready → added `onAuthStateChange` waiting for `INITIAL_SESSION`
 
-### Session 3 — Finance
+---
+
+### Session 3 — Finance (Expenses, Budget, Categories, Chart)
+Scope change: Cards moved to Session 4.
+
+**SQL run:**
 ```sql
 INSERT INTO categories (name, color) VALUES
   ('Food','#f97316'),('Transport','#3b82f6'),('Health','#22c55e'),
@@ -250,25 +275,48 @@ INSERT INTO categories (name, color) VALUES
   ('Other','#6b7280');
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO authenticated;
 ```
-- Budget uses delete + re-insert; `expenses.category` is TEXT — renaming won't backfill
 
-### Session 4 — Health + Cards
+**Notes:**
+- Chart.js 4 loaded via CDN (`chart.umd.min.js`) as regular script before the module script
+- Budget uses delete + re-insert (avoids needing UNIQUE constraint on `month`)
+- `expenses.category` stores category name as TEXT — renaming in Settings will not backfill old rows
+- Finance tab lazy-loads on first tab switch; does not reload on subsequent visits
+- Inline delete confirm replaces the row in-place (no `window.confirm()`)
+
+---
+
+### Session 4 — Health Sessions + Cards + Post-build Fixes
+
+**SQL run:**
 ```sql
 INSERT INTO cards (name, "limit", paid, visible) VALUES
-  ('Ila', 300.000, 0.000, true),
-  ('CrediMax', 300.000, 0.000, true);
+  ('ILA', 300.000, 0.000, true),
+  ('CREDIMAX', 300.000, 0.000, true);
 ```
-- Card balance = all-time sum(charges) − sum(payments)
-- `"limit"` is a reserved word in PostgreSQL — must be quoted
 
-### Session 5 — Analytics
-- Gym and prayers excluded from analytics by choice
+**Notes:**
+- Card balance = all-time sum(charges) − sum(payments); NOT month-scoped
+- `"limit"` is a reserved word in PostgreSQL — must be quoted in raw SQL
+- Health type tile privacy: tapping hides tile → "Hidden (N)" section; prefs in localStorage
+- `hlthNormalizeType()` maps non-standard strings to 'other' for chip coloring
+- PIN screen: wrapped title+dots+keypad in `.pin-inner` with `gap: 28px`
+- Health privacy: changed from opacity filter to full hide + collapsible "Hidden" section
+
+---
+
+### Session 5 — Analytics + Bug Fixes
+- Prayers analytics excluded by choice
+- Quarterly summaries deferred
 - Monthly totals bar replaced stacked category chart (unreadable with sparse data)
 - All analytics data parallel-fetched via `Promise.all`
+- PIN keys scaled to `min(22vw, 88px)`; dots enlarged to 16px
+- Health tiles redesigned to vertical pill rows with colored left accent bar
 
-### Session 6 — Settings + Calendar + Reading + Polish
+---
 
-**SQL required:**
+### Session 6 — Settings + Calendar Rings + Reading + Polish
+
+**SQL run:**
 ```sql
 ALTER TABLE daily_tracking ADD COLUMN IF NOT EXISTS reading BOOLEAN DEFAULT false;
 
@@ -290,34 +338,50 @@ ALTER TABLE custom_log_types ENABLE ROW LEVEL SECURITY;
 ALTER TABLE custom_log_entries ENABLE ROW LEVEL SECURITY;
 GRANT SELECT, INSERT, UPDATE, DELETE ON custom_log_types TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON custom_log_entries TO authenticated;
-ALTER TABLE custom_log_types ADD COLUMN IF NOT EXISTS show_in_analytics BOOLEAN DEFAULT false;
 ```
 
 **Features added:**
 - Reading toggle in Today + Calendar day view
 - Reading analytics card (streak, this month, total)
-- Calendar segmented rings — 1 log = full circle, 2–4 = arc segments; gym removed from rings
+- Calendar segmented rings (🟣 Prayers, 🟠 Meals, 🔴 Smoking, 🔵 Reading)
 - Settings tab: categories, supplements, cards, analytics visibility
 - Card limit editable inline; card tile tap → per-card spending donut
-- Supplement delete (2-tap), card delete (3-tap + cascade)
-- Auto-save: 100ms debounce on all changes — no manual Save needed
-- Dirty-flag system: Today/Health/Analytics only reload when data actually changed
-- Settings re-fetches all data on every gear icon tap
+- Auto-save: 100ms debounce — no manual Save needed
+- Dirty-flag system: Today/Health/Analytics only reload when data changed
 
 **Bug fixes:**
 - Calendar 400: hardcoded day 31 invalid for short months → `new Date(year, month+1, 0)`
-- Calendar 400: explicit column select conflicted with date filter → `select('*')`
-- Analytics 400: `select('date,smoked,reading')` fails if reading column missing → `select('*')`
-- Single calendar ring showed as nothing → SVG arc of 360° is degenerate → switched to `<circle>` element for single-log days
-- Duplicate supplements: `loadTodayTab` called twice (nav click + switchTab) → removed redundant listener
+- Single calendar ring showed as nothing → switched to `<circle>` for single-log days
+- Duplicate supplements: removed redundant `loadTodayTab` call
 - Supplement toggles not auto-saving → added `scheduleAutoSave` to `renderSuppRows`
-- Supplements added from Settings not appearing in daily log → Settings re-fetches on every open; Today reloads via dirty flag
-- Custom log types feature attempted then reverted — tables remain in DB for future use, UI removed
+- Custom log types attempted then reverted — tables remain in DB, UI removed
 
 ---
 
-## Current File
+### Session 7 — Finance UX + Repo Cleanup
 
-| Version | Filename | Sessions covered |
-|---------|----------|-----------------|
-| Latest | `index-s6.html` | S1 → S6 + all post-build fixes |
+**SQL run:**
+```sql
+ALTER TABLE budget_settings ADD COLUMN IF NOT EXISTS started_at date;
+```
+
+**Finance changes:**
+- "Spent" → "Remaining" on Monthly Budget (shows budget − spent; red when over)
+- Monthly Budget box styled violet (`#8b5cf6`) to match card aesthetic (same `darkTint`/`hexA` functions)
+- Title "💰 Monthly Budget" moved inside the violet box as card-style header
+- ▶ Start button: press when salary arrives → creates next month's budget cycle
+  - `budget_settings.started_at` records exact date pressed
+  - Expense filter uses `started_at` of current cycle as start; end = `started_at` of next cycle (open-ended until next Start)
+  - `currentPeriodYM()` finds most recent cycle where `started_at ≤ today`
+  - e.g. press in late June → label becomes "July 2026"; cycle covers Jun 26 → until July Start
+
+**Repo cleanup:**
+- Removed `Code/`, `html/`, `md/` folders
+- Removed `dashboard.md` from root
+- `index.html`, `script.js`, `style.css` at root are the canonical files served by GitHub Pages
+- Session notes consolidated into `docs/project-log.md`
+
+**Implementation notes:**
+- Root `index.html`/`script.js` = what GitHub Pages serves; always keep in sync with any changes
+- `darkTint(hex, w)` and `hexA(hex, a)` helper functions used for card + budget box styling
+- Budget cycle `month` key = label month (e.g. '2026-07'); `started_at` = actual start date (e.g. '2026-06-26')
