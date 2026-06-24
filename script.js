@@ -691,13 +691,14 @@
     if (!btn || !inp) return
     async function saveBudget() {
       const val = parseFloat(inp.value)
-      await supabase.from('budget_settings').delete().eq('month', finMonth)
-      if (!isNaN(val) && val > 0) {
-        await supabase.from('budget_settings').insert({ month: finMonth, total: val })
-        finBudget = val
+      const newTotal = (!isNaN(val) && val > 0) ? val : null
+      const { data: existing } = await supabase.from('budget_settings').select('id').eq('month', finMonth).maybeSingle()
+      if (existing) {
+        await supabase.from('budget_settings').update({ total: newTotal }).eq('month', finMonth)
       } else {
-        finBudget = null
+        await supabase.from('budget_settings').insert({ month: finMonth, total: newTotal })
       }
+      finBudget = newTotal
       renderBudgetBar()
     }
     btn.addEventListener('click', saveBudget)
