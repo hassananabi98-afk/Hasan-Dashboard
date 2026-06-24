@@ -1970,8 +1970,7 @@
       loadAnalytics()
     })
     $('anl-next-btn').addEventListener('click', () => {
-      const cur = new Date().toISOString().slice(0,7)
-      if (anlMonth >= cur) return
+      if (anlMonth >= currentPeriodYM()) return
       const [y,m] = anlMonth.split('-').map(Number)
       let nm = m + 1; let ny = y
       if (nm > 12) { nm = 1; ny++ }
