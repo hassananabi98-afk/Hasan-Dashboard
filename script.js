@@ -1989,6 +1989,9 @@
     $('anl-next-btn').disabled = anlMonth >= cur
     $('anl-next-btn').style.opacity = anlMonth >= cur ? '0.3' : '1'
 
+    // ensure salary cycles are loaded so donut uses period boundaries, not calendar month
+    if (!finCycles.length) await loadFinanceCycles()
+
     // fetch in parallel — all expenses for quarterly + trend; prayers for missed section
     const [dtAll, expensesAll, cats, prayersAll] = await Promise.all([
       supabase.from('daily_tracking').select('*').order('date', {ascending:false}),
@@ -2071,7 +2074,7 @@
 
 
   function renderSpendChart(expenses, cats, month) {
-    const monthExp = expenses.filter(e => e.date.startsWith(month))
+    const monthExp = getPeriodTxns(expenses, month)
     const catMap = {}
     cats.forEach(c => catMap[c.name] = c.color)
 
