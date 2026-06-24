@@ -134,7 +134,7 @@
   /* ── LOG SECTIONS ── */
   .log-section { margin-bottom: 20px; }
   .log-section-title { font-size: 13px; font-weight: 600; color: var(--text2); letter-spacing: -0.01em; margin-bottom: 8px; padding: 0 2px; }
-  .log-card { background: var(--bg2); border-radius: var(--radius); overflow: hidden; }
+  .log-card { background: var(--bg2); border-radius: var(--radius); overflow: hidden; padding: 14px; }
 
   .log-row { display: flex; align-items: center; justify-content: space-between; padding: 13px 14px; border-bottom: 0.5px solid var(--border); }
   .log-row:last-child { border-bottom: none; }
@@ -313,7 +313,7 @@
   .type-opt.selected{background:rgba(59,130,246,.15);border-color:var(--accent);color:var(--accent)}
 
   /* ── ANALYTICS ──────────────────────────────────────── */
-  .anl-stat-row{display:flex;gap:8px;justify-content:space-between}
+  .anl-stat-row{display:flex;gap:8px;justify-content:space-between;padding:0 12px 12px 12px}
   .anl-stat{flex:1;background:var(--bg3);border-radius:var(--radius-sm);padding:12px 8px;text-align:center}
   .anl-stat-val{font-size:26px;font-weight:700;color:var(--text);font-family:ui-monospace,'Cascadia Code',monospace;line-height:1}
   .anl-stat-lbl{font-size:10px;color:var(--text3);margin-top:4px;font-weight:500;text-transform:uppercase;letter-spacing:.3px}
