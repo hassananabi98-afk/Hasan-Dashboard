@@ -603,7 +603,12 @@
   }
   function getPeriodDates(ym) {
     const cycle = finCycles.find(c => c.month === ym)
-    if (!cycle || !cycle.started_at) return { start: `${ym}-01`, end: firstDayOfNextMonth(ym), open: false }
+    if (!cycle || !cycle.started_at) {
+      const monthStart = `${ym}-01`
+      const monthEnd = firstDayOfNextMonth(ym)
+      const cap = finCycles.find(c => c.started_at > monthStart && c.started_at < monthEnd)
+      return { start: monthStart, end: cap ? cap.started_at : monthEnd, open: false }
+    }
     const idx = finCycles.indexOf(cycle)
     const next = finCycles[idx + 1]
     return { start: cycle.started_at, end: next ? next.started_at : null, open: !next }
