@@ -27,6 +27,7 @@
 | 7 | Finance UX improvements + repo cleanup | ✅ Done |
 | 8 | Finance polish — budget box style, Start New Month, Remaining display, salary cycle fix | ✅ Done |
 | 9 | Finance performance + salary cycle applied to cards | ✅ Done |
+| 10 | Analytics spacing polish | ✅ Done |
 
 ---
 
@@ -190,3 +191,11 @@ ALTER TABLE budget_settings ADD COLUMN IF NOT EXISTS started_at date;
 - Bug: after pressing Start New Month on Jun 24, June showed all Jun 1–30 expenses (overlapping with July)
 - Fix: when a month has no cycle of its own, check if a later cycle's `started_at` falls within that month and cap the end date there
 - Result: June shows Jun 1–23; July shows Jun 24 onwards — clean handover with no overlap
+
+---
+
+### Session 10 — Analytics Spacing Polish
+
+- `.anl-stat-row`: added `padding: 0 12px 12px 12px` — stat boxes no longer touch left/right edges of their card
+- `.anl-stat`: reduced `min-height` to `80px` and font-size to `20px` for more compact counter tiles
+- `.log-card`: added `padding: 14px` — title, emoji and content have breathing room from card borders
