@@ -28,6 +28,7 @@
 | 8 | Finance polish — budget box style, Start New Month, Remaining display, salary cycle fix | ✅ Done |
 | 9 | Finance performance + salary cycle applied to cards | ✅ Done |
 | 10 | Analytics spacing polish | ✅ Done |
+| 11 | Analytics period-aware filtering + navigation fix | ✅ Done |
 
 ---
 
@@ -191,6 +192,26 @@ ALTER TABLE budget_settings ADD COLUMN IF NOT EXISTS started_at date;
 - Bug: after pressing Start New Month on Jun 24, June showed all Jun 1–30 expenses (overlapping with July)
 - Fix: when a month has no cycle of its own, check if a later cycle's `started_at` falls within that month and cap the end date there
 - Result: June shows Jun 1–23; July shows Jun 24 onwards — clean handover with no overlap
+
+---
+
+### Session 11 — Analytics Period-Aware Filtering + Navigation Fix
+
+**Spending donut (renderSpendChart):**
+- Was filtering by calendar month (`startsWith`); now uses `getPeriodTxns(expenses, month)` so the donut only shows expenses within the salary cycle period, matching Finance behaviour
+
+**Yearly trend chart (renderTrendChart):**
+- Same fix: each bar now uses `getPeriodTxns(expenses, m)` per month — no cross-period double-counting
+
+**Analytics navigation:**
+- `anlMonth` now defaults to `currentPeriodYM()` on first visit (not current calendar month), so the chart opens on the active salary period
+- Next-button cap changed from current calendar month to `currentPeriodYM()` — allows navigating forward to a period whose cycle started mid-last-month
+- Cap stored in `anlPeriodYM` (cached in `loadAnalytics`) so the click handler uses a reliable value rather than calling `currentPeriodYM()` live
+- `loadFinanceCycles()` is called inside `loadAnalytics()` when `finCycles` is empty, so cycle data is available even if Finance tab was never visited
+
+**Static stats:**
+- Smoke and reading stats always show the current calendar month (`currentYM()`) regardless of which spending period is being viewed — navigating the chart no longer changes them
+- Prayer missed counter was already static (no month parameter) — no change needed
 
 ---
 

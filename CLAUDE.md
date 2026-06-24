@@ -58,6 +58,14 @@ docs/
 - `finTxnsLoaded` flag — card transactions fetched once on first Finance visit and cached; add/delete/edit handlers patch `finAllTxns` in memory
 - Pressing **Start New Month** upserts next month's row with `started_at = today`; expenses for the period run from that date until the next cycle's `started_at`
 
+### Analytics period filtering
+- `anlMonth` — currently viewed period in Analytics; defaults to `currentPeriodYM()` on first visit
+- `anlPeriodYM` — cached result of `currentPeriodYM()` set each time `loadAnalytics` runs; used as the next-button cap so the click handler has a reliable value
+- `renderSpendChart` and `renderTrendChart` both use `getPeriodTxns(expenses, month)` — same salary cycle boundaries as Finance, not calendar month
+- `loadAnalytics` calls `loadFinanceCycles()` if `finCycles` is empty, ensuring cycle data is available when Analytics is visited before Finance
+- Smoke and reading stat tiles always use `currentYM()` (current calendar month) — unaffected by chart navigation
+- Prayer missed counter has no month parameter — always shows all-time missed prayers up to today
+
 ### Dirty-flag pattern
 - Today, Health, Analytics tabs only reload from Supabase when data changed since last visit
 - Flags: `todayDirty`, `healthDirty`, `analyticsNeedReload`
