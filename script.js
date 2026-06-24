@@ -1896,6 +1896,7 @@
   // ── ANALYTICS ────────────────────────────────────────────
   let anlLoaded = false
   let anlMonth = null // set to currentPeriodYM() after cycles load on first visit
+  let anlPeriodYM = null // cached cap for next-button; set in loadAnalytics
   let anlSpendChart = null, anlTrendChart = null
   let anlExpensesAll = [], anlPrayersAll = []
 
@@ -1970,7 +1971,7 @@
       loadAnalytics()
     })
     $('anl-next-btn').addEventListener('click', () => {
-      if (anlMonth >= currentPeriodYM()) return
+      if (!anlPeriodYM || anlMonth >= anlPeriodYM) return
       const [y,m] = anlMonth.split('-').map(Number)
       let nm = m + 1; let ny = y
       if (nm > 12) { nm = 1; ny++ }
@@ -1990,9 +1991,9 @@
     $('anl-month-lbl').textContent = anlFmtMonth(anlMonth)
 
     // cap next at current period — period can be ahead of calendar month when cycle starts mid-month
-    const periodYM = currentPeriodYM()
-    $('anl-next-btn').disabled = anlMonth >= periodYM
-    $('anl-next-btn').style.opacity = anlMonth >= periodYM ? '0.3' : '1'
+    anlPeriodYM = currentPeriodYM()
+    $('anl-next-btn').disabled = anlMonth >= anlPeriodYM
+    $('anl-next-btn').style.opacity = anlMonth >= anlPeriodYM ? '0.3' : '1'
 
     // fetch in parallel — all expenses for quarterly + trend; prayers for missed section
     const [dtAll, expensesAll, cats, prayersAll] = await Promise.all([
@@ -2005,8 +2006,8 @@
     anlExpensesAll = expensesAll.data || []
     anlPrayersAll  = prayersAll.data  || []
     renderMissedPrayers(anlPrayersAll)
-    renderSmokeStats(dtAll.data || [], anlMonth)
-    renderReadingStats(dtAll.data || [], anlMonth)
+    renderSmokeStats(dtAll.data || [], currentYM())
+    renderReadingStats(dtAll.data || [], currentYM())
     renderSpendChart(anlExpensesAll, cats.data || [], anlMonth)
     renderTrendChart(anlExpensesAll, cats.data || [])
   }
