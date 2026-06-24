@@ -614,6 +614,10 @@
     const next = finCycles[idx + 1]
     return { start: cycle.started_at, end: next ? next.started_at : null, open: !next }
   }
+  function getPeriodTxns(txns, ym) {
+    const { start: ps, end: pe, open: po } = getPeriodDates(ym)
+    return txns.filter(t => t.date >= ps && (po || t.date < pe))
+  }
   function fmtAmount(n) { return `BHD ${Number(n).toFixed(3)}` }
   function fmtDateShort(ds) {
     const [y,m,d] = ds.split('-').map(Number)
@@ -1068,10 +1072,10 @@
       const { data: allTxns } = await supabase.from('card_transactions').select('*').order('date', { ascending: false })
       finAllTxns = allTxns || []
       finTxnsLoaded = true
-      finMonthTxns = finAllTxns.filter(t => t.date.startsWith(finMonth))
+      finMonthTxns = getPeriodTxns(finAllTxns, finMonth)
       renderCardSections()
     } else if (finCards.length > 0) {
-      finMonthTxns = finAllTxns.filter(t => t.date.startsWith(finMonth))
+      finMonthTxns = getPeriodTxns(finAllTxns, finMonth)
       renderCardSections()
     }
   }
@@ -1087,7 +1091,7 @@
     if (startBtn) startBtn.style.display = ym === currentPeriodYM() ? '' : 'none'
     cancelDeleteConfirm()
     closeExpenseForm()
-    finMonthTxns = finAllTxns.filter(t => t.date.startsWith(ym))
+    finMonthTxns = getPeriodTxns(finAllTxns, ym)
   }
 
   $('fin-prev').addEventListener('click', () => {
@@ -1485,7 +1489,7 @@
     if (error) { showToast('Could not add transaction', true); btn.disabled = false; btn.textContent = 'Save'; return }
     finAllTxns.unshift(data)
     finAllTxns.sort((a,b) => b.date.localeCompare(a.date))
-    finMonthTxns = finAllTxns.filter(t => t.date.startsWith(finMonth))
+    finMonthTxns = getPeriodTxns(finAllTxns, finMonth)
     closeCardForm(cardId)
     renderCardSections()
     showToast('Transaction added ✓')
@@ -1535,7 +1539,7 @@
       if (error) { btn.textContent = 'Save'; btn.disabled = false; showToast('Update failed', true); return }
       const idx = finAllTxns.findIndex(x => x.id === id)
       if (idx !== -1) finAllTxns[idx] = { ...finAllTxns[idx], label, amount, date, card_id, type, category }
-      finMonthTxns = finAllTxns.filter(t => t.date.startsWith(finMonth))
+      finMonthTxns = getPeriodTxns(finAllTxns, finMonth)
       renderCardSections()
     })
   }
@@ -1554,7 +1558,7 @@
       const { error } = await supabase.from('card_transactions').delete().eq('id', id)
       if (error) { showToast('Delete failed', true); return }
       finAllTxns = finAllTxns.filter(t => t.id !== id)
-      finMonthTxns = finAllTxns.filter(t => t.date.startsWith(finMonth))
+      finMonthTxns = getPeriodTxns(finAllTxns, finMonth)
       pendingTxnDeleteId = null
       renderCardSections()
     })
