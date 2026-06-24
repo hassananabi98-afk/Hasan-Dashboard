@@ -53,7 +53,7 @@ docs/
 ### Budget cycle logic
 - `finCycles` — array of `{ month, started_at }` sorted ascending; loaded from `budget_settings` where `started_at` is not null
 - `currentPeriodYM()` — returns the most recent cycle's `month` where `started_at ≤ today`
-- `getPeriodDates(ym)` — returns `{ start, end, open }`: if `open=true`, no `.lt()` filter on expenses (cycle hasn't ended)
+- `getPeriodDates(ym)` — returns `{ start, end, open }`: if `open=true`, no `.lt()` filter on expenses (cycle hasn't ended). If the month has no cycle, checks whether a later cycle's `started_at` falls within the month and uses that as the cap (prevents overlap after pressing Start mid-month)
 - Pressing **Start New Month** upserts next month's row with `started_at = today`; expenses for the period run from that date until the next cycle's `started_at`
 
 ### Dirty-flag pattern

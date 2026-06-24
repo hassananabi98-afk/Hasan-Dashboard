@@ -25,7 +25,7 @@
 | 5 | Analytics — smoking, spending, monthly trends | ✅ Done |
 | 6 | Settings + calendar rings + Reading + polish + bug fixes | ✅ Done |
 | 7 | Finance UX improvements + repo cleanup | ✅ Done |
-| 8 | Finance polish — budget box violet style, Start New Month, Remaining display | ✅ Done |
+| 8 | Finance polish — budget box style, Start New Month, Remaining display, salary cycle fix | ✅ Done |
 
 ---
 
@@ -161,7 +161,15 @@ ALTER TABLE budget_settings ADD COLUMN IF NOT EXISTS started_at date;
 
 ---
 
-### Session 8 — Finance Polish
-- Budget box top line: switched from `border-top` inline style to `::before` pseudo-element (matches card rendering exactly)
-- Budget box border/shadow: matched to `.card-section` style (1px subtle border, directional shadow)
+### Session 8 — Finance Polish + Salary Cycle Fix
+
+**Budget box styling:**
+- Top line: switched from `border-top` inline style to `::before` pseudo-element (`height: 3px`, `position: absolute`) — matches card rendering exactly
+- Border/shadow: matched to `.card-section` style (`1px` subtle border at 25% opacity, `0 2px 12px` directional shadow)
 - Remaining amount: styled with `.card-tile-balance` (20px bold monospace, same as card balances)
+- Title "💰 Monthly Budget" and "Start New Month" button sit outside the violet box in a flex row above it
+
+**Salary cycle fix (`getPeriodDates`):**
+- Bug: after pressing Start New Month on Jun 24, June showed all Jun 1–30 expenses (overlapping with July)
+- Fix: when a month has no cycle of its own, check if a later cycle's `started_at` falls within that month and cap the end date there
+- Result: June shows Jun 1–23; July shows Jun 24 onwards — clean handover with no overlap
