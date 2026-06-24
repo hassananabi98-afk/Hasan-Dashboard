@@ -1895,7 +1895,7 @@
 
   // ── ANALYTICS ────────────────────────────────────────────
   let anlLoaded = false
-  let anlMonth = new Date().toISOString().slice(0,7)
+  let anlMonth = null // set to currentPeriodYM() after cycles load on first visit
   let anlSpendChart = null, anlTrendChart = null
   let anlExpensesAll = [], anlPrayersAll = []
 
@@ -1982,15 +1982,18 @@
   }
 
   async function loadAnalytics() {
-    $('anl-month-lbl').textContent = anlFmtMonth(anlMonth)
-
-    // disable next if at current month
-    const cur = new Date().toISOString().slice(0,7)
-    $('anl-next-btn').disabled = anlMonth >= cur
-    $('anl-next-btn').style.opacity = anlMonth >= cur ? '0.3' : '1'
-
     // ensure salary cycles are loaded so donut uses period boundaries, not calendar month
     if (!finCycles.length) await loadFinanceCycles()
+
+    // default to current salary period on first visit (not necessarily the calendar month)
+    if (!anlMonth) anlMonth = currentPeriodYM()
+
+    $('anl-month-lbl').textContent = anlFmtMonth(anlMonth)
+
+    // cap next at current period — period can be ahead of calendar month when cycle starts mid-month
+    const periodYM = currentPeriodYM()
+    $('anl-next-btn').disabled = anlMonth >= periodYM
+    $('anl-next-btn').style.opacity = anlMonth >= periodYM ? '0.3' : '1'
 
     // fetch in parallel — all expenses for quarterly + trend; prayers for missed section
     const [dtAll, expensesAll, cats, prayersAll] = await Promise.all([
@@ -2112,7 +2115,7 @@
     const year = new Date().getFullYear()
     const months = Array.from({length:12}, (_,i) => `${year}-${String(i+1).padStart(2,'0')}`)
     const labels = months.map(m => { const [y,mo] = m.split('-'); return new Date(y,mo-1,1).toLocaleDateString('en-US',{month:'short'}) })
-    const totals = months.map(m => parseFloat(expenses.filter(e => e.date.startsWith(m)).reduce((s,e)=>s+Number(e.amount),0).toFixed(3)))
+    const totals = months.map(m => parseFloat(getPeriodTxns(expenses, m).reduce((s,e)=>s+Number(e.amount),0).toFixed(3)))
 
     const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
     const textColor = isDark ? '#999999' : '#666666'
