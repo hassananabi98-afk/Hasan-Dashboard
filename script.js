@@ -1013,7 +1013,8 @@
       showToast('Could not add expense', true)
       btn.disabled = false; btn.textContent = 'Save'; return
     }
-    if (date.startsWith(finMonth)) {
+    const { start: ps, end: pe, open: po } = getPeriodDates(finMonth)
+    if (data.date >= ps && (po || data.date < pe)) {
       finExpenses.unshift(data)
       finExpenses.sort((a,b) => b.date.localeCompare(a.date) || (b.created_at||'').localeCompare(a.created_at||''))
     }
@@ -1046,7 +1047,6 @@
       const { data } = await supabase.from('categories').select('*').order('name')
       finCategories = data || []
     }
-    await loadFinanceCycles()
     const { data: budget } = await supabase.from('budget_settings').select('*').eq('month', finMonth).maybeSingle()
     finBudget = budget ? Number(budget.total) : null
     const { start: periodStart, end: periodEnd, open } = getPeriodDates(finMonth)
