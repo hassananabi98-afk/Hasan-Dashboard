@@ -570,6 +570,7 @@
   let finExpenses = []
   let finChartInstance = null
   let finLoaded = false
+  let finTxnsLoaded = false
   let finCycles = [] // { month, started_at } sorted by started_at asc
   let finCycleStartConfirming = false
   let selectedCatName = null
@@ -1047,24 +1048,29 @@
       const { data } = await supabase.from('categories').select('*').order('name')
       finCategories = data || []
     }
-    const { data: budget } = await supabase.from('budget_settings').select('*').eq('month', finMonth).maybeSingle()
-    finBudget = budget ? Number(budget.total) : null
     const { start: periodStart, end: periodEnd, open } = getPeriodDates(finMonth)
     let expQuery = supabase.from('expenses').select('*').gte('date', periodStart)
     if (!open) expQuery = expQuery.lt('date', periodEnd)
-    const { data: expenses } = await expQuery
-      .order('date', { ascending: false })
-      .order('created_at', { ascending: false })
+    expQuery = expQuery.order('date', { ascending: false }).order('created_at', { ascending: false })
+    const [{ data: budget }, { data: expenses }] = await Promise.all([
+      supabase.from('budget_settings').select('*').eq('month', finMonth).maybeSingle(),
+      expQuery
+    ])
+    finBudget = budget ? Number(budget.total) : null
     finExpenses = expenses || []
     renderBudgetBar(); renderExpenseList(); renderDonutChart()
-    // load cards once
+    // load cards + transactions once; updated in-memory on add/delete
     if (finCards.length === 0) {
       const { data: cards } = await supabase.from('cards').select('*').eq('visible', true).order('name')
       finCards = cards || []
     }
-    if (finCards.length > 0) {
+    if (finCards.length > 0 && !finTxnsLoaded) {
       const { data: allTxns } = await supabase.from('card_transactions').select('*').order('date', { ascending: false })
       finAllTxns = allTxns || []
+      finTxnsLoaded = true
+      finMonthTxns = finAllTxns.filter(t => t.date.startsWith(finMonth))
+      renderCardSections()
+    } else if (finCards.length > 0) {
       finMonthTxns = finAllTxns.filter(t => t.date.startsWith(finMonth))
       renderCardSections()
     }
