@@ -26,6 +26,7 @@
 | 6 | Settings + calendar rings + Reading + polish + bug fixes | ✅ Done |
 | 7 | Finance UX improvements + repo cleanup | ✅ Done |
 | 8 | Finance polish — budget box style, Start New Month, Remaining display, salary cycle fix | ✅ Done |
+| 9 | Finance performance + salary cycle applied to cards | ✅ Done |
 
 ---
 
@@ -158,6 +159,22 @@ ALTER TABLE budget_settings ADD COLUMN IF NOT EXISTS started_at date;
 - Removed `Code/`, `html/`, `md/` folders and `dashboard.md`
 - `index.html`, `script.js`, `style.css` at root are canonical files for GitHub Pages
 - Docs restructured into `CLAUDE.md`, `docs/schema.md`, `docs/style-guide.md`, `docs/changelog.md`
+
+---
+
+### Session 9 — Finance Performance + Card Cycle Alignment
+
+**Performance:**
+- `loadFinanceData`: budget + expenses queries now run in parallel via `Promise.all`
+- Card transactions (`finAllTxns`) loaded once on first Finance visit (`finTxnsLoaded` flag) instead of re-fetching all history on every refresh; add/delete/edit handlers keep the in-memory cache accurate
+- Removed redundant `loadFinanceCycles` call from inside `loadFinanceData` — cycles are only reloaded in `initFinanceTab` and after pressing Start New Month
+
+**Salary cycle applied to cards:**
+- Added `getPeriodTxns(txns, ym)` helper — mirrors `getPeriodDates` boundary logic for transaction filtering
+- All `finMonthTxns` assignments replaced with `getPeriodTxns(finAllTxns, finMonth)` so card spending from Jun 24 onwards correctly shows in July's card section (same as cash expenses)
+
+**Bug fix:**
+- After adding an expense, it was not appearing immediately when the expense date fell in a prior month but within the salary cycle (e.g. Jun 24 expense in July view). Fixed by replacing `date.startsWith(finMonth)` check in `submitExpense` with the same period boundary logic
 
 ---
 

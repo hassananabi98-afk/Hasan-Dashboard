@@ -54,6 +54,8 @@ docs/
 - `finCycles` — array of `{ month, started_at }` sorted ascending; loaded from `budget_settings` where `started_at` is not null
 - `currentPeriodYM()` — returns the most recent cycle's `month` where `started_at ≤ today`
 - `getPeriodDates(ym)` — returns `{ start, end, open }`: if `open=true`, no `.lt()` filter on expenses (cycle hasn't ended). If the month has no cycle, checks whether a later cycle's `started_at` falls within the month and uses that as the cap (prevents overlap after pressing Start mid-month)
+- `getPeriodTxns(txns, ym)` — filters a transactions array by the same period boundaries as `getPeriodDates`; used for all `finMonthTxns` assignments so card transactions follow the same salary cycle as expenses
+- `finTxnsLoaded` flag — card transactions fetched once on first Finance visit and cached; add/delete/edit handlers patch `finAllTxns` in memory
 - Pressing **Start New Month** upserts next month's row with `started_at = today`; expenses for the period run from that date until the next cycle's `started_at`
 
 ### Dirty-flag pattern
