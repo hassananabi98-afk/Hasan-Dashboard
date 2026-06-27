@@ -2036,16 +2036,16 @@
 
     const monthRows = rows.filter(r => r.date.startsWith(month))
     const smokedDays = monthRows.filter(r => r.smoked).length
-    const freeDays = monthRows.filter(r => !r.smoked).length
+    const freeDaysTotal = rows.filter(r => !r.smoked).length
 
     $('anl-smoke-free-streak').textContent = streak
-    $('anl-smoke-free-month').textContent = freeDays
     $('anl-smoke-days-month').textContent = smokedDays
+    $('anl-smoke-free-month').textContent = freeDaysTotal
 
     const statEls = document.querySelectorAll('#anl-smoke-card .anl-stat')
     statEls[0].className = 'anl-stat ' + (streak > 0 ? 'anl-smoke-free' : 'anl-smoke-bad')
-    statEls[1].className = 'anl-stat anl-smoke-free'
-    statEls[2].className = 'anl-stat ' + (smokedDays > 0 ? 'anl-smoke-bad' : '')
+    statEls[1].className = 'anl-stat ' + (smokedDays > 0 ? 'anl-smoke-bad' : '')
+    statEls[2].className = 'anl-stat anl-smoke-free'
   }
 
   function renderReadingStats(rows, month) {
