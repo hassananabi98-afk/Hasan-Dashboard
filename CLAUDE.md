@@ -38,6 +38,10 @@ docs/
 
 ## Key Code Patterns
 
+### Cache-busting (IMPORTANT)
+- `index.html` loads assets with a version query: `script.js?v=N` and `style.css?v=N`
+- **Always bump `N` on both lines after editing `script.js` or `style.css`** — GitHub Pages/browsers cache by full URL, so without a bump the old cached file is served indefinitely and changes look like they "didn't apply"
+
 ### Helper functions (script.js)
 - `darkTint(hex, w)` — blends hex color toward black; used for card/budget box backgrounds
 - `hexA(hex, a)` — returns hex color as `rgba(...)` at given opacity; used for borders and shadows
@@ -63,7 +67,9 @@ docs/
 - `anlPeriodYM` — cached result of `currentPeriodYM()` set each time `loadAnalytics` runs; used as the next-button cap so the click handler has a reliable value
 - `renderSpendChart` and `renderTrendChart` both use `getPeriodTxns(expenses, month)` — same salary cycle boundaries as Finance, not calendar month
 - `loadAnalytics` calls `loadFinanceCycles()` if `finCycles` is empty, ensuring cycle data is available when Analytics is visited before Finance
-- Smoke and reading stat tiles always use `currentYM()` (current calendar month) — unaffected by chart navigation
+- Smoke and reading "this month" tiles use `currentYM()` (current calendar month) — unaffected by chart navigation
+- Smoking tiles (left→right): day streak · smoked this month · smoke-free total. "Smoke-free total" is all-time (`rows.filter(r => !r.smoked).length`), not month-scoped
+- Reading tiles (left→right): day streak · days this month (plain) · days total (green)
 - Prayer missed counter has no month parameter — always shows all-time missed prayers up to today
 
 ### Dirty-flag pattern

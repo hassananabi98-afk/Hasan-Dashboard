@@ -29,10 +29,29 @@
 | 9 | Finance performance + salary cycle applied to cards | ✅ Done |
 | 10 | Analytics spacing polish | ✅ Done |
 | 11 | Analytics period-aware filtering + navigation fix | ✅ Done |
+| 12 | Smoking analytics redesign + reading colour swap | ✅ Done |
 
 ---
 
 ## Session Notes
+
+### Session 12 — Smoking Analytics Redesign + Reading Colour Swap
+
+**Smoking card (`renderSmokeStats`, index.html):**
+- Stat tiles reordered: Day Streak · **Smoked This Month** (middle) · **Smoke-Free Total** (right) — middle and right swapped
+- "Smoke-free this month" → **"smoke-free total"**: now counts all-time logged days where `smoked = false` (`rows.filter(r => !r.smoked).length`) instead of the current-month filter — keeps accumulating across months
+- Colour classes follow the new order: middle red when `smokedDays > 0`, right always green
+
+**Reading card (`renderReadingStats`):**
+- Colours swapped: **"days total"** now green (`total > 0`), **"days this month"** now plain — streak tile unchanged
+
+**Cache-busting:**
+- Bumped `script.js` / `style.css` query string from `?v=17` → `?v=18` in `index.html`
+- Lesson: this project relies on the `?v=N` version query to force browsers to refetch assets — **always bump it when editing JS/CSS**, otherwise the cached copy is served indefinitely and changes appear "not applied"
+
+**No DB changes** — all data already fetched via the existing `daily_tracking` query.
+
+---
 
 ### Session 1 — Supabase Setup + Calendar Shell
 - Anonymous sign-ins off by default → enabled via Auth → Sign In Providers
