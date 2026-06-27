@@ -2072,7 +2072,8 @@
     const card = document.getElementById('anl-reading-card')
     const statEls = card ? card.querySelectorAll('.anl-stat') : []
     if (statEls[0]) statEls[0].className = 'anl-stat ' + (streak > 0 ? 'anl-smoke-free' : '')
-    if (statEls[1]) statEls[1].className = 'anl-stat ' + (monthCount > 0 ? 'anl-smoke-free' : '')
+    if (statEls[1]) statEls[1].className = 'anl-stat'
+    if (statEls[2]) statEls[2].className = 'anl-stat ' + (total > 0 ? 'anl-smoke-free' : '')
   }
 
 
