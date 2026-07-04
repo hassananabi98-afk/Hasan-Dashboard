@@ -30,10 +30,23 @@
 | 10 | Analytics spacing polish | ✅ Done |
 | 11 | Analytics period-aware filtering + navigation fix | ✅ Done |
 | 12 | Smoking analytics redesign + reading colour swap | ✅ Done |
+| 13 | Calendar last-day-of-month ring bug fix | ✅ Done |
 
 ---
 
 ## Session Notes
+
+### Session 13 — Calendar Last-Day-of-Month Ring Bug Fix
+
+**Bug:** the last day of each month never showed its coloured rings on the Calendar (e.g. June 30 was blank despite logged data).
+
+**Cause (`loadCalDots`):** the date-range upper bound was built with `new Date(year, month+1, 0).toISOString().slice(0,10)`. `new Date(...)` returns the last day at **local** midnight, but `.toISOString()` converts to **UTC** — in Bahrain (UTC+3) that shifts midnight back to 21:00 the previous day, so `end` became the 29th/30th instead of the 30th/31st, and the `date <= end` filter dropped the final day.
+
+**Fix:** build `end` from local parts — `` `${ym}-${String(new Date(year, month+1, 0).getDate()).padStart(2,'0')}` `` — no `toISOString()`, so no UTC shift.
+
+**Bumped** `?v=18` → `?v=19`. No DB changes.
+
+---
 
 ### Session 12 — Smoking Analytics Redesign + Reading Colour Swap
 

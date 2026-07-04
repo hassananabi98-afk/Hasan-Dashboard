@@ -383,7 +383,8 @@
   async function loadCalDots(year, month) {
     const ym = `${year}-${String(month+1).padStart(2,'0')}`
     const start = `${ym}-01`
-    const end = new Date(year, month + 1, 0).toISOString().slice(0, 10) // actual last day of month
+    const lastDay = new Date(year, month + 1, 0).getDate() // actual number of days in month
+    const end = `${ym}-${String(lastDay).padStart(2, '0')}` // local date string — avoids toISOString UTC shift dropping the last day
     const [prayRes, mealRes, dtRes] = await Promise.all([
       supabase.from('prayers').select('*').filter('date','gte',start).filter('date','lte',end),
       supabase.from('meals').select('*').filter('date','gte',start).filter('date','lte',end),
