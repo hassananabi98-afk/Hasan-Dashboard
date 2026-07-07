@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Dashboard</title>
-<link rel="stylesheet" href="style.css?v=21">
+<link rel="stylesheet" href="style.css?v=22">
 </head>
 <body>
 
@@ -73,7 +73,6 @@
       <div class="cal-ring-legend">
         <div class="cal-ring-legend-item"><div class="cal-ring-legend-dot" style="background:#a855f7"></div>Prayers</div>
         <div class="cal-ring-legend-item"><div class="cal-ring-legend-dot" style="background:#f97316"></div>Meals</div>
-        <div class="cal-ring-legend-item"><div class="cal-ring-legend-dot" style="background:#ef4444"></div>Smoking</div>
         <div class="cal-ring-legend-item"><div class="cal-ring-legend-dot" style="background:#3b82f6"></div>Reading</div>
       </div>
       </div>
@@ -105,22 +104,6 @@
             <div class="log-row"><span class="log-row-label">Breakfast</span><button class="toggle" id="tog-breakfast"><div class="toggle-thumb"></div></button></div>
             <div class="log-row"><span class="log-row-label">Lunch</span><button class="toggle" id="tog-lunch"><div class="toggle-thumb"></div></button></div>
             <div class="log-row"><span class="log-row-label">Dinner</span><button class="toggle" id="tog-dinner"><div class="toggle-thumb"></div></button></div>
-          </div>
-        </div>
-
-        <!-- Smoking -->
-        <div class="log-section">
-          <div class="log-section-title">🚬 Smoking</div>
-          <div class="log-card">
-            <div class="log-row"><span class="log-row-label">Smoked today</span><button class="toggle" id="tog-smoked"><div class="toggle-thumb"></div></button></div>
-            <div class="log-row">
-              <span class="log-row-label">Patches used</span>
-              <div class="stepper">
-                <button class="step-btn" id="patches-dec">−</button>
-                <span class="step-val" id="patches-val">0</span>
-                <button class="step-btn" id="patches-inc">+</button>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -185,21 +168,6 @@
           <div class="log-row"><span class="log-row-label">Breakfast</span><button class="toggle" id="ttog-breakfast"><div class="toggle-thumb"></div></button></div>
           <div class="log-row"><span class="log-row-label">Lunch</span><button class="toggle" id="ttog-lunch"><div class="toggle-thumb"></div></button></div>
           <div class="log-row"><span class="log-row-label">Dinner</span><button class="toggle" id="ttog-dinner"><div class="toggle-thumb"></div></button></div>
-        </div>
-      </div>
-
-      <div class="log-section">
-        <div class="log-section-title">🚬 Smoking</div>
-        <div class="log-card">
-          <div class="log-row"><span class="log-row-label">Smoked today</span><button class="toggle" id="ttog-smoked"><div class="toggle-thumb"></div></button></div>
-          <div class="log-row">
-            <span class="log-row-label">Patches used</span>
-            <div class="stepper">
-              <button class="step-btn" id="tpatches-dec">−</button>
-              <span class="step-val" id="tpatches-val">0</span>
-              <button class="step-btn" id="tpatches-inc">+</button>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -405,18 +373,6 @@
             <div class="anl-stat"><div class="anl-stat-val" id="anl-reading-total">—</div><div class="anl-stat-lbl">days total</div></div>
           </div>
         </div>
-        <!-- Smoking -->
-        <div class="log-card" style="margin-bottom:14px" id="anl-smoke-card">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-            <span style="font-size:22px">🚬</span>
-            <span style="font-size:16px;font-weight:600;color:var(--text)">Smoking</span>
-          </div>
-          <div class="anl-stat-row" id="anl-smoke-stats">
-            <div class="anl-stat"><div class="anl-stat-val" id="anl-smoke-free-streak">—</div><div class="anl-stat-lbl">day streak</div></div>
-            <div class="anl-stat"><div class="anl-stat-val" id="anl-smoke-days-month">—</div><div class="anl-stat-lbl">smoked this month</div></div>
-            <div class="anl-stat"><div class="anl-stat-val" id="anl-smoke-free-month">—</div><div class="anl-stat-lbl">smoke-free total</div></div>
-          </div>
-        </div>
         <!-- Spending -->
         <div class="log-card" style="margin-bottom:14px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -482,13 +438,9 @@
         <!-- Analytics Visibility -->
         <div class="sett-section">
           <div class="sett-section-title">Analytics Visibility</div>
-          <div class="sett-row">
+          <div class="sett-row" style="border-bottom:none">
             <div class="sett-row-label">📚 Reading</div>
             <button class="sett-toggle" id="sett-reading-analytics-toggle"></button>
-          </div>
-          <div class="sett-row" style="border-bottom:none">
-            <div class="sett-row-label">🚬 Smoking</div>
-            <button class="sett-toggle" id="sett-smoke-analytics-toggle"></button>
           </div>
         </div>
 
@@ -535,6 +487,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script type="module" src="script.js?v=21"></script>
+<script type="module" src="script.js?v=22"></script>
 </body>
 </html>

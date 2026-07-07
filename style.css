@@ -325,7 +325,6 @@
   .anl-legend-name{flex:1}
   .anl-legend-amt{font-family:ui-monospace,'Cascadia Code',monospace;color:var(--text2);font-size:13px}
   .anl-smoke-free .anl-stat-val{color:#22c55e}
-  .anl-smoke-bad .anl-stat-val{color:var(--danger)}
 
   /* ── CARDS ───────────────────────────────────────────── */
   .card-tile{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:8px}
@@ -441,7 +440,6 @@
   }
   .anl-stat-val{font-size:28px}
   .anl-smoke-free .anl-stat-val{color:#22c55e}
-  .anl-smoke-bad .anl-stat-val{color:var(--danger)}
 
   /* Health tiles */
   .hlth-type-tile{

@@ -9,8 +9,6 @@ All tables use `authenticated` role with RLS enabled (`USING (true) WITH CHECK (
 |--------|------|-------|
 | id | UUID | Primary key |
 | date | DATE | Unique per day |
-| smoked | BOOLEAN | Did you smoke today |
-| patches | INTEGER | Nicotine patches used |
 | reading | BOOLEAN | Read today |
 | notes | TEXT | General day notes |
 | notes_tomorrow | TEXT | Note written today for tomorrow |

@@ -188,21 +188,10 @@
   const prayerKeys = ['fajr','dhuhr','asr','maghrib','isha']
   const mealKeys = ['breakfast','lunch','dinner']
 
-  ;[...prayerKeys, ...mealKeys, 'smoked', 'reading'].forEach(k => {
+  ;[...prayerKeys, ...mealKeys, 'reading'].forEach(k => {
     bindToggle(`tog-${k}`)
     bindToggle(`ttog-${k}`)
   })
-
-  // ── STEPPER HELPER ───────────────────────────────────────
-  function bindStepper(decId, incId, valId) {
-    let v = 0
-    $(decId).addEventListener('click', () => { if (v > 0) { v--; $(valId).textContent = v } })
-    $(incId).addEventListener('click', () => { v++; $(valId).textContent = v })
-    return { get: () => v, set: (n) => { v = n; $(valId).textContent = v } }
-  }
-
-  const patchesStepper = bindStepper('patches-dec', 'patches-inc', 'patches-val')
-  const tpatchesStepper = bindStepper('tpatches-dec', 'tpatches-inc', 'tpatches-val')
 
   // ── SUPPLEMENTS ──────────────────────────────────────────
   // supplements state: { id (from DB or temp), name, active (bool for this day) }
@@ -225,7 +214,7 @@
         e.currentTarget.classList.toggle('on')
         state[i].taken = e.currentTarget.classList.contains('on')
         // auto-save on supplement toggle
-        if (saveCtx) scheduleAutoSave(saveCtx.dateStr, saveCtx.prefix, saveCtx.stepperCtrl, saveCtx.stateRef)
+        if (saveCtx) scheduleAutoSave(saveCtx.dateStr, saveCtx.prefix, saveCtx.stateRef)
       })
       card.insertBefore(row, addBtn)
     })
@@ -264,10 +253,9 @@
   bindAddSupp('tadd-supp-btn', 'tadd-supp-input-row', 'tadd-supp-input', 'tadd-supp-confirm', 'tsupp-card', tsuppState, 'tadd-supp-')
 
   // ── LOAD DAY DATA ────────────────────────────────────────
-  async function loadDayData(dateStr, prefix, stepperCtrl, stateRef, cardId) {
+  async function loadDayData(dateStr, prefix, stateRef, cardId) {
     // reset UI
-    ;[...prayerKeys, ...mealKeys, 'smoked', 'reading'].forEach(k => setToggle(`${prefix}tog-${k}`, false))
-    stepperCtrl.set(0)
+    ;[...prayerKeys, ...mealKeys, 'reading'].forEach(k => setToggle(`${prefix}tog-${k}`, false))
     stateRef.length = 0
 
     // load supplement list
@@ -282,7 +270,7 @@
     supplements.forEach(s => {
       stateRef.push({ id: s.id, name: s.name, taken: !!takenMap[s.id] })
     })
-    const saveCtx = { dateStr, prefix, stepperCtrl, stateRef }
+    const saveCtx = { dateStr, prefix, stateRef }
     renderSuppRows(cardId, stateRef, prefix === '' ? '' : 'tadd-supp-', saveCtx)
 
     // load prayers
@@ -296,9 +284,7 @@
     // load daily tracking
     const { data: dt } = await supabase.from('daily_tracking').select('*').eq('date', dateStr).maybeSingle()
     if (dt) {
-      setToggle(`${prefix}tog-smoked`, dt.smoked)
       setToggle(`${prefix}tog-reading`, dt.reading || false)
-      stepperCtrl.set(dt.patches || 0)
       if (prefix === '') {
         $('notes-today').value = dt.notes || ''
         $('notes-tomorrow').value = dt.notes_tomorrow || ''
@@ -316,12 +302,11 @@
   // Captures the current UI state up front so a save always writes what was
   // on screen when it was triggered, even if the user has since navigated to
   // another day and the shared DOM/steppers/stateRef have moved on.
-  function captureDaySnapshot(prefix, stepperCtrl, stateRef) {
+  function captureDaySnapshot(prefix, stateRef) {
     return {
       toggles: Object.fromEntries(
-        [...prayerKeys, ...mealKeys, 'smoked', 'reading'].map(k => [k, getToggle(`${prefix}tog-${k}`)])
+        [...prayerKeys, ...mealKeys, 'reading'].map(k => [k, getToggle(`${prefix}tog-${k}`)])
       ),
-      patches: stepperCtrl.get(),
       notes: prefix === '' ? $('notes-today').value : $('tnotes-today').value,
       notesTomorrow: prefix === '' ? $('notes-tomorrow').value : $('tnotes-tomorrow').value,
       supplements: stateRef.map(s => ({ id: s.id, taken: s.taken })),
@@ -348,9 +333,7 @@
       // daily tracking upsert
       await supabase.from('daily_tracking').upsert({
         date: dateStr,
-        smoked: snapshot.toggles.smoked,
         reading: snapshot.toggles.reading,
-        patches: snapshot.patches,
         notes: snapshot.notes,
         notes_tomorrow: snapshot.notesTomorrow,
       }, { onConflict: 'date' })
@@ -377,7 +360,7 @@
   const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
   const DAYS = ['S','M','T','W','T','F','S']
   let calYear, calMonth
-  let calDotData = {} // key: 'YYYY-MM-DD', value: { prayers, meals, smoke, reading }
+  let calDotData = {} // key: 'YYYY-MM-DD', value: { prayers, meals, reading }
   let calNeedsRefresh = false   // set true after any day save
   let todayNeedsRefresh = false  // set true after any day save
   let hlthNeedsRefresh = false   // set true after health session add/delete
@@ -385,14 +368,14 @@
 
   // ── AUTO-SAVE ─────────────────────────────────────────────
   const autoSaveTimers = {}
-  function scheduleAutoSave(dateStr, prefix, stepperCtrl, stateRef) {
+  function scheduleAutoSave(dateStr, prefix, stateRef) {
     // Keyed by date (not just prefix) so navigating to a different day
     // doesn't cancel a still-pending save for the day just left, and the
     // snapshot is captured now — before the shared DOM/stateRef can be
     // reset by opening another day — so a delayed save can't write the
     // wrong day's data.
     const key = `${prefix || 'day'}:${dateStr}`
-    const snapshot = captureDaySnapshot(prefix, stepperCtrl, stateRef)
+    const snapshot = captureDaySnapshot(prefix, stateRef)
     clearTimeout(autoSaveTimers[key])
     autoSaveTimers[key] = setTimeout(() => {
       delete autoSaveTimers[key]
@@ -421,7 +404,6 @@
     })
     ;(dtRes.data||[]).forEach(r => {
       if (!calDotData[r.date]) calDotData[r.date] = {}
-      calDotData[r.date].smoke = r.smoked
       calDotData[r.date].reading = r.reading || false
     })
   }
@@ -457,7 +439,6 @@
       const segments = []
       if (dots.prayers) segments.push('#a855f7')
       if (dots.meals)   segments.push('#f97316')
-      if (dots.smoke)   segments.push('#ef4444')
       if (dots.reading) segments.push('#3b82f6')
 
       const svgNS = 'http://www.w3.org/2000/svg'
@@ -531,30 +512,23 @@
   // time so these listeners, which stay attached to the same static DOM
   // elements for the life of the page, always target whichever day is
   // currently displayed instead of accumulating stale per-visit closures.
-  function wireAutoSave(prefix, getDateStr, stepperCtrl, stateRef) {
+  function wireAutoSave(prefix, getDateStr, stateRef) {
     // Toggles
-    const toggleIds = [...prayerKeys, ...mealKeys, 'smoked', 'reading'].map(k => `${prefix}tog-${k}`)
+    const toggleIds = [...prayerKeys, ...mealKeys, 'reading'].map(k => `${prefix}tog-${k}`)
     toggleIds.forEach(id => {
       const el = $(id); if (!el) return
-      el.addEventListener('click', () => scheduleAutoSave(getDateStr(), prefix, stepperCtrl, stateRef), { capture: true })
-    })
-    // Stepper
-    const decId = prefix === '' ? 'dec-patches' : 'tdec-patches'
-    const incId = prefix === '' ? 'inc-patches' : 'tinc-patches'
-    ;[decId, incId].forEach(id => {
-      const el = $(id); if (!el) return
-      el.addEventListener('click', () => scheduleAutoSave(getDateStr(), prefix, stepperCtrl, stateRef))
+      el.addEventListener('click', () => scheduleAutoSave(getDateStr(), prefix, stateRef), { capture: true })
     })
     // Notes
     const notesId = prefix === '' ? 'notes-today' : 'tnotes-today'
     const tmrwId  = prefix === '' ? 'notes-tomorrow' : 'tnotes-tomorrow'
     ;[notesId, tmrwId].forEach(id => {
       const el = $(id); if (!el) return
-      el.addEventListener('input', () => scheduleAutoSave(getDateStr(), prefix, stepperCtrl, stateRef))
+      el.addEventListener('input', () => scheduleAutoSave(getDateStr(), prefix, stateRef))
     })
   }
-  wireAutoSave('', () => currentDayStr, patchesStepper, suppState)
-  wireAutoSave('t', () => todayStr(), tpatchesStepper, tsuppState)
+  wireAutoSave('', () => currentDayStr, suppState)
+  wireAutoSave('t', () => todayStr(), tsuppState)
 
   async function openDayView(y, m, d) {
     currentDayStr = toDateStr(y, m, d)
@@ -563,7 +537,7 @@
     $('calendar-view').style.display = 'none'
     $('day-view').classList.add('active')
     $('top-title').textContent = 'Day'
-    await loadDayData(currentDayStr, '', patchesStepper, suppState, 'supp-card')
+    await loadDayData(currentDayStr, '', suppState, 'supp-card')
   }
 
   $('day-back').addEventListener('click', () => {
@@ -572,16 +546,16 @@
     $('top-title').textContent = 'Calendar'
   })
 
-  $('save-btn').addEventListener('click', () => saveDayData(currentDayStr, '', captureDaySnapshot('', patchesStepper, suppState)))
+  $('save-btn').addEventListener('click', () => saveDayData(currentDayStr, '', captureDaySnapshot('', suppState)))
 
   // ── TODAY TAB ────────────────────────────────────────────
   async function loadTodayTab() {
     const now = new Date()
     $('today-date-label').textContent = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-    await loadDayData(todayStr(), 't', tpatchesStepper, tsuppState, 'tsupp-card')
+    await loadDayData(todayStr(), 't', tsuppState, 'tsupp-card')
   }
 
-  $('tsave-btn').addEventListener('click', () => saveDayData(todayStr(), 't', captureDaySnapshot('t', tpatchesStepper, tsuppState)))
+  $('tsave-btn').addEventListener('click', () => saveDayData(todayStr(), 't', captureDaySnapshot('t', tsuppState)))
 
   // reload today data when switching to today tab
 
@@ -1982,8 +1956,6 @@
 
   async function initAnalytics() {
     // apply visibility
-    const smokeCard = document.getElementById('anl-smoke-card')
-    if (smokeCard) smokeCard.style.display = showSmokeInAnalytics ? '' : 'none'
     const readCard = document.getElementById('anl-reading-card')
     if (readCard) readCard.style.display = showReadingInAnalytics ? '' : 'none'
 
@@ -2031,7 +2003,6 @@
     anlExpensesAll = expensesAll.data || []
     anlPrayersAll  = prayersAll.data  || []
     renderMissedPrayers(anlPrayersAll)
-    renderSmokeStats(dtAll.data || [], currentYM())
     renderReadingStats(dtAll.data || [], currentYM())
     renderSpendChart(anlExpensesAll, cats.data || [], anlMonth)
     renderTrendChart(anlExpensesAll, cats.data || [])
@@ -2046,31 +2017,6 @@
 
   function localDateStr(d) {
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
-  }
-
-  function renderSmokeStats(rows, month) {
-    const smokeSet = new Set(rows.filter(r => r.smoked).map(r => r.date))
-    const loggedSet = new Set(rows.map(r => r.date))
-    // streak = logged smoke-free days in a row from most recent — gaps (unlogged days) don't break it
-    const sortedDates = [...loggedSet].sort().reverse()
-    let streak = 0
-    for (const ds of sortedDates) {
-      if (smokeSet.has(ds)) break
-      streak++
-    }
-
-    const monthRows = rows.filter(r => r.date.startsWith(month))
-    const smokedDays = monthRows.filter(r => r.smoked).length
-    const freeDaysTotal = rows.filter(r => !r.smoked).length
-
-    $('anl-smoke-free-streak').textContent = streak
-    $('anl-smoke-days-month').textContent = smokedDays
-    $('anl-smoke-free-month').textContent = freeDaysTotal
-
-    const statEls = document.querySelectorAll('#anl-smoke-card .anl-stat')
-    statEls[0].className = 'anl-stat ' + (streak > 0 ? 'anl-smoke-free' : 'anl-smoke-bad')
-    statEls[1].className = 'anl-stat ' + (smokedDays > 0 ? 'anl-smoke-bad' : '')
-    statEls[2].className = 'anl-stat anl-smoke-free'
   }
 
   function renderReadingStats(rows, month) {
@@ -2213,7 +2159,7 @@
       })), 'Card Transactions')
 
       addSheet(wb, (dt.data || []).map(r => ({
-        Date: r.date, Smoked: yn(r.smoked), Patches: yn(r.patches), Reading: yn(r.reading),
+        Date: r.date, Reading: yn(r.reading),
         Notes: r.notes || '', 'Notes Tomorrow': r.notes_tomorrow || ''
       })), 'Daily Tracking')
 
@@ -2439,24 +2385,10 @@
   }
 
   // ── Analytics Visibility ──
-  const SMOKE_ANL_KEY = 'hassan-smoke-anl-show'
-  let showSmokeInAnalytics = localStorage.getItem(SMOKE_ANL_KEY) !== 'false' // default: show
   const READING_ANL_KEY = 'hassan-reading-anl-show'
   let showReadingInAnalytics = localStorage.getItem(READING_ANL_KEY) !== 'false' // default: show
 
   function renderSettAnalytics() {
-    // Smoke toggle
-    const smokeBtn = document.getElementById('sett-smoke-analytics-toggle')
-    if (smokeBtn) {
-      smokeBtn.classList.toggle('on', showSmokeInAnalytics)
-      smokeBtn.addEventListener('click', () => {
-        showSmokeInAnalytics = !showSmokeInAnalytics
-        localStorage.setItem(SMOKE_ANL_KEY, showSmokeInAnalytics)
-        smokeBtn.classList.toggle('on', showSmokeInAnalytics)
-        const card = document.getElementById('anl-smoke-card')
-        if (card) card.style.display = showSmokeInAnalytics ? '' : 'none'
-      })
-    }
     // Reading toggle
     const readBtn = document.getElementById('sett-reading-analytics-toggle')
     if (readBtn) {
