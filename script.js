@@ -313,7 +313,22 @@
   }
 
   // ── SAVE DAY DATA ────────────────────────────────────────
-  async function saveDayData(dateStr, prefix, stepperCtrl, stateRef, silent = false) {
+  // Captures the current UI state up front so a save always writes what was
+  // on screen when it was triggered, even if the user has since navigated to
+  // another day and the shared DOM/steppers/stateRef have moved on.
+  function captureDaySnapshot(prefix, stepperCtrl, stateRef) {
+    return {
+      toggles: Object.fromEntries(
+        [...prayerKeys, ...mealKeys, 'smoked', 'reading'].map(k => [k, getToggle(`${prefix}tog-${k}`)])
+      ),
+      patches: stepperCtrl.get(),
+      notes: prefix === '' ? $('notes-today').value : $('tnotes-today').value,
+      notesTomorrow: prefix === '' ? $('notes-tomorrow').value : $('tnotes-tomorrow').value,
+      supplements: stateRef.map(s => ({ id: s.id, taken: s.taken })),
+    }
+  }
+
+  async function saveDayData(dateStr, prefix, snapshot, silent = false) {
     const btn = $(`${prefix === '' ? '' : 't'}save-btn`)
     if (!silent) { btn.disabled = true; btn.textContent = 'Saving...' }
 
@@ -321,34 +336,32 @@
       // prayers upsert
       await supabase.from('prayers').upsert({
         date: dateStr,
-        ...Object.fromEntries(prayerKeys.map(k => [k, getToggle(`${prefix}tog-${k}`)]))
+        ...Object.fromEntries(prayerKeys.map(k => [k, snapshot.toggles[k]]))
       }, { onConflict: 'date' })
 
       // meals upsert
       await supabase.from('meals').upsert({
         date: dateStr,
-        ...Object.fromEntries(mealKeys.map(k => [k, getToggle(`${prefix}tog-${k}`)]))
+        ...Object.fromEntries(mealKeys.map(k => [k, snapshot.toggles[k]]))
       }, { onConflict: 'date' })
 
       // daily tracking upsert
       await supabase.from('daily_tracking').upsert({
         date: dateStr,
-        smoked: getToggle(`${prefix}tog-smoked`),
-        reading: getToggle(`${prefix}tog-reading`),
-        patches: stepperCtrl.get(),
-        notes: prefix === '' ? $('notes-today').value : $('tnotes-today').value,
-        notes_tomorrow: prefix === '' ? $('notes-tomorrow').value : $('tnotes-tomorrow').value,
+        smoked: snapshot.toggles.smoked,
+        reading: snapshot.toggles.reading,
+        patches: snapshot.patches,
+        notes: snapshot.notes,
+        notes_tomorrow: snapshot.notesTomorrow,
       }, { onConflict: 'date' })
 
       // supplements: delete existing for this day, re-insert
       await supabase.from('supplements').delete().eq('date', dateStr)
-      if (stateRef.length > 0) {
+      if (snapshot.supplements.length > 0) {
         await supabase.from('supplements').insert(
-          stateRef.map(s => ({ date: dateStr, supplement_id: s.id, taken: s.taken }))
+          snapshot.supplements.map(s => ({ date: dateStr, supplement_id: s.id, taken: s.taken }))
         )
       }
-
-
 
       calNeedsRefresh = true
       anlNeedsRefresh = true
@@ -373,10 +386,17 @@
   // ── AUTO-SAVE ─────────────────────────────────────────────
   const autoSaveTimers = {}
   function scheduleAutoSave(dateStr, prefix, stepperCtrl, stateRef) {
-    const key = prefix || 'day'
+    // Keyed by date (not just prefix) so navigating to a different day
+    // doesn't cancel a still-pending save for the day just left, and the
+    // snapshot is captured now — before the shared DOM/stateRef can be
+    // reset by opening another day — so a delayed save can't write the
+    // wrong day's data.
+    const key = `${prefix || 'day'}:${dateStr}`
+    const snapshot = captureDaySnapshot(prefix, stepperCtrl, stateRef)
     clearTimeout(autoSaveTimers[key])
     autoSaveTimers[key] = setTimeout(() => {
-      saveDayData(dateStr, prefix, stepperCtrl, stateRef, true)
+      delete autoSaveTimers[key]
+      saveDayData(dateStr, prefix, snapshot, true)
     }, 100)
   }
 
@@ -547,7 +567,7 @@
     $('top-title').textContent = 'Calendar'
   })
 
-  $('save-btn').addEventListener('click', () => saveDayData(currentDayStr, '', patchesStepper, suppState))
+  $('save-btn').addEventListener('click', () => saveDayData(currentDayStr, '', captureDaySnapshot('', patchesStepper, suppState)))
 
   // ── TODAY TAB ────────────────────────────────────────────
   async function loadTodayTab() {
@@ -557,7 +577,7 @@
     wireAutoSave('t', todayStr(), tpatchesStepper, tsuppState)
   }
 
-  $('tsave-btn').addEventListener('click', () => saveDayData(todayStr(), 't', tpatchesStepper, tsuppState))
+  $('tsave-btn').addEventListener('click', () => saveDayData(todayStr(), 't', captureDaySnapshot('t', tpatchesStepper, tsuppState)))
 
   // reload today data when switching to today tab
 
