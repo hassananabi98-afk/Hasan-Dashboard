@@ -527,28 +527,34 @@
   // ── DAY VIEW ─────────────────────────────────────────────
   let currentDayStr = ''
 
-  function wireAutoSave(prefix, dateStr, stepperCtrl, stateRef) {
+  // Wired once per prefix (not per day-open) — `getDateStr` is read at click
+  // time so these listeners, which stay attached to the same static DOM
+  // elements for the life of the page, always target whichever day is
+  // currently displayed instead of accumulating stale per-visit closures.
+  function wireAutoSave(prefix, getDateStr, stepperCtrl, stateRef) {
     // Toggles
     const toggleIds = [...prayerKeys, ...mealKeys, 'smoked', 'reading'].map(k => `${prefix}tog-${k}`)
     toggleIds.forEach(id => {
       const el = $(id); if (!el) return
-      el.addEventListener('click', () => scheduleAutoSave(dateStr, prefix, stepperCtrl, stateRef), { capture: true })
+      el.addEventListener('click', () => scheduleAutoSave(getDateStr(), prefix, stepperCtrl, stateRef), { capture: true })
     })
     // Stepper
     const decId = prefix === '' ? 'dec-patches' : 'tdec-patches'
     const incId = prefix === '' ? 'inc-patches' : 'tinc-patches'
     ;[decId, incId].forEach(id => {
       const el = $(id); if (!el) return
-      el.addEventListener('click', () => scheduleAutoSave(dateStr, prefix, stepperCtrl, stateRef))
+      el.addEventListener('click', () => scheduleAutoSave(getDateStr(), prefix, stepperCtrl, stateRef))
     })
     // Notes
     const notesId = prefix === '' ? 'notes-today' : 'tnotes-today'
     const tmrwId  = prefix === '' ? 'notes-tomorrow' : 'tnotes-tomorrow'
     ;[notesId, tmrwId].forEach(id => {
       const el = $(id); if (!el) return
-      el.addEventListener('input', () => scheduleAutoSave(dateStr, prefix, stepperCtrl, stateRef))
+      el.addEventListener('input', () => scheduleAutoSave(getDateStr(), prefix, stepperCtrl, stateRef))
     })
   }
+  wireAutoSave('', () => currentDayStr, patchesStepper, suppState)
+  wireAutoSave('t', () => todayStr(), tpatchesStepper, tsuppState)
 
   async function openDayView(y, m, d) {
     currentDayStr = toDateStr(y, m, d)
@@ -558,7 +564,6 @@
     $('day-view').classList.add('active')
     $('top-title').textContent = 'Day'
     await loadDayData(currentDayStr, '', patchesStepper, suppState, 'supp-card')
-    wireAutoSave('', currentDayStr, patchesStepper, suppState)
   }
 
   $('day-back').addEventListener('click', () => {
@@ -574,7 +579,6 @@
     const now = new Date()
     $('today-date-label').textContent = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
     await loadDayData(todayStr(), 't', tpatchesStepper, tsuppState, 'tsupp-card')
-    wireAutoSave('t', todayStr(), tpatchesStepper, tsuppState)
   }
 
   $('tsave-btn').addEventListener('click', () => saveDayData(todayStr(), 't', captureDaySnapshot('t', tpatchesStepper, tsuppState)))
