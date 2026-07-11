@@ -418,6 +418,10 @@
     const now = new Date()
     if (calYear === undefined) { calYear = now.getFullYear(); calMonth = now.getMonth() }
     $('cal-month-label').textContent = `${MONTHS[calMonth]} ${calYear}`
+    // "Today" jump chip — only shown when viewing another month
+    const todayBtn = $('cal-today-btn')
+    if (todayBtn) todayBtn.style.display =
+      (calYear === now.getFullYear() && calMonth === now.getMonth()) ? 'none' : ''
     await loadCalDots(calYear, calMonth)
     const grid = $('cal-grid')
     grid.innerHTML = ''
@@ -506,10 +510,20 @@
       wrap.addEventListener('click', () => openDayView(calYear, calMonth, d))
       grid.appendChild(wrap)
     }
+
+    // re-trigger the fade-in on every render (class alone only animates once)
+    grid.classList.remove('cal-anim')
+    void grid.offsetWidth
+    grid.classList.add('cal-anim')
   }
 
   $('cal-prev').addEventListener('click', () => { calMonth--; if (calMonth < 0) { calMonth = 11; calYear-- } renderCalendar() })
   $('cal-next').addEventListener('click', () => { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++ } renderCalendar() })
+  $('cal-today-btn').addEventListener('click', () => {
+    const now = new Date()
+    calYear = now.getFullYear(); calMonth = now.getMonth()
+    renderCalendar()
+  })
 
   // ── DAY VIEW ─────────────────────────────────────────────
   let currentDayStr = ''

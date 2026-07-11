@@ -559,3 +559,81 @@
   }
   /* Spending donut sits centered with breathing room inside its card */
   #anl-spend-chart-wrap{height:210px}
+
+  /* ── 3D TOGGLES ────────────────────────────────────────── */
+  .toggle{
+    background:var(--bg3);
+    box-shadow:inset 0 2px 4px rgba(0,0,0,.18),inset 0 1px 2px rgba(0,0,0,.12);
+    transition:background .25s,box-shadow .25s
+  }
+  .toggle.on{
+    background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 82%,#fff),var(--accent));
+    box-shadow:inset 0 1px 2px rgba(255,255,255,.3),inset 0 -2px 4px rgba(0,0,0,.18),0 2px 8px color-mix(in srgb,var(--accent) 40%,transparent)
+  }
+  .toggle-thumb{
+    background:linear-gradient(180deg,#ffffff 0%,#eceef2 100%);
+    box-shadow:0 2px 5px rgba(0,0,0,.32),0 1px 1px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 1px rgba(0,0,0,.06);
+    transition:left .25s cubic-bezier(.3,1.4,.6,1),width .15s ease
+  }
+  /* iOS-style press: thumb stretches, then springs into place */
+  .toggle:active .toggle-thumb{width:26px}
+  .toggle.on:active .toggle-thumb{left:16px}
+  @media(prefers-color-scheme:dark){
+    .toggle{box-shadow:inset 0 2px 5px rgba(0,0,0,.55),inset 0 1px 2px rgba(0,0,0,.4)}
+    .toggle-thumb{background:linear-gradient(180deg,#ffffff 0%,#dfe1e6 100%)}
+  }
+
+  .sett-toggle{
+    box-shadow:inset 0 2px 4px rgba(0,0,0,.18),inset 0 1px 2px rgba(0,0,0,.12);
+    transition:background .25s,box-shadow .25s
+  }
+  .sett-toggle.on{
+    background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 82%,#fff),var(--accent));
+    box-shadow:inset 0 1px 2px rgba(255,255,255,.3),inset 0 -2px 4px rgba(0,0,0,.18),0 2px 8px color-mix(in srgb,var(--accent) 40%,transparent)
+  }
+  .sett-toggle::after{
+    background:linear-gradient(180deg,#ffffff 0%,#eceef2 100%);
+    box-shadow:0 2px 4px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.95);
+    transition:transform .25s cubic-bezier(.3,1.4,.6,1)
+  }
+  @media(prefers-color-scheme:dark){
+    .sett-toggle{box-shadow:inset 0 2px 5px rgba(0,0,0,.55),inset 0 1px 2px rgba(0,0,0,.4)}
+  }
+
+  /* ── CALENDAR MODERNIZATION ────────────────────────────── */
+  .cal-card{
+    background:var(--bg2);
+    border-radius:16px;
+    padding:12px 8px 4px;
+    box-shadow:0 1px 4px rgba(0,0,0,.07),0 8px 24px rgba(0,0,0,.05)
+  }
+  @media(prefers-color-scheme:dark){
+    .cal-card{box-shadow:0 1px 4px rgba(0,0,0,.35),0 8px 24px rgba(0,0,0,.3);border:1px solid var(--border)}
+  }
+  .cal-grid{gap:4px 2px}
+  .cal-dow{font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--text3)}
+  .cal-cell-wrap{transition:background .1s,transform .1s}
+  .cal-cell-wrap:active{transform:scale(.9)}
+  .cal-cell-wrap.today .cal-rings{filter:drop-shadow(0 2px 8px color-mix(in srgb,var(--accent) 45%,transparent))}
+  .cal-anim{animation:cal-in .22s ease}
+  @keyframes cal-in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+  .cal-title-wrap{display:flex;align-items:center;justify-content:center;gap:8px;min-width:0}
+  .cal-today-btn{
+    font-size:11px;font-weight:600;color:var(--accent);
+    background:var(--accent-bg);border:none;border-radius:12px;
+    padding:4px 10px;cursor:pointer;white-space:nowrap
+  }
+  .cal-today-btn:active{opacity:.7}
+  .cal-nav-btn{
+    border-radius:50%;
+    box-shadow:0 1px 3px rgba(0,0,0,.12),inset 0 1px 0 rgba(255,255,255,.06);
+    transition:transform .1s,background .1s
+  }
+  .cal-nav-btn:active{transform:scale(.92)}
+
+  .cal-ring-legend{gap:8px;padding:12px 4px 10px}
+  .cal-ring-legend-item{
+    background:var(--bg3);border-radius:20px;padding:4px 11px;
+    font-size:11px;font-weight:500;color:var(--text2)
+  }

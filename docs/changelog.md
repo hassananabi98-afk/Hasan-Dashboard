@@ -279,3 +279,22 @@ ALTER TABLE budget_settings ADD COLUMN IF NOT EXISTS started_at date;
 - `donutEntries` now also folds any category under 2.5% of the total into "Other" (in addition to the top-6 cap) — sliver arcs can't render legibly
 - Segment rounding is now scaled to segment share (<5% → 1px, <10% → 2px, else 4px) via scriptable `borderRadius`
 - Ring slightly thicker: cutout 72% → 70%
+
+---
+
+### Session 13 — 3D Toggles + Calendar Modernization
+
+**3D toggles (`.toggle` day/today views, `.sett-toggle` settings):**
+- Track: inset shadows for recessed depth (stronger in dark mode); on-state gets an accent gradient (light top edge), inner bevel and a soft accent glow
+- Thumb: white→gray gradient with layered drop shadow + top highlight — reads as a raised physical knob
+- iOS-style press feedback: thumb stretches wider while held (`:active`), springs into place with a bouncy cubic-bezier when released
+
+**Calendar page:**
+- Grid + legend now live in a floating `.cal-card` (16px radius, layered shadow, hairline border in dark mode)
+- Legend converted to pill chips
+- New "Today" chip beside the month label — appears only when viewing another month, tap to jump back (`#cal-today-btn`)
+- Month change plays a 220ms fade/rise animation (`.cal-anim`, re-triggered per render via reflow)
+- Today's cell ring gets an accent glow (`drop-shadow` on `.cal-rings`)
+- Cells scale down slightly on press; weekday header row restyled (smaller, tracked-out, uppercase weight)
+- Nav buttons: circular with subtle raised shadow and press scale
+- Cache version bumped to `?v=24`
