@@ -715,24 +715,29 @@
   // ── DONUT CHART (shared by Finance, Cards, Analytics) ────
   const DONUT_OTHER_COLOR = '#6b7280'
 
-  // totals map → sorted segment list, folding the tail into "Other" so the
-  // ring stays readable at a glance (≤ 7 segments)
-  function donutEntries(catTotals, colorFor, maxSegs = 6) {
+  // totals map → sorted segment list, folding the tail beyond the top 6 AND
+  // any sliver under 2.5% into "Other" — sub-2.5% arcs are too short to
+  // render as recognizable segments and turn into pinched blobs
+  function donutEntries(catTotals, colorFor, maxSegs = 6, minShare = 0.025) {
     const sorted = Object.entries(catTotals).sort((a,b) => b[1] - a[1])
-    const entries = sorted.slice(0, maxSegs).map(([name, value]) => ({ name, value, color: colorFor(name) }))
-    const rest = sorted.slice(maxSegs)
-    if (rest.length === 1) {
-      const [name, value] = rest[0]
+    const total = sorted.reduce((s,[,v]) => s+v, 0)
+    const entries = [], fold = []
+    sorted.forEach(([name, value], i) => {
+      if (i < maxSegs && (total === 0 || value / total >= minShare)) entries.push({ name, value, color: colorFor(name) })
+      else fold.push([name, value])
+    })
+    if (fold.length === 1) {
+      const [name, value] = fold[0]
       entries.push({ name, value, color: colorFor(name) })
-    } else if (rest.length > 1) {
-      entries.push({ name: `Other (${rest.length})`, value: rest.reduce((s,[,v]) => s+v, 0), color: DONUT_OTHER_COLOR })
+    } else if (fold.length > 1) {
+      entries.push({ name: `Other (${fold.length})`, value: fold.reduce((s,[,v]) => s+v, 0), color: DONUT_OTHER_COLOR })
     }
     return entries
   }
 
   // Draws a rounded-segment donut with a live center readout and a tappable
   // legend. Tap a segment (or legend row) to spotlight it; tap again to reset.
-  function buildDonut(canvas, entries, { cutout = '72%', centerEl, legendEl, centerLabel = 'total' } = {}) {
+  function buildDonut(canvas, entries, { cutout = '70%', centerEl, legendEl, centerLabel = 'total' } = {}) {
     if (!canvas || typeof Chart === 'undefined') return null
     const total = entries.reduce((s,e) => s + e.value, 0)
     const single = entries.length === 1
@@ -747,6 +752,13 @@
     }
     setCenter(null)
 
+    // rounding scaled to segment size — a fixed radius turns short arcs into
+    // pinched pebble shapes, so small segments get near-flat ends
+    const segRadius = ctx => {
+      const share = total ? entries[ctx.dataIndex].value / total : 0
+      return share < 0.05 ? 1 : share < 0.1 ? 2 : 4
+    }
+
     const chart = new Chart(canvas, {
       type: 'doughnut',
       data: {
@@ -755,8 +767,8 @@
           data: entries.map(e => e.value),
           backgroundColor: entries.map(e => e.color),
           borderWidth: 0,
-          spacing: single ? 0 : 2,       // surface gap between segments, no strokes
-          borderRadius: single ? 0 : 5,  // rounded segment ends
+          spacing: single ? 0 : 2,            // surface gap between segments, no strokes
+          borderRadius: single ? 0 : segRadius,
           hoverOffset: 5,
         }]
       },

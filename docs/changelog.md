@@ -273,3 +273,9 @@ ALTER TABLE budget_settings ADD COLUMN IF NOT EXISTS started_at date;
 - Unified legend (`.donut-legend`): tappable rows with color swatch, name, share % and amount (tabular numerals); replaces `.fin-legend-*` and `.anl-legend-*`
 - Analytics donut gained a center readout (`#anl-spend-center`); card donuts gained a center total ("charges")
 - Cache version bumped to `?v=23`
+
+**Donut refinement (same session, follow-up):**
+- Fixed pebble-shaped tiny segments: fixed `borderRadius: 5` was larger than short arcs, pinching sub-5% categories into blobs
+- `donutEntries` now also folds any category under 2.5% of the total into "Other" (in addition to the top-6 cap) — sliver arcs can't render legibly
+- Segment rounding is now scaled to segment share (<5% → 1px, <10% → 2px, else 4px) via scriptable `borderRadius`
+- Ring slightly thicker: cutout 72% → 70%
