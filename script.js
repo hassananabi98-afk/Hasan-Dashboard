@@ -12,12 +12,16 @@
   const $ = id => document.getElementById(id)
 
   // ── TOAST ────────────────────────────────────────────────
+  // single shared timer — a second toast within 2.5s would otherwise be
+  // hidden early by the first toast's still-pending timeout
+  let toastTimer = null
   function showToast(msg, isError = false) {
     const t = $('toast')
     t.textContent = msg
     t.className = 'toast' + (isError ? ' error' : '')
     t.classList.add('show')
-    setTimeout(() => t.classList.remove('show'), 2500)
+    clearTimeout(toastTimer)
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2500)
   }
 
   // ── AUTH ─────────────────────────────────────────────────
@@ -200,8 +204,6 @@
 
   function renderSuppRows(cardId, state, prefix, saveCtx) {
     const card = $(cardId)
-    // addBtn id: '' → 'add-supp-btn', 'tadd-supp-' → 'tadd-supp-btn'
-    const addBtnId = prefix === '' ? 'add-supp-btn' : prefix.replace(/-$/, '-btn').replace('tadd-supp', 'tadd-supp')
     const addBtn = $(prefix === '' ? 'add-supp-btn' : 'tadd-supp-btn')
     // remove existing supp rows
     card.querySelectorAll('.supp-row').forEach(r => r.remove())
@@ -209,7 +211,7 @@
     state.forEach((s, i) => {
       const row = document.createElement('div')
       row.className = 'log-row supp-row'
-      row.innerHTML = `<span class="log-row-label">${s.name}</span><button class="toggle${s.taken ? ' on' : ''}" data-supp-idx="${i}"><div class="toggle-thumb"></div></button>`
+      row.innerHTML = `<span class="log-row-label">${escHtml(s.name)}</span><button class="toggle${s.taken ? ' on' : ''}" data-supp-idx="${i}"><div class="toggle-thumb"></div></button>`
       row.querySelector('button').addEventListener('click', (e) => {
         e.currentTarget.classList.toggle('on')
         state[i].taken = e.currentTarget.classList.contains('on')
@@ -220,7 +222,7 @@
     })
   }
 
-  function bindAddSupp(addBtnId, inputRowId, inputId, confirmId, cardId, stateRef, renderPrefix) {
+  function bindAddSupp(addBtnId, inputRowId, inputId, confirmId, cardId, stateRef, renderPrefix, getSaveCtx) {
     const addBtn = $(addBtnId)
     const inputRow = $(inputRowId)
     const input = $(inputId)
@@ -242,15 +244,19 @@
       input.value = ''
       inputRow.style.display = 'none'
       addBtn.style.display = 'flex'
-      renderSuppRows(cardId, stateRef, renderPrefix, null)
+      // re-render with a live save context — otherwise toggles on the rows
+      // rendered after an add never trigger auto-save for this day
+      renderSuppRows(cardId, stateRef, renderPrefix, getSaveCtx ? getSaveCtx() : null)
     }
 
     confirmBtn.addEventListener('click', doAdd)
     input.addEventListener('keydown', e => { if (e.key === 'Enter') doAdd() })
   }
 
-  bindAddSupp('add-supp-btn', 'add-supp-input-row', 'add-supp-input', 'add-supp-confirm', 'supp-card', suppState, '')
-  bindAddSupp('tadd-supp-btn', 'tadd-supp-input-row', 'tadd-supp-input', 'tadd-supp-confirm', 'tsupp-card', tsuppState, 'tadd-supp-')
+  bindAddSupp('add-supp-btn', 'add-supp-input-row', 'add-supp-input', 'add-supp-confirm', 'supp-card', suppState, '',
+    () => ({ dateStr: currentDayStr, prefix: '', stateRef: suppState }))
+  bindAddSupp('tadd-supp-btn', 'tadd-supp-input-row', 'tadd-supp-input', 'tadd-supp-confirm', 'tsupp-card', tsuppState, 'tadd-supp-',
+    () => ({ dateStr: todayStr(), prefix: 't', stateRef: tsuppState }))
 
   // ── LOAD DAY DATA ────────────────────────────────────────
   async function loadDayData(dateStr, prefix, stateRef, cardId) {
@@ -596,7 +602,9 @@
   }
   function currentPeriodYM() {
     if (!finCycles.length) return currentYM()
-    const today = new Date().toISOString().slice(0, 10)
+    // local date, not toISOString() — UTC would lag behind Bahrain (UTC+3)
+    // between midnight and 3am and briefly resurrect the previous cycle
+    const today = todayStr()
     const active = finCycles.filter(c => c.started_at <= today)
     if (!active.length) return currentYM()
     return active[active.length - 1].month
@@ -704,7 +712,91 @@
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') saveBudget() })
   }
 
-  // ── DONUT CHART ──────────────────────────────────────────
+  // ── DONUT CHART (shared by Finance, Cards, Analytics) ────
+  const DONUT_OTHER_COLOR = '#6b7280'
+
+  // totals map → sorted segment list, folding the tail into "Other" so the
+  // ring stays readable at a glance (≤ 7 segments)
+  function donutEntries(catTotals, colorFor, maxSegs = 6) {
+    const sorted = Object.entries(catTotals).sort((a,b) => b[1] - a[1])
+    const entries = sorted.slice(0, maxSegs).map(([name, value]) => ({ name, value, color: colorFor(name) }))
+    const rest = sorted.slice(maxSegs)
+    if (rest.length === 1) {
+      const [name, value] = rest[0]
+      entries.push({ name, value, color: colorFor(name) })
+    } else if (rest.length > 1) {
+      entries.push({ name: `Other (${rest.length})`, value: rest.reduce((s,[,v]) => s+v, 0), color: DONUT_OTHER_COLOR })
+    }
+    return entries
+  }
+
+  // Draws a rounded-segment donut with a live center readout and a tappable
+  // legend. Tap a segment (or legend row) to spotlight it; tap again to reset.
+  function buildDonut(canvas, entries, { cutout = '72%', centerEl, legendEl, centerLabel = 'total' } = {}) {
+    if (!canvas || typeof Chart === 'undefined') return null
+    const total = entries.reduce((s,e) => s + e.value, 0)
+    const single = entries.length === 1
+    let selected = null
+
+    function setCenter(idx) {
+      if (!centerEl) return
+      const e = idx == null ? null : entries[idx]
+      const amount = e ? e.value : total
+      const label = e ? `${e.name} · ${total ? Math.round(e.value / total * 100) : 0}%` : centerLabel
+      centerEl.innerHTML = `<div class="donut-center-amount">${fmtAmount(amount)}</div><div class="donut-center-label">${escHtml(label)}</div>`
+    }
+    setCenter(null)
+
+    const chart = new Chart(canvas, {
+      type: 'doughnut',
+      data: {
+        labels: entries.map(e => e.name),
+        datasets: [{
+          data: entries.map(e => e.value),
+          backgroundColor: entries.map(e => e.color),
+          borderWidth: 0,
+          spacing: single ? 0 : 2,       // surface gap between segments, no strokes
+          borderRadius: single ? 0 : 5,  // rounded segment ends
+          hoverOffset: 5,
+        }]
+      },
+      options: {
+        cutout,
+        layout: { padding: 6 },
+        animation: { duration: 500, easing: 'easeOutQuart' },
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        onHover: (evt, els) => {
+          if (evt.native?.target) evt.native.target.style.cursor = els.length ? 'pointer' : 'default'
+        },
+        onClick: (evt, els) => select(els.length ? els[0].index : null),
+      }
+    })
+
+    function select(idx) {
+      selected = (idx == null || idx === selected) ? null : idx
+      chart.setActiveElements(selected == null ? [] : [{ datasetIndex: 0, index: selected }])
+      chart.update()
+      setCenter(selected)
+      if (legendEl) legendEl.querySelectorAll('.donut-legend-row').forEach(r =>
+        r.classList.toggle('active', Number(r.dataset.seg) === selected))
+    }
+
+    if (legendEl) {
+      legendEl.innerHTML = entries.map((e, i) => `
+        <div class="donut-legend-row" data-seg="${i}">
+          <span class="donut-legend-dot" style="background:${e.color}"></span>
+          <span class="donut-legend-name">${escHtml(e.name)}</span>
+          <span class="donut-legend-pct">${total ? Math.round(e.value / total * 100) : 0}%</span>
+          <span class="donut-legend-amt">${fmtAmount(e.value)}</span>
+        </div>`).join('')
+      legendEl.querySelectorAll('.donut-legend-row').forEach(row => {
+        row.addEventListener('click', () => select(Number(row.dataset.seg)))
+      })
+    }
+
+    return chart
+  }
+
   function renderDonutChart() {
     const section = $('fin-chart-section')
     if (!section) return
@@ -719,37 +811,13 @@
 
     const catTotals = {}
     finExpenses.forEach(e => { catTotals[e.category] = (catTotals[e.category]||0) + Number(e.amount) })
-    const labels = Object.keys(catTotals)
-    const values = labels.map(l => catTotals[l])
-    const colors = labels.map(l => { const c = finCategories.find(x => x.name===l); return c ? c.color : '#6b7280' })
-    const total = values.reduce((s,v) => s+v, 0)
-
-    const center = $('donut-center')
-    if (center) center.innerHTML = `<div class="donut-center-amount">${fmtAmount(total)}</div><div class="donut-center-label">total</div>`
+    const entries = donutEntries(catTotals, n => finCategories.find(c => c.name === n)?.color || DONUT_OTHER_COLOR)
 
     if (finChartInstance) { finChartInstance.destroy(); finChartInstance = null }
-    const canvas = $('fin-chart')
-    if (!canvas || typeof Chart === 'undefined') return
-
-    finChartInstance = new Chart(canvas, {
-      type: 'doughnut',
-      data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 0, hoverOffset: 4 }] },
-      options: {
-        cutout: '66%',
-        plugins: { legend: { display: false }, tooltip: { enabled: false } },
-        animation: { duration: 350 }
-      }
+    finChartInstance = buildDonut($('fin-chart'), entries, {
+      centerEl: $('donut-center'),
+      legendEl: $('fin-legend'),
     })
-
-    const legend = $('fin-legend')
-    if (legend) {
-      legend.innerHTML = labels.map((l,i) => `
-        <div class="fin-legend-row">
-          <div class="fin-legend-dot" style="background:${colors[i]}"></div>
-          <span class="fin-legend-name">${escHtml(l)}</span>
-          <span class="fin-legend-amt">${fmtAmount(values[i])}</span>
-        </div>`).join('')
-    }
   }
 
   // ── EXPENSE LIST ─────────────────────────────────────────
@@ -1136,7 +1204,8 @@
       const nextM = m === 12 ? 1 : m + 1
       const nextY = m === 12 ? y + 1 : y
       const nextYM = `${nextY}-${String(nextM).padStart(2,'0')}`
-      const today = new Date().toISOString().slice(0, 10)
+      const today = todayStr() // local date — toISOString() is UTC and can be yesterday
+
       const { data: existing } = await supabase.from('budget_settings').select('*').eq('month', nextYM).maybeSingle()
       if (existing) {
         await supabase.from('budget_settings').update({ started_at: today }).eq('month', nextYM)
@@ -1301,19 +1370,23 @@
   function drawCardDonut(cardId) {
     const area = $(`card-donut-area-${cardId}`)
     if (!area) return
-    const txns = finAllTxns.filter(t => t.card_id === cardId)
     const catTotals = {}
-    txns.filter(t => t.type === 'charge').forEach(t => {
+    finAllTxns.filter(t => t.card_id === cardId && t.type === 'charge').forEach(t => {
       catTotals[t.category || 'Other'] = (catTotals[t.category || 'Other'] || 0) + Number(t.amount)
     })
-    const entries = Object.entries(catTotals).sort((a,b) => b[1]-a[1])
-    if (!entries.length) { area.innerHTML = ''; return }
-    const palette = ['#ef4444','#f97316','#f59e0b','#eab308','#84cc16','#22c55e','#14b8a6','#06b6d4','#3b82f6','#6366f1','#8b5cf6','#a855f7','#d946ef','#ec4899','#f43f5e','#6b7280']
-    const colors = entries.map(([name],i) => finCategories.find(c=>c.name===name)?.color || palette[i%palette.length])
-    area.innerHTML = `<div style="position:relative;height:140px;display:flex;align-items:center;justify-content:center;margin-top:10px"><canvas id="card-donut-${cardId}" style="max-width:140px;max-height:140px"></canvas></div><div id="card-donut-leg-${cardId}" style="margin-top:8px"></div>`
-    const ctx = document.getElementById(`card-donut-${cardId}`).getContext('2d')
-    finCardCharts[cardId] = new Chart(ctx, { type:'doughnut', data:{ labels:entries.map(([n])=>n), datasets:[{ data:entries.map(([,v])=>v), backgroundColor:colors, borderWidth:2, borderColor:'var(--bg2)' }] }, options:{ cutout:'65%', plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>` BHD ${Number(c.raw).toFixed(3)}`}} } } })
-    document.getElementById(`card-donut-leg-${cardId}`).innerHTML = entries.map(([name,amt],i)=>`<div style="display:flex;align-items:center;gap:6px;padding:2px 0;font-size:12px"><div style="width:8px;height:8px;border-radius:50%;background:${colors[i]};flex-shrink:0"></div><span style="flex:1;color:var(--text)">${escHtml(name)}</span><span style="color:var(--text2);font-family:monospace">BHD ${amt.toFixed(3)}</span></div>`).join('')
+    if (!Object.keys(catTotals).length) { area.innerHTML = ''; return }
+    const entries = donutEntries(catTotals, n => finCategories.find(c => c.name === n)?.color || DONUT_OTHER_COLOR)
+    area.innerHTML = `
+      <div class="donut-wrap donut-wrap-sm">
+        <canvas id="card-donut-${cardId}"></canvas>
+        <div class="donut-center" id="card-donut-ctr-${cardId}"></div>
+      </div>
+      <div class="donut-legend" id="card-donut-leg-${cardId}"></div>`
+    finCardCharts[cardId] = buildDonut($(`card-donut-${cardId}`), entries, {
+      centerEl: $(`card-donut-ctr-${cardId}`),
+      legendEl: $(`card-donut-leg-${cardId}`),
+      centerLabel: 'charges',
+    })
   }
 
   function wireCardEvents() {
@@ -2008,13 +2081,6 @@
     renderTrendChart(anlExpensesAll, cats.data || [])
   }
 
-  function get6mStart() {
-    const d = new Date()
-    d.setMonth(d.getMonth() - 5)
-    d.setDate(1)
-    return d.toISOString().slice(0,10)
-  }
-
   function localDateStr(d) {
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
   }
@@ -2055,31 +2121,20 @@
 
     const totals = {}
     monthExp.forEach(e => { totals[e.category] = (totals[e.category]||0) + Number(e.amount) })
-    const sorted = Object.entries(totals).sort((a,b) => b[1]-a[1])
-
-    // legend
-    const leg = $('anl-spend-legend')
-    if (sorted.length === 0) {
-      leg.innerHTML = '<div style="text-align:center;color:var(--text3);font-size:13px;padding:16px 0">No expenses this month</div>'
-    } else {
-      leg.innerHTML = sorted.map(([name, amt]) =>
-        `<div class="anl-legend-row"><div class="anl-legend-dot" style="background:${catMap[name]||'#6b7280'}"></div><span class="anl-legend-name">${escHtml(name)}</span><span class="anl-legend-amt">BHD ${amt.toFixed(3)}</span></div>`
-      ).join('')
-    }
 
     if (anlSpendChart) { anlSpendChart.destroy(); anlSpendChart = null }
-    if (sorted.length === 0) { $('anl-spend-canvas').style.display='none'; return }
-    $('anl-spend-canvas').style.display = ''
+    const canvas = $('anl-spend-canvas'), center = $('anl-spend-center'), leg = $('anl-spend-legend')
 
-    const ctx = $('anl-spend-canvas').getContext('2d')
-    anlSpendChart = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: sorted.map(([n])=>n),
-        datasets: [{ data: sorted.map(([,v])=>v), backgroundColor: sorted.map(([n])=>catMap[n]||'#6b7280'), borderWidth: 2, borderColor: window.matchMedia('(prefers-color-scheme: dark)').matches ? '#111111' : '#ffffff' }]
-      },
-      options: { cutout: '68%', responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` BHD ${Number(ctx.raw).toFixed(3)}` } } } }
-    })
+    if (Object.keys(totals).length === 0) {
+      leg.innerHTML = '<div style="text-align:center;color:var(--text3);font-size:13px;padding:16px 0">No expenses this month</div>'
+      canvas.style.display = 'none'
+      if (center) center.innerHTML = ''
+      return
+    }
+    canvas.style.display = ''
+
+    const entries = donutEntries(totals, n => catMap[n] || DONUT_OTHER_COLOR)
+    anlSpendChart = buildDonut(canvas, entries, { centerEl: center, legendEl: leg })
   }
 
   function renderTrendChart(expenses, cats) {
@@ -2230,7 +2285,7 @@
     if (!cats.length) { el.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:var(--text3);background:var(--bg2);border-radius:var(--radius)">No categories yet</div>'; return }
     el.innerHTML = cats.map(c => `
       <div class="sett-row" data-cat-id="${c.id}" style="flex-wrap:wrap;gap:6px;align-items:center">
-        <button class="sett-dot" data-cat-color-btn="${c.id}" style="background:${c.color};cursor:pointer;border:none;width:22px;height:22px;border-radius:50%;flex-shrink:0" title="Change color"></button>
+        <button class="sett-dot" data-cat-color-btn="${c.id}" data-current-color="${c.color}" style="background:${c.color};cursor:pointer;border:none;width:22px;height:22px;border-radius:50%;flex-shrink:0" title="Change color"></button>
         <input class="sett-rename-input" data-cat-name-inp="${c.id}" data-original-name="${escHtml(c.name)}" value="${escHtml(c.name)}" maxlength="40" style="flex:1;min-width:80px">
         <button class="sett-add-btn" data-cat-save="${c.id}" style="padding:5px 10px;font-size:12px">Save</button>
         <button class="sett-del-btn" data-cat-del="${c.id}" title="Delete">×</button>
@@ -2271,7 +2326,9 @@
         const colorBtn = el.querySelector(`[data-cat-color-btn="${id}"]`)
         const name = nameInp.value.trim(); if (!name) return
         const oldName = nameInp.dataset.originalName
-        const color = colorBtn.dataset.currentColor || colorBtn.style.background
+        // dataset.currentColor is always a hex — style.background would
+        // come back as "rgb(...)" and pollute the DB color format
+        const color = colorBtn.dataset.currentColor
         btn.textContent = '✓'; btn.disabled = true
         await supabase.from('categories').update({ name, color }).eq('id', id)
         if (oldName && oldName !== name) {

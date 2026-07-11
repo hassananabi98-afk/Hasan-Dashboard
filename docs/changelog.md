@@ -252,3 +252,24 @@ ALTER TABLE budget_settings ADD COLUMN IF NOT EXISTS started_at date;
 - `.anl-stat-row`: added `padding: 0 12px 12px 12px` — stat boxes no longer touch left/right edges of their card
 - `.anl-stat`: reduced `min-height` to `80px` and font-size to `20px` for more compact counter tiles
 - `.log-card`: added `padding: 14px` — title, emoji and content have breathing room from card borders
+
+---
+
+### Session 12 — Bug Fixes + Donut Chart Redesign
+
+**Bug fixes:**
+- `renderSuppRows`: supplement names now HTML-escaped (were injected raw into `innerHTML`); removed dead `addBtnId` computation
+- `bindAddSupp`: after adding a supplement from a day view, rows are re-rendered with a live save context — previously `saveCtx` was `null`, so toggling any supplement right after an add never auto-saved
+- `currentPeriodYM` / Start New Month: switched from `toISOString()` (UTC) to local `todayStr()` — between midnight and 3am Bahrain time the UTC date is still "yesterday", which could mis-select the active cycle or stamp `started_at` with the wrong day
+- Card donut border used `borderColor:'var(--bg2)'` — CSS variables don't resolve on canvas, so segment borders rendered black in both themes (fixed by the redesign: no borders, gap spacing instead)
+- Settings → category color: saving without re-picking a color stored `style.background` (`rgb(...)` string) instead of hex; the color button now carries `data-current-color` from render
+- `showToast`: consecutive toasts no longer get hidden early by the previous toast's timer
+- Removed dead `get6mStart()` helper
+
+**Donut chart redesign (Finance, Cards, Analytics — shared code):**
+- New `donutEntries()` — sorts categories by amount desc and folds anything beyond the top 6 into a gray "Other (n)" segment so the ring stays readable
+- New `buildDonut()` — one builder for all three donuts: rounded segment ends (`borderRadius: 5`), 2px gaps between segments (`spacing`, replaces theme-dependent borders), 72% cutout, ease-out entry animation
+- Interactive center readout: shows the period total by default; tapping a segment (or its legend row) spotlights it and shows the category amount + share %; tap again to reset
+- Unified legend (`.donut-legend`): tappable rows with color swatch, name, share % and amount (tabular numerals); replaces `.fin-legend-*` and `.anl-legend-*`
+- Analytics donut gained a center readout (`#anl-spend-center`); card donuts gained a center total ("charges")
+- Cache version bumped to `?v=23`

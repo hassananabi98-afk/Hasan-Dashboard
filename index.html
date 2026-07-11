@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Dashboard</title>
-<link rel="stylesheet" href="style.css?v=22">
+<link rel="stylesheet" href="style.css?v=23">
 </head>
 <body>
 
@@ -237,7 +237,7 @@
               <canvas id="fin-chart"></canvas>
               <div class="donut-center" id="donut-center"></div>
             </div>
-            <div class="fin-legend" id="fin-legend"></div>
+            <div class="donut-legend" id="fin-legend"></div>
           </div>
           <div class="add-expense-form" id="add-expense-form" style="display:none;margin-top:10px">
             <div class="fin-form-row">
@@ -383,10 +383,11 @@
               <button class="anl-nav-btn" id="anl-next-btn">›</button>
             </div>
           </div>
-          <div id="anl-spend-chart-wrap" style="position:relative;height:220px;margin-bottom:12px;display:flex;align-items:center;justify-content:center">
-            <canvas id="anl-spend-canvas" style="max-width:220px;max-height:220px"></canvas>
+          <div id="anl-spend-chart-wrap" style="position:relative;height:210px;margin-bottom:12px;display:flex;align-items:center;justify-content:center">
+            <canvas id="anl-spend-canvas" style="max-width:200px;max-height:200px"></canvas>
+            <div class="donut-center" id="anl-spend-center"></div>
           </div>
-          <div id="anl-spend-legend" style="margin-top:8px"></div>
+          <div class="donut-legend" id="anl-spend-legend" style="margin-top:8px"></div>
         </div>
         <!-- Monthly totals -->
         <div class="log-card" style="margin-bottom:14px">
@@ -487,6 +488,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script type="module" src="script.js?v=22"></script>
+<script type="module" src="script.js?v=23"></script>
 </body>
 </html>
