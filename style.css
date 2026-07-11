@@ -637,3 +637,39 @@
     background:var(--bg3);border-radius:20px;padding:4px 11px;
     font-size:11px;font-weight:500;color:var(--text2)
   }
+
+  /* ── FLOATING BOTTOM NAV ───────────────────────────────── */
+  .bottom-nav{
+    position:fixed;
+    left:12px;right:12px;
+    bottom:calc(10px + env(safe-area-inset-bottom));
+    max-width:520px;
+    margin:0 auto;
+    height:var(--nav-h);
+    padding-bottom:0;
+    border:1px solid var(--border);
+    border-top:1px solid var(--border);
+    border-radius:28px;
+    background:color-mix(in srgb,var(--bg2) 80%,transparent);
+    -webkit-backdrop-filter:blur(20px) saturate(1.5);
+    backdrop-filter:blur(20px) saturate(1.5);
+    box-shadow:0 8px 24px rgba(0,0,0,.14),0 2px 8px rgba(0,0,0,.08);
+    z-index:40;
+    overflow:hidden
+  }
+  @media(prefers-color-scheme:dark){
+    .bottom-nav{box-shadow:0 8px 28px rgba(0,0,0,.55),0 2px 8px rgba(0,0,0,.4)}
+  }
+  /* content scrolls underneath the floating bar — keep the tail reachable */
+  .content{padding-bottom:calc(var(--nav-h) + 22px + env(safe-area-inset-bottom))}
+  .toast{bottom:calc(var(--nav-h) + 30px + env(safe-area-inset-bottom))}
+
+  /* active tab: pill highlight instead of the old top indicator line */
+  .nav-item{transition:color .15s,transform .1s}
+  .nav-item:active{transform:scale(.9)}
+  .nav-item.active::before{
+    content:'';position:absolute;
+    top:7px;bottom:7px;left:10%;right:10%;height:auto;
+    background:var(--accent-bg);
+    border-radius:18px
+  }

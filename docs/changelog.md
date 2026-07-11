@@ -298,3 +298,10 @@ ALTER TABLE budget_settings ADD COLUMN IF NOT EXISTS started_at date;
 - Cells scale down slightly on press; weekday header row restyled (smaller, tracked-out, uppercase weight)
 - Nav buttons: circular with subtle raised shadow and press scale
 - Cache version bumped to `?v=24`
+
+**Floating bottom nav (same session, follow-up):**
+- `.bottom-nav` is now a floating pill: fixed 12px from the edges (10px + safe-area from the bottom), 28px radius, hairline border, layered shadow, max-width 520px centered
+- Frosted-glass background: `color-mix` translucent `--bg2` + `backdrop-filter: blur(20px) saturate(1.5)` — content scrolls underneath
+- Active tab indicator changed from a top line to a rounded pill highlight behind the icon+label; tabs scale down on press
+- `.content` gained bottom padding (nav height + 22px + safe-area) so nothing hides behind the bar; toast raised to clear it
+- Cache version bumped to `?v=25`
