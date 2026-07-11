@@ -320,3 +320,10 @@ ALTER TABLE budget_settings ADD COLUMN IF NOT EXISTS started_at date;
 - Surface color resolved at draw time by walking up from the canvas to the first opaque ancestor background (page bg, white/dark card, tinted card section all match correctly); canvas can't resolve CSS `var()` strings
 - Added a `prefers-color-scheme` change listener that re-renders loaded charts so baked-in canvas colors track OS theme flips
 - Cache version bumped to `?v=27`
+
+**Unified card standard (follow-up):**
+- The `.cal-card` look is now the app-wide standard: `--radius` token bumped 12px → 16px (every `var(--radius)` box inherits it — log cards, forms, budget box, finance card sections, dropdowns, textareas)
+- `.log-card`, `.add-expense-form`, `.fin-empty`, `.hlth-type-tile` and the settings list groups get the same layered shadow (`0 1px 4px` + `0 8px 24px`) and, in dark mode, the same hairline `var(--border)` border
+- Settings lists (`#sett-cat-list` etc.) rounded + clipped as a group via `:not(:empty)` so empty containers don't render as stray hairlines
+- Accent-styled boxes (violet budget, tinted finance card sections) keep their identity — they inherit only the radius token
+- Cache version bumped to `?v=28`
