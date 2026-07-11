@@ -770,6 +770,19 @@
       return share < 0.05 ? 1 : share < 0.1 ? 2 : 4
     }
 
+    // Segment gaps via a surface-colored border, NOT `spacing` — spacing
+    // offsets each arc radially from the center, so the gaps around a
+    // dominant arc render much wider than those between small ones.
+    // The gap must match the backdrop the chart actually sits on (page bg,
+    // white card, tinted card section), so walk up from the canvas to the
+    // first opaque background — canvas can't interpret 'var(--bg2)' itself.
+    let surface = ''
+    for (let n = canvas; n && n !== document.documentElement; n = n.parentElement) {
+      const bg = getComputedStyle(n).backgroundColor
+      if (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)') { surface = bg; break }
+    }
+    if (!surface) surface = getComputedStyle(document.body).backgroundColor || '#1c1c1e'
+
     const chart = new Chart(canvas, {
       type: 'doughnut',
       data: {
@@ -777,8 +790,9 @@
         datasets: [{
           data: entries.map(e => e.value),
           backgroundColor: entries.map(e => e.color),
-          borderWidth: 0,
-          spacing: single ? 0 : 2,            // surface gap between segments, no strokes
+          borderWidth: single ? 0 : 2,
+          borderColor: surface,
+          spacing: 0,
           borderRadius: single ? 0 : segRadius,
           hoverOffset: 5,
         }]
@@ -2550,4 +2564,11 @@
   })
 
   // ── INIT ─────────────────────────────────────────────────
+  // re-render charts when the OS theme flips — canvas colors (segment gap
+  // borders, axis ticks) are resolved at draw time and don't track CSS vars
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if (finLoaded) { renderDonutChart(); renderCardSections() }
+    if (anlLoaded) loadAnalytics()
+  })
+
   initAuth()

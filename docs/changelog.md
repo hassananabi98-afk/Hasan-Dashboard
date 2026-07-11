@@ -313,3 +313,10 @@ ALTER TABLE budget_settings ADD COLUMN IF NOT EXISTS started_at date;
 - Today's marker shrunk from a 38-radius disc to a 23-radius disc so it sits inside the rings instead of behind them (dropped the old 0.75-opacity hack)
 - Grid gaps widened (7px 5px) so adjacent day rings don't touch
 - Cache version bumped to `?v=26`
+
+**Donut gap equalization (follow-up):**
+- Chart.js `spacing` translates each arc radially from the center, so with a dominant segment (e.g. Bills 70%) the gaps around the big arc rendered much wider than between small segments
+- Replaced with `spacing: 0` + a 2px surface-colored border per segment — uniform gaps regardless of arc size
+- Surface color resolved at draw time by walking up from the canvas to the first opaque ancestor background (page bg, white/dark card, tinted card section all match correctly); canvas can't resolve CSS `var()` strings
+- Added a `prefers-color-scheme` change listener that re-renders loaded charts so baked-in canvas colors track OS theme flips
+- Cache version bumped to `?v=27`
