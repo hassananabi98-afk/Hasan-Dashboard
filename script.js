@@ -400,17 +400,18 @@
       supabase.from('daily_tracking').select('*').filter('date','gte',start).filter('date','lte',end),
     ])
     calDotData = {}
+    // fractions (0..1), not booleans — ring arc length shows day completion
     ;(prayRes.data||[]).forEach(r => {
       if (!calDotData[r.date]) calDotData[r.date] = {}
-      calDotData[r.date].prayers = r.fajr||r.dhuhr||r.asr||r.maghrib||r.isha
+      calDotData[r.date].prayers = prayerKeys.reduce((s,k) => s + (r[k] ? 1 : 0), 0) / prayerKeys.length
     })
     ;(mealRes.data||[]).forEach(r => {
       if (!calDotData[r.date]) calDotData[r.date] = {}
-      calDotData[r.date].meals = r.breakfast||r.lunch||r.dinner
+      calDotData[r.date].meals = mealKeys.reduce((s,k) => s + (r[k] ? 1 : 0), 0) / mealKeys.length
     })
     ;(dtRes.data||[]).forEach(r => {
       if (!calDotData[r.date]) calDotData[r.date] = {}
-      calDotData[r.date].reading = r.reading || false
+      calDotData[r.date].reading = r.reading ? 1 : 0
     })
   }
 
@@ -444,65 +445,61 @@
       const wrap = document.createElement('div')
       wrap.className = 'cal-cell-wrap' + (isToday ? ' today' : '') + (isFuture ? ' future' : '')
 
-      // SVG rings — each active indicator adds a concentric ring
-      // Build one segmented ring: each active indicator = one arc segment
-      const segments = []
-      if (dots.prayers) segments.push('#a855f7')
-      if (dots.meals)   segments.push('#f97316')
-      if (dots.reading) segments.push('#3b82f6')
-
+      // Activity-style concentric rings — one ring per type at a fixed
+      // radius, arc length = fraction of the day completed (3/5 prayers =
+      // 60% of the purple ring); a faint track completes partial rings
       const svgNS = 'http://www.w3.org/2000/svg'
       const svg = document.createElementNS(svgNS, 'svg')
       svg.setAttribute('viewBox', '0 0 100 100')
       svg.setAttribute('class', 'cal-rings')
 
-      // today: solid accent fill background
+      // today: small accent disc behind the number, inside the rings
       if (isToday) {
         const bg = document.createElementNS(svgNS, 'circle')
-        bg.setAttribute('cx','50'); bg.setAttribute('cy','50'); bg.setAttribute('r','38')
+        bg.setAttribute('cx','50'); bg.setAttribute('cy','50'); bg.setAttribute('r','23')
         bg.setAttribute('fill', 'var(--accent)')
         svg.appendChild(bg)
       }
 
-      if (segments.length > 0) {
-        const r = 46
-        const cx = 50, cy = 50
-        const gap = segments.length > 1 ? 3 : 0
-        const totalAngle = 360
-        const segAngle = (totalAngle - gap * segments.length) / segments.length
-
-        if (segments.length === 1) {
-          // single log — draw full circle (SVG arc can't represent 360°)
+      const RING_DEFS = [
+        { key: 'prayers', color: '#a855f7', r: 46 },   // outer
+        { key: 'meals',   color: '#f97316', r: 37.5 }, // middle
+        { key: 'reading', color: '#3b82f6', r: 29 },   // inner
+      ]
+      const cx = 50, cy = 50, sw = 6
+      let drewRing = false
+      RING_DEFS.forEach(({ key, color, r }) => {
+        const frac = Math.min(dots[key] || 0, 1)
+        if (frac <= 0) return
+        drewRing = true
+        if (frac >= 1) {
+          // complete — full circle (an SVG arc can't represent 360°)
           const circ = document.createElementNS(svgNS, 'circle')
           circ.setAttribute('cx', cx); circ.setAttribute('cy', cy); circ.setAttribute('r', r)
           circ.setAttribute('fill', 'none')
-          circ.setAttribute('stroke', segments[0])
-          circ.setAttribute('stroke-width', '5')
-          circ.setAttribute('opacity', isToday ? '0.75' : '1')
+          circ.setAttribute('stroke', color)
+          circ.setAttribute('stroke-width', sw)
           svg.appendChild(circ)
-        } else {
-          segments.forEach((color, i) => {
-            const startDeg = -90 + i * (segAngle + gap)
-            const endDeg = startDeg + segAngle
-            const start = startDeg * Math.PI / 180
-            const end = endDeg * Math.PI / 180
-            const x1 = cx + r * Math.cos(start), y1 = cy + r * Math.sin(start)
-            const x2 = cx + r * Math.cos(end),   y2 = cy + r * Math.sin(end)
-            const largeArc = segAngle > 180 ? 1 : 0
-            const path = document.createElementNS(svgNS, 'path')
-            path.setAttribute('d', `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`)
-            path.setAttribute('fill', 'none')
-            path.setAttribute('stroke', color)
-            path.setAttribute('stroke-width', '5')
-            path.setAttribute('stroke-linecap', 'round')
-            path.setAttribute('opacity', isToday ? '0.75' : '1')
-            svg.appendChild(path)
-          })
+          return
         }
-        wrap.appendChild(svg)
-      } else if (isToday) {
-        wrap.appendChild(svg)
-      }
+        const track = document.createElementNS(svgNS, 'circle')
+        track.setAttribute('cx', cx); track.setAttribute('cy', cy); track.setAttribute('r', r)
+        track.setAttribute('fill', 'none')
+        track.setAttribute('stroke', color)
+        track.setAttribute('stroke-width', sw)
+        track.setAttribute('opacity', '0.2')
+        svg.appendChild(track)
+        const start = -90 * Math.PI / 180
+        const end = (-90 + frac * 360) * Math.PI / 180
+        const path = document.createElementNS(svgNS, 'path')
+        path.setAttribute('d', `M ${cx + r * Math.cos(start)} ${cy + r * Math.sin(start)} A ${r} ${r} 0 ${frac > 0.5 ? 1 : 0} 1 ${cx + r * Math.cos(end)} ${cy + r * Math.sin(end)}`)
+        path.setAttribute('fill', 'none')
+        path.setAttribute('stroke', color)
+        path.setAttribute('stroke-width', sw)
+        path.setAttribute('stroke-linecap', 'round')
+        svg.appendChild(path)
+      })
+      if (drewRing || isToday) wrap.appendChild(svg)
 
       const num = document.createElement('div')
       num.className = 'cal-num'; num.textContent = d

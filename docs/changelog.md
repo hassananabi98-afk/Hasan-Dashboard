@@ -305,3 +305,11 @@ ALTER TABLE budget_settings ADD COLUMN IF NOT EXISTS started_at date;
 - Active tab indicator changed from a top line to a rounded pill highlight behind the icon+label; tabs scale down on press
 - `.content` gained bottom padding (nav height + 22px + safe-area) so nothing hides behind the bar; toast raised to clear it
 - Cache version bumped to `?v=25`
+
+**Calendar activity rings (same session, follow-up):**
+- Day indicators redesigned from a single segmented ring into Apple-Fitness-style concentric progress rings: prayers (purple, outer), meals (orange, middle), reading (blue, inner) — each type always at the same radius
+- Arc length now shows day completion: `loadCalDots` stores fractions (prayers done /5, meals /3, reading 0/1) instead of booleans; partial rings run clockwise from 12 o'clock with rounded caps over a faint 20%-opacity track of the same color
+- Complete rings render as full circles; days with no logs stay clean
+- Today's marker shrunk from a 38-radius disc to a 23-radius disc so it sits inside the rings instead of behind them (dropped the old 0.75-opacity hack)
+- Grid gaps widened (7px 5px) so adjacent day rings don't touch
+- Cache version bumped to `?v=26`

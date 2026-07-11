@@ -610,7 +610,7 @@
   @media(prefers-color-scheme:dark){
     .cal-card{box-shadow:0 1px 4px rgba(0,0,0,.35),0 8px 24px rgba(0,0,0,.3);border:1px solid var(--border)}
   }
-  .cal-grid{gap:4px 2px}
+  .cal-grid{gap:7px 5px}
   .cal-dow{font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--text3)}
   .cal-cell-wrap{transition:background .1s,transform .1s}
   .cal-cell-wrap:active{transform:scale(.9)}
