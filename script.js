@@ -733,22 +733,27 @@
     const sorted = Object.entries(catTotals).sort((a,b) => b[1] - a[1])
     const total = sorted.reduce((s,[,v]) => s+v, 0)
     const entries = [], fold = []
+    // each entry carries `cats`: the underlying category name(s) it represents,
+    // so tapping a segment can filter the expense list — the folded "Other"
+    // segment covers several categories at once.
     sorted.forEach(([name, value], i) => {
-      if (i < maxSegs && (total === 0 || value / total >= minShare)) entries.push({ name, value, color: colorFor(name) })
+      if (i < maxSegs && (total === 0 || value / total >= minShare)) entries.push({ name, value, color: colorFor(name), cats: [name] })
       else fold.push([name, value])
     })
     if (fold.length === 1) {
       const [name, value] = fold[0]
-      entries.push({ name, value, color: colorFor(name) })
+      entries.push({ name, value, color: colorFor(name), cats: [name] })
     } else if (fold.length > 1) {
       const foldValue = fold.reduce((s,[,v]) => s+v, 0)
+      const foldCats = fold.map(([n]) => n)
       // If a genuine "Other" category is already shown, merge the folded tail
       // into it rather than adding a second "Other (N)" row (duplicate legend).
       const existingOther = entries.find(e => e.name === 'Other')
       if (existingOther) {
         existingOther.value += foldValue
+        existingOther.cats = existingOther.cats.concat(foldCats)
       } else {
-        entries.push({ name: `Other (${fold.length})`, value: foldValue, color: DONUT_OTHER_COLOR })
+        entries.push({ name: `Other (${fold.length})`, value: foldValue, color: DONUT_OTHER_COLOR, cats: foldCats })
       }
     }
     return entries
@@ -756,7 +761,7 @@
 
   // Draws a rounded-segment donut with a live center readout and a tappable
   // legend. Tap a segment (or legend row) to spotlight it; tap again to reset.
-  function buildDonut(canvas, entries, { cutout = '70%', centerEl, legendEl, centerLabel = 'total' } = {}) {
+  function buildDonut(canvas, entries, { cutout = '70%', centerEl, legendEl, centerLabel = 'total', onSelect } = {}) {
     if (!canvas || typeof Chart === 'undefined') return null
     const total = entries.reduce((s,e) => s + e.value, 0)
     const single = entries.length === 1
@@ -824,6 +829,7 @@
       setCenter(selected)
       if (legendEl) legendEl.querySelectorAll('.donut-legend-row').forEach(r =>
         r.classList.toggle('active', Number(r.dataset.seg) === selected))
+      if (onSelect) onSelect(selected == null ? null : entries[selected])
     }
 
     if (legendEl) {
@@ -845,6 +851,7 @@
   function renderDonutChart() {
     const section = $('fin-chart-section')
     if (!section) return
+    finCatFilter = null   // rebuilding the chart clears any tapped-category filter
     if (finExpenses.length === 0) {
       section.style.display = 'none'
       if (finChartInstance) { finChartInstance.destroy(); finChartInstance = null }
@@ -862,11 +869,18 @@
     finChartInstance = buildDonut($('fin-chart'), entries, {
       centerEl: $('donut-center'),
       legendEl: $('fin-legend'),
+      onSelect: entry => {
+        // tap a category → show only its expenses; tap again to clear
+        finCatFilter = entry ? entry.cats : null
+        renderExpenseList()
+      },
     })
+    renderExpenseList()
   }
 
   // ── EXPENSE LIST ─────────────────────────────────────────
   let finExpensesCollapsed = true
+  let finCatFilter = null   // null = show all; else array of category names to show
 
   function renderExpenseList() {
     const container = $('expense-list')
@@ -877,7 +891,22 @@
       return
     }
 
-    container.innerHTML = `<div class="log-card">${finExpenses.map(e => {
+    const filtered = finCatFilter ? finExpenses.filter(e => finCatFilter.includes(e.category)) : finExpenses
+    const filterLabel = finCatFilter ? (finCatFilter.length === 1 ? finCatFilter[0] : 'Other') : ''
+    const filterBar = finCatFilter
+      ? `<div class="expense-filter-bar">
+           <span class="expense-filter-label">Showing <b>${escHtml(filterLabel)}</b> · ${filtered.length}</span>
+           <button class="expense-filter-clear" id="expense-filter-clear">Clear</button>
+         </div>`
+      : ''
+
+    if (finCatFilter && filtered.length === 0) {
+      container.innerHTML = filterBar + '<div class="fin-empty">No expenses in this category</div>'
+      $('expense-filter-clear')?.addEventListener('click', clearCatFilter)
+      return
+    }
+
+    container.innerHTML = filterBar + `<div class="log-card">${filtered.map(e => {
       const cat = finCategories.find(c => c.name === e.category)
       const color = cat ? cat.color : '#6b7280'
       return `<div class="expense-row" data-id="${e.id}">
@@ -901,6 +930,23 @@
     container.querySelectorAll('[data-del]').forEach(btn => {
       btn.addEventListener('click', ev => { ev.stopPropagation(); showDeleteConfirm(btn.dataset.del) })
     })
+    $('expense-filter-clear')?.addEventListener('click', clearCatFilter)
+  }
+
+  // Clear the tapped-category filter and de-select the donut segment
+  function clearCatFilter() {
+    finCatFilter = null
+    if (finChartInstance) {
+      finChartInstance.setActiveElements([])
+      finChartInstance.update()
+    }
+    $('fin-legend')?.querySelectorAll('.donut-legend-row.active').forEach(r => r.classList.remove('active'))
+    const centerEl = $('donut-center')
+    if (centerEl && finChartInstance) {
+      const total = finChartInstance.data.datasets[0].data.reduce((s,v) => s + v, 0)
+      centerEl.innerHTML = `<div class="donut-center-amount">${fmtAmount(total)}</div><div class="donut-center-label">total</div>`
+    }
+    renderExpenseList()
   }
 
   function showExpenseEditForm(id) {

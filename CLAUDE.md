@@ -1,5 +1,7 @@
 # Hassan Personal Dashboard — Claude Instructions
 
+> **⚠️ EVERY NEW SESSION — READ FIRST:** Always commit and push to **`main`**. GitHub Pages serves the live site from `main`, so any work pushed to another branch will NOT go live. Do not develop on or push to feature branches unless the user explicitly asks for one in that session.
+
 ## Project Overview
 A personal life management dashboard. Calendar-based daily logging for health, finance, prayers, meals, supplements, and wellness. Built as a standalone HTML/CSS/JS web app backed by Supabase.
 

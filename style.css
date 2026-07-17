@@ -286,6 +286,11 @@
   .cat-save-btn{flex:1;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);padding:7px;font-size:13px;cursor:pointer}
   .cat-cancel-btn{background:var(--bg3);color:var(--text2);border:none;border-radius:var(--radius-sm);padding:7px 12px;font-size:13px;cursor:pointer}
   .fin-empty{text-align:center;padding:32px 16px;color:var(--text3);font-size:14px;background:var(--bg2);border-radius:var(--radius)}
+  .expense-filter-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 14px;margin-bottom:8px;background:var(--bg2);border-radius:var(--radius-sm)}
+  .expense-filter-label{font-size:13px;color:var(--text2)}
+  .expense-filter-label b{color:var(--text);font-weight:600}
+  .expense-filter-clear{background:var(--bg3);color:var(--text2);border:none;border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;cursor:pointer}
+  .expense-filter-clear:active{background:var(--accent);color:#fff}
 
   /* ── HEALTH ──────────────────────────────────────────── */
   .hlth-types-grid{display:flex;flex-direction:column;gap:6px;margin-bottom:4px}
