@@ -35,8 +35,18 @@ docs/
 
 1. **Always discuss before changing anything** — explain the proposed change and wait for approval before touching any file, git, or database.
 2. **Database changes require explicit approval** — never run DDL (ALTER TABLE, CREATE TABLE, etc.) or DML without telling the user what SQL will be run and getting a "yes". The user runs SQL manually in the Supabase SQL Editor.
-3. **Git: always push to `main`** — GitHub Pages serves from main. Never push to another branch without permission.
+3. **Git: always commit & push to `main`** — GitHub Pages serves from main. Never create or push to a feature branch unless the user explicitly asks for one. Follow the procedure below.
 4. **No changes to Supabase credentials** — anon key is in `script.js`; never commit secrets.
+
+### Commit & Push Procedure (main only)
+Do this every time, at the end of a change:
+1. If `script.js` or `style.css` changed, bump `?v=N` on **both** lines in `index.html` (see Cache-busting).
+2. Confirm the branch: `git rev-parse --abbrev-ref HEAD` must be `main`. If it isn't, `git checkout main` and merge/apply the work there — do not push a feature branch.
+3. Stage and commit: `git add -A && git commit -m "<clear, present-tense summary>"`.
+4. Push: `git push origin main`. On network errors only, retry up to 4× with backoff (2s, 4s, 8s, 16s).
+5. Verify it landed: `git log --oneline -1 origin/main` should show your commit.
+6. Do **not** open a pull request unless the user asks — pushing straight to `main` is the normal flow, and the live site rebuilds from `main` within ~1 minute.
+- **Never leave work on a feature branch** thinking a PR will carry it live — GitHub Pages ignores every branch except `main`.
 
 ## Key Code Patterns
 
