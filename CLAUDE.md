@@ -48,6 +48,13 @@ Do this every time, at the end of a change:
 6. Do **not** open a pull request unless the user asks — pushing straight to `main` is the normal flow, and the live site rebuilds from `main` within ~1 minute.
 - **Never leave work on a feature branch** thinking a PR will carry it live — GitHub Pages ignores every branch except `main`.
 
+### Leftover-branch cleanup (`claude/*` branches)
+Old `claude/*` session branches accumulate. To clean them, first confirm each is already in `main` (`git merge-base --is-ancestor origin/claude/<b> origin/main`, or that its work was merged via a closed PR), then:
+1. Try to delete it: `git push origin --delete claude/<b>`.
+2. **If that returns HTTP 403**, the session's git token isn't scoped to delete remote refs — it varies by session, it is *not* a permanent block and *not* a protected-branch issue. Do **not** keep hammering it. Instead force the branch to `main`'s tip so it isn't left stale/divergent: `git push --force origin origin/main:refs/heads/claude/<b>`.
+3. Actual removal is then an operator action — delete from the GitHub UI (repo → **branches** → trash icon; merged PRs also show a "Delete branch" button) or from a machine whose credentials have delete scope.
+- Only ever touch `claude/*` branches this way — never force-push or delete `main`.
+
 ## Key Code Patterns
 
 ### Cache-busting (IMPORTANT)
