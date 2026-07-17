@@ -741,7 +741,15 @@
       const [name, value] = fold[0]
       entries.push({ name, value, color: colorFor(name) })
     } else if (fold.length > 1) {
-      entries.push({ name: `Other (${fold.length})`, value: fold.reduce((s,[,v]) => s+v, 0), color: DONUT_OTHER_COLOR })
+      const foldValue = fold.reduce((s,[,v]) => s+v, 0)
+      // If a genuine "Other" category is already shown, merge the folded tail
+      // into it rather than adding a second "Other (N)" row (duplicate legend).
+      const existingOther = entries.find(e => e.name === 'Other')
+      if (existingOther) {
+        existingOther.value += foldValue
+      } else {
+        entries.push({ name: `Other (${fold.length})`, value: foldValue, color: DONUT_OTHER_COLOR })
+      }
     }
     return entries
   }
