@@ -896,7 +896,7 @@
     const filterBar = finCatFilter
       ? `<div class="expense-filter-bar">
            <span class="expense-filter-label">Showing <b>${escHtml(filterLabel)}</b> · ${filtered.length}</span>
-           <button class="expense-filter-clear" id="expense-filter-clear">Clear</button>
+           <button class="expense-filter-clear" id="expense-filter-clear">All categories</button>
          </div>`
       : ''
 
