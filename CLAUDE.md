@@ -73,6 +73,11 @@ Old `claude/*` session branches accumulate. To clean them, first confirm each is
 - Budget box (`#budget-wrap`) mirrors card styling with violet (`#8b5cf6`) via inline styles in `renderBudgetBar()`
 - `BUDGET_COLOR = '#8b5cf6'`
 
+### Donut chart & legend (`buildDonut` / `donutEntries`)
+- `donutEntries()` folds categories beyond the top 6 **or** under 2.5% share into one gray "Other" arc (merges into a genuine "Other" category if present) — keeps the donut from sprouting unreadable slivers. Each entry carries `cats` (the category names it covers).
+- The Finance donut passes `legendItems` (the **full** per-category list) to `buildDonut`, so the percentage list under the chart shows **every** category by name — even small ones folded into the gray arc. Each legend item has `seg` = which arc to spotlight when tapped. Cards/Analytics omit `legendItems`, so their legend mirrors the folded arcs 1:1.
+- Tapping a legend row or arc filters the Cash Expenses list (`finCatFilter`) and spotlights the matching arc; the "All categories" button calls `chart.clearSelection()`.
+
 ### Budget cycle logic
 - `finCycles` — array of `{ month, started_at }` sorted ascending; loaded from `budget_settings` where `started_at` is not null
 - `currentPeriodYM()` — returns the most recent cycle's `month` where `started_at ≤ today`

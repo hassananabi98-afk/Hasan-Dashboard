@@ -761,20 +761,24 @@
 
   // Draws a rounded-segment donut with a live center readout and a tappable
   // legend. Tap a segment (or legend row) to spotlight it; tap again to reset.
-  function buildDonut(canvas, entries, { cutout = '70%', centerEl, legendEl, centerLabel = 'total', onSelect } = {}) {
+  // `legendItems` (optional) drives the legend independently of the donut arcs:
+  // pass the full per-category list so every category shows by name even when
+  // the donut folds small slivers into one gray "Other" arc. Each item is
+  // { name, value, color, cats:[names], seg } where `seg` is the arc index to
+  // spotlight on tap. Omit it and the legend mirrors the folded arcs 1:1.
+  function buildDonut(canvas, entries, { cutout = '70%', centerEl, legendEl, centerLabel = 'total', onSelect, legendItems } = {}) {
     if (!canvas || typeof Chart === 'undefined') return null
     const total = entries.reduce((s,e) => s + e.value, 0)
     const single = entries.length === 1
-    let selected = null
+    let selected = null   // selection key: null, arc index, or a category name
 
-    function setCenter(idx) {
+    function setCenter(name, value) {
       if (!centerEl) return
-      const e = idx == null ? null : entries[idx]
-      const amount = e ? e.value : total
-      const label = e ? `${e.name} · ${total ? Math.round(e.value / total * 100) : 0}%` : centerLabel
+      const amount = value == null ? total : value
+      const label = name == null ? centerLabel : `${name} · ${total ? Math.round(value / total * 100) : 0}%`
       centerEl.innerHTML = `<div class="donut-center-amount">${fmtAmount(amount)}</div><div class="donut-center-label">${escHtml(label)}</div>`
     }
-    setCenter(null)
+    setCenter(null, null)
 
     // rounding scaled to segment size — a fixed radius turns short arcs into
     // pinched pebble shapes, so small segments get near-flat ends
@@ -818,33 +822,64 @@
         onHover: (evt, els) => {
           if (evt.native?.target) evt.native.target.style.cursor = els.length ? 'pointer' : 'default'
         },
-        onClick: (evt, els) => select(els.length ? els[0].index : null),
+        onClick: (evt, els) => onArcClick(els.length ? els[0].index : null),
       }
     })
 
-    function select(idx) {
-      selected = (idx == null || idx === selected) ? null : idx
-      chart.setActiveElements(selected == null ? [] : [{ datasetIndex: 0, index: selected }])
+    function spotlight(seg) {
+      chart.setActiveElements(seg == null ? [] : [{ datasetIndex: 0, index: seg }])
       chart.update()
-      setCenter(selected)
-      if (legendEl) legendEl.querySelectorAll('.donut-legend-row').forEach(r =>
-        r.classList.toggle('active', Number(r.dataset.seg) === selected))
-      if (onSelect) onSelect(selected == null ? null : entries[selected])
     }
 
-    if (legendEl) {
-      legendEl.innerHTML = entries.map((e, i) => `
-        <div class="donut-legend-row" data-seg="${i}">
-          <span class="donut-legend-dot" style="background:${e.color}"></span>
-          <span class="donut-legend-name">${escHtml(e.name)}</span>
-          <span class="donut-legend-pct">${total ? Math.round(e.value / total * 100) : 0}%</span>
-          <span class="donut-legend-amt">${fmtAmount(e.value)}</span>
-        </div>`).join('')
-      legendEl.querySelectorAll('.donut-legend-row').forEach(row => {
-        row.addEventListener('click', () => select(Number(row.dataset.seg)))
+    // Highlight legend rows: active when the row's category is in `activeCats`
+    // (spreads a folded "Other" arc across its members) or matches `activeName`
+    // (the row's own label, so a single folded legend row still lights up).
+    function highlight(activeCats, activeName) {
+      if (!legendEl) return
+      legendEl.querySelectorAll('.donut-legend-row').forEach(r => {
+        const c = r.dataset.cat
+        r.classList.toggle('active', (!!activeCats && activeCats.includes(c)) || c === activeName)
       })
     }
 
+    // Tapping a donut arc selects that arc (a real category, or the folded
+    // "Other" group). Tapping the same arc again clears.
+    function onArcClick(idx) {
+      const e = idx == null ? null : entries[idx]
+      selected = (e == null || selected === idx) ? null : idx
+      const on = selected != null
+      spotlight(on ? idx : null)
+      setCenter(on ? e.name : null, on ? e.value : null)
+      highlight(on ? e.cats : null, on ? e.name : null)
+      if (onSelect) onSelect(on ? { cats: e.cats, name: e.name } : null)
+    }
+
+    // Full-category legend (Finance): every category listed by name; a folded
+    // small category still spotlights the shared "Other" arc when tapped.
+    function onCatClick(item) {
+      selected = (item == null || selected === item.name) ? null : item.name
+      const on = selected != null
+      spotlight(on ? item.seg : null)
+      setCenter(on ? item.name : null, on ? item.value : null)
+      highlight(on ? item.cats : null, on ? item.name : null)
+      if (onSelect) onSelect(on ? { cats: item.cats, name: item.name } : null)
+    }
+
+    const rows = legendItems || entries.map((e, i) => ({ name: e.name, value: e.value, color: e.color, cats: e.cats, seg: i }))
+    if (legendEl) {
+      legendEl.innerHTML = rows.map(it => `
+        <div class="donut-legend-row" data-cat="${escHtml(it.name)}">
+          <span class="donut-legend-dot" style="background:${it.color}"></span>
+          <span class="donut-legend-name">${escHtml(it.name)}</span>
+          <span class="donut-legend-pct">${total ? Math.round(it.value / total * 100) : 0}%</span>
+          <span class="donut-legend-amt">${fmtAmount(it.value)}</span>
+        </div>`).join('')
+      legendEl.querySelectorAll('.donut-legend-row').forEach(row => {
+        row.addEventListener('click', () => onCatClick(rows.find(it => it.name === row.dataset.cat)))
+      })
+    }
+
+    chart.clearSelection = () => onArcClick(null)   // reset selection + fire onSelect(null)
     return chart
   }
 
@@ -861,17 +896,27 @@
     if (expWrap && expWrap.style.display === 'none') return
     section.style.display = 'block'
 
+    const colorFor = n => finCategories.find(c => c.name === n)?.color || DONUT_OTHER_COLOR
     const catTotals = {}
     finExpenses.forEach(e => { catTotals[e.category] = (catTotals[e.category]||0) + Number(e.amount) })
-    const entries = donutEntries(catTotals, n => finCategories.find(c => c.name === n)?.color || DONUT_OTHER_COLOR)
+    const entries = donutEntries(catTotals, colorFor)
+
+    // Legend lists EVERY category by name (even ones the donut folds into the
+    // gray "Other" arc). Map each category to the arc it should spotlight.
+    const segOf = {}
+    entries.forEach((e, i) => e.cats.forEach(c => { segOf[c] = i }))
+    const legendItems = Object.entries(catTotals)
+      .sort((a,b) => b[1] - a[1])
+      .map(([name, value]) => ({ name, value, cats: [name], color: colorFor(name), seg: segOf[name] }))
 
     if (finChartInstance) { finChartInstance.destroy(); finChartInstance = null }
     finChartInstance = buildDonut($('fin-chart'), entries, {
       centerEl: $('donut-center'),
       legendEl: $('fin-legend'),
-      onSelect: entry => {
+      legendItems,
+      onSelect: sel => {
         // tap a category → show only its expenses; tap again to clear
-        finCatFilter = entry ? entry.cats : null
+        finCatFilter = sel ? sel.cats : null
         renderExpenseList()
       },
     })
@@ -933,20 +978,16 @@
     $('expense-filter-clear')?.addEventListener('click', clearCatFilter)
   }
 
-  // Clear the tapped-category filter and de-select the donut segment
+  // Clear the tapped-category filter and de-select the donut segment.
+  // clearSelection() resets the donut's internal state, restores the center
+  // readout and legend, and fires onSelect(null) → which re-renders the list.
   function clearCatFilter() {
-    finCatFilter = null
-    if (finChartInstance) {
-      finChartInstance.setActiveElements([])
-      finChartInstance.update()
+    if (finChartInstance && finChartInstance.clearSelection) {
+      finChartInstance.clearSelection()
+    } else {
+      finCatFilter = null
+      renderExpenseList()
     }
-    $('fin-legend')?.querySelectorAll('.donut-legend-row.active').forEach(r => r.classList.remove('active'))
-    const centerEl = $('donut-center')
-    if (centerEl && finChartInstance) {
-      const total = finChartInstance.data.datasets[0].data.reduce((s,v) => s + v, 0)
-      centerEl.innerHTML = `<div class="donut-center-amount">${fmtAmount(total)}</div><div class="donut-center-label">total</div>`
-    }
-    renderExpenseList()
   }
 
   function showExpenseEditForm(id) {
