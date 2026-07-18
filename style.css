@@ -243,7 +243,7 @@
   .expense-label{font-size:14px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .expense-cat-date{font-size:11px;color:var(--text3);margin-top:2px}
   .expense-amount{font-size:14px;font-weight:500;color:var(--text);white-space:nowrap;flex-shrink:0}
-  .expense-del-btn{width:28px;height:28px;border:none;background:none;color:var(--text3);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;line-height:1;padding:0}
+  .expense-del-btn{width:34px;height:34px;border:none;background:none;color:var(--text3);cursor:pointer;font-size:24px;display:flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;line-height:1;padding:0}
   .expense-del-btn:active{background:var(--bg3);color:var(--danger)}
   .expense-confirm-row{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:.5px solid var(--border);background:var(--bg2)}
   .expense-confirm-row:last-child{border-bottom:none}
@@ -317,7 +317,7 @@
   .hlth-session-meta{flex:1;min-width:0}
   .hlth-session-date{font-size:13px;font-weight:500;color:var(--text)}
   .hlth-session-notes{font-size:12px;color:var(--text3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .hlth-del-btn{width:28px;height:28px;border:none;background:none;color:var(--text3);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;line-height:1;padding:0}
+  .hlth-del-btn{width:34px;height:34px;border:none;background:none;color:var(--text3);cursor:pointer;font-size:24px;display:flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;line-height:1;padding:0}
   .hlth-del-btn:active{background:var(--bg3);color:var(--danger)}
   .type-selector{display:flex;flex-wrap:wrap;gap:6px;flex:1}
   .type-opt{padding:5px 12px;border-radius:20px;font-size:13px;background:var(--bg3);color:var(--text2);cursor:pointer;border:1.5px solid transparent;transition:all .15s;user-select:none}
@@ -355,7 +355,7 @@
   .txn-amount{font-size:14px;font-weight:500;white-space:nowrap;flex-shrink:0}
   .txn-amount.charge{color:var(--text)}
   .txn-amount.payment{color:var(--success)}
-  .txn-del-btn{width:28px;height:28px;border:none;background:none;color:var(--text3);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;line-height:1;padding:0}
+  .txn-del-btn{width:34px;height:34px;border:none;background:none;color:var(--text3);cursor:pointer;font-size:24px;display:flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;line-height:1;padding:0}
   .txn-del-btn:active{background:var(--bg3);color:var(--danger)}
   .card-selector{display:flex;gap:6px;flex:1;flex-wrap:wrap}
   .card-opt{padding:5px 12px;border-radius:20px;font-size:13px;background:var(--bg3);color:var(--text2);cursor:pointer;border:1.5px solid transparent;transition:all .15s;user-select:none}
@@ -376,7 +376,7 @@
   .sett-row-label { flex: 1; font-size: 14px; color: var(--text); }
   .sett-row-sub { font-size: 12px; color: var(--text3); margin-top: 1px; }
   .sett-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  .sett-del-btn { border: none; background: none; color: var(--text3); font-size: 18px; cursor: pointer; padding: 2px 6px; border-radius: 4px; line-height: 1; }
+  .sett-del-btn { border: none; background: none; color: var(--text3); font-size: 24px; cursor: pointer; padding: 4px 10px; border-radius: 6px; line-height: 1; }
   .sett-del-btn:active { color: var(--danger); background: var(--bg3); }
   .sett-rename-input { flex: 1; font-size: 14px; padding: 4px 8px; border-radius: var(--radius-sm); border: 1px solid var(--accent); background: var(--bg); color: var(--text); font-family: inherit; }
   .sett-add-row { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
