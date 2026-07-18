@@ -453,19 +453,23 @@
       svg.setAttribute('viewBox', '0 0 100 100')
       svg.setAttribute('class', 'cal-rings')
 
-      // today: small accent disc behind the number, inside the rings
-      if (isToday) {
-        const bg = document.createElementNS(svgNS, 'circle')
-        bg.setAttribute('cx','50'); bg.setAttribute('cy','50'); bg.setAttribute('r','23')
-        bg.setAttribute('fill', 'var(--accent)')
-        svg.appendChild(bg)
-      }
-
       const RING_DEFS = [
         { key: 'prayers', color: '#a855f7', r: 46 },   // outer
         { key: 'meals',   color: '#f97316', r: 37.5 }, // middle
         { key: 'reading', color: '#3b82f6', r: 29 },   // inner
       ]
+
+      // today: accent disc behind the number. With no rings logged yet it
+      // fills the cell (r 44) so it matches the diameter of the ringed days;
+      // once any ring is drawn it shrinks to a small disc inside the inner ring.
+      if (isToday) {
+        const hasRings = RING_DEFS.some(({ key }) => (dots[key] || 0) > 0)
+        const bg = document.createElementNS(svgNS, 'circle')
+        bg.setAttribute('cx','50'); bg.setAttribute('cy','50')
+        bg.setAttribute('r', hasRings ? '23' : '44')
+        bg.setAttribute('fill', 'var(--accent)')
+        svg.appendChild(bg)
+      }
       const cx = 50, cy = 50, sw = 6
       let drewRing = false
       RING_DEFS.forEach(({ key, color, r }) => {
