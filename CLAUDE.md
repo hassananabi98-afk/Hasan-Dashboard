@@ -60,6 +60,7 @@ Old `claude/*` session branches accumulate. To clean them, first confirm each is
 ### Cache-busting (IMPORTANT)
 - `index.html` loads assets with a version query: `script.js?v=N` and `style.css?v=N`
 - **Always bump `N` on both lines after editing `script.js` or `style.css`** — GitHub Pages/browsers cache by full URL, so without a bump the old cached file is served indefinitely and changes look like they "didn't apply"
+- **Increment `N` by 1 from whatever is currently in `index.html`** (the owner tracks this number, currently in the 100s — it was realigned to 124). Read the existing value and go one higher; never reset it to a small number.
 
 ### Helper functions (script.js)
 - `darkTint(hex, w)` — blends hex color toward black; used for card/budget box backgrounds
