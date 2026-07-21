@@ -605,6 +605,7 @@
   let finCardTxnType = {}
   let finCardTxnCat = {}
   let finCardCharts = {}
+  let finCardDonutScope = {}   // per card: 'cycle' (default) or 'lifetime'
   let cardDocClickBound = false
 
   function finMonthLabel(ym) {
@@ -1136,6 +1137,22 @@
     if (dd) dd.style.display = 'none'
   }
 
+  // Clamps a .cat-dropdown to whichever side of its trigger button has more
+  // room, so a long category list never renders past the viewport edge —
+  // otherwise the tail of the list is unreachable by scrolling (the page
+  // scrolls instead of the dropdown, which has already scrolled to its own
+  // bottom).
+  function positionCatDropdown(btn, dropdown) {
+    const margin = 10
+    const rect = btn.getBoundingClientRect()
+    const spaceBelow = window.innerHeight - rect.bottom - margin
+    const spaceAbove = rect.top - margin
+    const openBelow = spaceBelow >= 140 || spaceBelow >= spaceAbove
+    dropdown.style.maxHeight = `${Math.max(80, Math.min(220, openBelow ? spaceBelow : spaceAbove))}px`
+    dropdown.style.top = openBelow ? '100%' : 'auto'
+    dropdown.style.bottom = openBelow ? 'auto' : '100%'
+  }
+
   function selectCategory(name, color) {
     selectedCatName = name
     selectedCatColor = color
@@ -1187,6 +1204,7 @@
       const open = dropdown.style.display !== 'none'
       if (open) { dropdown.style.display = 'none'; return }
       renderCatDropdown()
+      positionCatDropdown(pickerBtn, dropdown)
       dropdown.style.display = 'block'
     })
 
@@ -1506,22 +1524,44 @@
   function drawCardDonut(cardId) {
     const area = $(`card-donut-area-${cardId}`)
     if (!area) return
+    const allCharges = finAllTxns.filter(t => t.card_id === cardId && t.type === 'charge')
+    if (!allCharges.length) { area.innerHTML = ''; return }
+
+    const scope = finCardDonutScope[cardId] || 'cycle'
+    const chargeTxns = scope === 'cycle' ? getPeriodTxns(allCharges, finMonth) : allCharges
     const catTotals = {}
-    finAllTxns.filter(t => t.card_id === cardId && t.type === 'charge').forEach(t => {
+    chargeTxns.forEach(t => {
       catTotals[t.category || 'Other'] = (catTotals[t.category || 'Other'] || 0) + Number(t.amount)
     })
-    if (!Object.keys(catTotals).length) { area.innerHTML = ''; return }
-    const entries = donutEntries(catTotals, n => finCategories.find(c => c.name === n)?.color || DONUT_OTHER_COLOR)
+    const hasData = Object.keys(catTotals).length > 0
+
     area.innerHTML = `
+      <div class="donut-scope-toggle">
+        <button class="donut-scope-btn${scope==='cycle'?' active':''}" data-card-id="${cardId}" data-scope="cycle" type="button">This cycle</button>
+        <button class="donut-scope-btn${scope==='lifetime'?' active':''}" data-card-id="${cardId}" data-scope="lifetime" type="button">All time</button>
+      </div>
+      ${hasData ? `
       <div class="donut-wrap donut-wrap-sm">
         <canvas id="card-donut-${cardId}"></canvas>
         <div class="donut-center" id="card-donut-ctr-${cardId}"></div>
       </div>
-      <div class="donut-legend" id="card-donut-leg-${cardId}"></div>`
+      <div class="donut-legend" id="card-donut-leg-${cardId}"></div>` : `<div class="donut-empty-scope">No charges this cycle</div>`}`
+
+    area.querySelectorAll('.donut-scope-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (finCardDonutScope[cardId] === btn.dataset.scope) return
+        finCardDonutScope[cardId] = btn.dataset.scope
+        if (finCardCharts[cardId]) { finCardCharts[cardId].destroy(); delete finCardCharts[cardId] }
+        drawCardDonut(cardId)
+      })
+    })
+    if (!hasData) return
+
+    const entries = donutEntries(catTotals, n => finCategories.find(c => c.name === n)?.color || DONUT_OTHER_COLOR)
     finCardCharts[cardId] = buildDonut($(`card-donut-${cardId}`), entries, {
       centerEl: $(`card-donut-ctr-${cardId}`),
       legendEl: $(`card-donut-leg-${cardId}`),
-      centerLabel: 'charges',
+      centerLabel: scope === 'cycle' ? 'this cycle' : 'all-time charges',
     })
   }
 
@@ -1631,6 +1671,7 @@
             dropdown.style.display = 'none'
           })
         })
+        positionCatDropdown(btn, dropdown)
         dropdown.style.display = 'block'
       })
     })
