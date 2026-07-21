@@ -605,7 +605,6 @@
   let finCardTxnType = {}
   let finCardTxnCat = {}
   let finCardCharts = {}
-  let finCardDonutScope = {}   // per card: 'cycle' (default) or 'lifetime'
   let cardDocClickBound = false
 
   function finMonthLabel(ym) {
@@ -1524,44 +1523,25 @@
   function drawCardDonut(cardId) {
     const area = $(`card-donut-area-${cardId}`)
     if (!area) return
-    const allCharges = finAllTxns.filter(t => t.card_id === cardId && t.type === 'charge')
-    if (!allCharges.length) { area.innerHTML = ''; return }
-
-    const scope = finCardDonutScope[cardId] || 'cycle'
-    const chargeTxns = scope === 'cycle' ? getPeriodTxns(allCharges, finMonth) : allCharges
+    const chargeTxns = getPeriodTxns(finAllTxns.filter(t => t.card_id === cardId && t.type === 'charge'), finMonth)
     const catTotals = {}
     chargeTxns.forEach(t => {
       catTotals[t.category || 'Other'] = (catTotals[t.category || 'Other'] || 0) + Number(t.amount)
     })
-    const hasData = Object.keys(catTotals).length > 0
+    if (!Object.keys(catTotals).length) { area.innerHTML = '<div class="donut-empty-scope">No charges this cycle</div>'; return }
 
     area.innerHTML = `
-      <div class="donut-scope-toggle">
-        <button class="donut-scope-btn${scope==='cycle'?' active':''}" data-card-id="${cardId}" data-scope="cycle" type="button">This cycle</button>
-        <button class="donut-scope-btn${scope==='lifetime'?' active':''}" data-card-id="${cardId}" data-scope="lifetime" type="button">All time</button>
-      </div>
-      ${hasData ? `
       <div class="donut-wrap donut-wrap-sm">
         <canvas id="card-donut-${cardId}"></canvas>
         <div class="donut-center" id="card-donut-ctr-${cardId}"></div>
       </div>
-      <div class="donut-legend" id="card-donut-leg-${cardId}"></div>` : `<div class="donut-empty-scope">No charges this cycle</div>`}`
-
-    area.querySelectorAll('.donut-scope-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        if (finCardDonutScope[cardId] === btn.dataset.scope) return
-        finCardDonutScope[cardId] = btn.dataset.scope
-        if (finCardCharts[cardId]) { finCardCharts[cardId].destroy(); delete finCardCharts[cardId] }
-        drawCardDonut(cardId)
-      })
-    })
-    if (!hasData) return
+      <div class="donut-legend" id="card-donut-leg-${cardId}"></div>`
 
     const entries = donutEntries(catTotals, n => finCategories.find(c => c.name === n)?.color || DONUT_OTHER_COLOR)
     finCardCharts[cardId] = buildDonut($(`card-donut-${cardId}`), entries, {
       centerEl: $(`card-donut-ctr-${cardId}`),
       legendEl: $(`card-donut-leg-${cardId}`),
-      centerLabel: scope === 'cycle' ? 'this cycle' : 'all-time charges',
+      centerLabel: 'this cycle',
     })
   }
 
