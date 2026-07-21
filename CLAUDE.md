@@ -35,25 +35,32 @@ docs/
 
 1. **Always discuss before changing anything** — explain the proposed change and wait for approval before touching any file, git, or database.
 2. **Database changes require explicit approval** — never run DDL (ALTER TABLE, CREATE TABLE, etc.) or DML without telling the user what SQL will be run and getting a "yes". The user runs SQL manually in the Supabase SQL Editor.
-3. **Git: always commit & push to `main`** — GitHub Pages serves from main. Never create or push to a feature branch unless the user explicitly asks for one. Follow the procedure below.
+3. **Git: commit per task, merge to `main` immediately** — GitHub Pages only serves `main`, and that's the only place the change can actually be seen live, so every confirmed change gets merged and pushed to `main` right away — never deferred to "later" or "end of session." If the session was started on a harness-assigned `claude/*` branch, commit there first, then merge that branch into `main` in the same step. Follow the procedure below.
 4. **No changes to Supabase credentials** — anon key is in `script.js`; never commit secrets.
 
-### Commit & Push Procedure (main only)
-Do this every time, at the end of a change:
-1. If `script.js` or `style.css` changed, bump `?v=N` on **both** lines in `index.html` (see Cache-busting).
-2. Confirm the branch: `git rev-parse --abbrev-ref HEAD` must be `main`. If it isn't, `git checkout main` and merge/apply the work there — do not push a feature branch.
+### Commit & Push Procedure
+Do this every time, right after a change is confirmed:
+1. Check the branch: `git rev-parse --abbrev-ref HEAD`.
+   - On `main` → commit and push there directly (steps 2-5 below).
+   - On a `claude/*` branch (assigned by the session) → commit there, then merge into `main` in the same pass — do not leave it sitting on the branch. The branch itself stays alive for the rest of the session; only the merge into main is immediate.
+2. If `script.js` or `style.css` changed, bump `?v=N` on **both** lines in `index.html` (see Cache-busting).
 3. Stage and commit: `git add -A && git commit -m "<clear, present-tense summary>"`.
-4. Push: `git push origin main`. On network errors only, retry up to 4× with backoff (2s, 4s, 8s, 16s).
+4. Merge to `main`: `git fetch origin main && git checkout main && git merge --ff-only <branch>` (fast-forward; if it's not a fast-forward, merge normally), then `git push origin main`. On network errors only, retry up to 4× with backoff (2s, 4s, 8s, 16s).
 5. Verify it landed: `git log --oneline -1 origin/main` should show your commit.
-6. Do **not** open a pull request unless the user asks — pushing straight to `main` is the normal flow, and the live site rebuilds from `main` within ~1 minute.
-- **Never leave work on a feature branch** thinking a PR will carry it live — GitHub Pages ignores every branch except `main`.
+6. If working on a `claude/*` branch, switch back to it (`git checkout <branch>`) so the next task in this session continues there.
+7. Do **not** open a pull request unless the user asks — pushing straight to `main` is the normal flow, and the live site rebuilds from `main` within ~1 minute.
+- **Never leave work only on a feature branch** — GitHub Pages ignores every branch except `main`, so an unmerged branch means the change isn't visible, period.
 
-### Leftover-branch cleanup (`claude/*` branches)
-Old `claude/*` session branches accumulate. To clean them, first confirm each is already in `main` (`git merge-base --is-ancestor origin/claude/<b> origin/main`, or that its work was merged via a closed PR), then:
-1. Try to delete it: `git push origin --delete claude/<b>`.
-2. **If that returns HTTP 403**, the session's git token isn't scoped to delete remote refs — it varies by session, it is *not* a permanent block and *not* a protected-branch issue. Do **not** keep hammering it. Instead force the branch to `main`'s tip so it isn't left stale/divergent: `git push --force origin origin/main:refs/heads/claude/<b>`.
-3. Actual removal is then an operator action — delete from the GitHub UI (repo → **branches** → trash icon; merged PRs also show a "Delete branch" button) or from a machine whose credentials have delete scope.
+### End-of-session cleanup
+Deleting the session's `claude/*` branch is housekeeping, not part of each task — doing it after every task just means recreating the same branch a minute later for the next task. Only run this when the user gives an explicit finishing signal: **"That's it for this session"** (or a clear equivalent like "that's it for now" / "wrapping up").
+1. Confirm any pending work is already merged to `main` (it should be, per the procedure above).
+2. Delete the branch: `git push origin --delete claude/<b>`.
+3. **If that returns HTTP 403**, the session's git token isn't scoped to delete remote refs — it varies by session, it is *not* a permanent block and *not* a protected-branch issue. Do **not** keep hammering it. Instead force the branch to `main`'s tip so it isn't left stale/divergent: `git push --force origin origin/main:refs/heads/claude/<b>`.
+4. Actual removal is then an operator action — delete from the GitHub UI (repo → **branches** → trash icon; merged PRs also show a "Delete branch" button) or from a machine whose credentials have delete scope.
 - Only ever touch `claude/*` branches this way — never force-push or delete `main`.
+
+### Leftover-branch cleanup (fallback)
+For `claude/*` branches from sessions that ended without the finishing signal (e.g. a dropped connection) rather than the normal end-of-session cleanup above. First confirm each is already in `main` (`git merge-base --is-ancestor origin/claude/<b> origin/main`, or that its work was merged via a closed PR), then follow the same delete → 403 fallback → operator-removal steps as above.
 
 ## Key Code Patterns
 
