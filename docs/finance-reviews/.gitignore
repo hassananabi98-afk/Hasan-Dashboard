@@ -1,0 +1,12 @@
+# This repo is PUBLIC and GitHub Pages serves from the root.
+# Completed finance reviews contain salary, loan, card and family detail —
+# committing one here would publish it at a public URL with no PIN in front
+# of it, and leave it in git history permanently.
+#
+# Keep reviews as published artifacts or local files instead.
+# See README.md → "Where the reviews live".
+
+*.html
+*.pdf
+*.csv
+*.xlsx

@@ -17,3 +17,6 @@ When one of these gets built, move its summary into `docs/changelog.md` and
 either delete the file or mark it **Done** in the table above.
 
 When a new idea comes up, add a numbered file and a row here.
+
+Related: [`../finance-reviews/`](../finance-reviews/) — the monthly review
+process that surfaced idea 01.
