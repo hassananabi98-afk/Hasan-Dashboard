@@ -1144,12 +1144,46 @@
   function positionCatDropdown(btn, dropdown) {
     const margin = 10
     const rect = btn.getBoundingClientRect()
-    const spaceBelow = window.innerHeight - rect.bottom - margin
+    const vh = window.visualViewport?.height ?? window.innerHeight
+    const spaceBelow = vh - rect.bottom - margin
     const spaceAbove = rect.top - margin
     const openBelow = spaceBelow >= 140 || spaceBelow >= spaceAbove
-    dropdown.style.maxHeight = `${Math.max(80, Math.min(220, openBelow ? spaceBelow : spaceAbove))}px`
-    dropdown.style.top = openBelow ? '100%' : 'auto'
-    dropdown.style.bottom = openBelow ? 'auto' : '100%'
+    // Clamp to the room actually available on the chosen side. A minimum height
+    // here would push the list past the viewport edge, and the clipped end is
+    // unreachable — the page scrolls, not the dropdown, which has already hit
+    // its own scroll limit.
+    const room = Math.max(0, openBelow ? spaceBelow : spaceAbove)
+    dropdown.style.maxHeight = `${Math.min(220, room)}px`
+    // Fixed positioning, so viewport coordinates — this is what keeps the list
+    // out of .content's overflow clip.
+    dropdown.style.left = `${rect.left}px`
+    dropdown.style.width = `${rect.width}px`
+    if (openBelow) {
+      dropdown.style.top = `${rect.bottom}px`
+      dropdown.style.bottom = 'auto'
+    } else {
+      dropdown.style.top = 'auto'
+      dropdown.style.bottom = `${vh - rect.top}px`
+    }
+  }
+
+  // Keep an open dropdown clamped while the page moves under it — without this
+  // the measurement is only correct at the instant it opened.
+  let catDropdownRepos = null
+  function trackCatDropdown(btn, dropdown) {
+    untrackCatDropdown()
+    catDropdownRepos = () => {
+      if (!dropdown.isConnected || dropdown.style.display === 'none') { untrackCatDropdown(); return }
+      positionCatDropdown(btn, dropdown)
+    }
+    window.addEventListener('scroll', catDropdownRepos, { passive: true, capture: true })
+    window.addEventListener('resize', catDropdownRepos, { passive: true })
+  }
+  function untrackCatDropdown() {
+    if (!catDropdownRepos) return
+    window.removeEventListener('scroll', catDropdownRepos, { capture: true })
+    window.removeEventListener('resize', catDropdownRepos)
+    catDropdownRepos = null
   }
 
   function selectCategory(name, color) {
@@ -1201,15 +1235,21 @@
     pickerBtn.addEventListener('click', ev => {
       ev.stopPropagation()
       const open = dropdown.style.display !== 'none'
-      if (open) { dropdown.style.display = 'none'; return }
+      if (open) { dropdown.style.display = 'none'; untrackCatDropdown(); return }
       renderCatDropdown()
       positionCatDropdown(pickerBtn, dropdown)
       dropdown.style.display = 'block'
+      // re-measure after paint: the list is only laid out once visible
+      requestAnimationFrame(() => positionCatDropdown(pickerBtn, dropdown))
+      trackCatDropdown(pickerBtn, dropdown)
     })
 
     document.addEventListener('click', ev => {
       const wrap = $('cat-picker-wrap')
-      if (wrap && !wrap.contains(ev.target) && dropdown) dropdown.style.display = 'none'
+      if (wrap && !wrap.contains(ev.target) && dropdown) {
+        dropdown.style.display = 'none'
+        untrackCatDropdown()
+      }
     })
 
     amtInp.addEventListener('input', validateExpenseForm)
@@ -1637,7 +1677,7 @@
       if (!dropdown) return
       btn.addEventListener('click', ev => {
         ev.stopPropagation()
-        if (dropdown.style.display !== 'none') { dropdown.style.display = 'none'; return }
+        if (dropdown.style.display !== 'none') { dropdown.style.display = 'none'; untrackCatDropdown(); return }
         const currentCat = finCardTxnCat[cardId]?.name || null
         let html = `<div class="cat-option${!currentCat?' selected':''}" data-cat="" data-color="#6b7280"><div class="cat-option-dot" style="background:#6b7280"></div>None</div>`
         html += finCategories.map(cat => `<div class="cat-option${cat.name===currentCat?' selected':''}" data-cat="${escHtml(cat.name)}" data-color="${cat.color}"><div class="cat-option-dot" style="background:${cat.color}"></div>${escHtml(cat.name)}</div>`).join('')
@@ -1649,10 +1689,13 @@
             if (dot) dot.style.background = opt.dataset.color
             if (txt) txt.textContent = opt.dataset.cat || 'None'
             dropdown.style.display = 'none'
+            untrackCatDropdown()
           })
         })
         positionCatDropdown(btn, dropdown)
         dropdown.style.display = 'block'
+        requestAnimationFrame(() => positionCatDropdown(btn, dropdown))
+        trackCatDropdown(btn, dropdown)
       })
     })
 
@@ -2341,7 +2384,8 @@
     btn.textContent = 'Exporting...'
     btn.disabled = true
     try {
-      const [dt, prayersD, meals, expenses, cards, txns, health, suppList, supps] = await Promise.all([
+      const [dt, prayersD, meals, expenses, cards, txns, health, suppList, supps,
+             budgets, cats, logTypes, logEntries] = await Promise.all([
         supabase.from('daily_tracking').select('*').order('date'),
         supabase.from('prayers').select('*').order('date'),
         supabase.from('meals').select('*').order('date'),
@@ -2351,6 +2395,10 @@
         supabase.from('health_sessions').select('*').order('date'),
         supabase.from('supplement_list').select('*').order('name'),
         supabase.from('supplements').select('*').order('date'),
+        supabase.from('budget_settings').select('*').order('month'),
+        supabase.from('categories').select('*').order('name'),
+        supabase.from('custom_log_types').select('*').order('name'),
+        supabase.from('custom_log_entries').select('*').order('date'),
       ])
 
       const cardName = {}; (cards.data || []).forEach(c => cardName[c.id] = c.name)
@@ -2361,44 +2409,71 @@
 
       const wb = XLSX.utils.book_new()
 
+      const logTypeName = {}; (logTypes.data || []).forEach(t => logTypeName[t.id] = t.name)
+
+      // ID is carried on every sheet so the workbook is a true backup — the
+      // importer upserts on it. Without it a restore can't tell an existing
+      // row from a new one and silently duplicates everything.
       addSheet(wb, (expenses.data || []).map(r => ({
-        Date: r.date, Label: r.label, Amount: r.amount, Category: r.category || '', Notes: r.notes || ''
+        Date: r.date, Label: r.label, Amount: r.amount, Category: r.category || '',
+        Notes: r.notes || '', ID: r.id
       })), 'Expenses')
 
       addSheet(wb, (txns.data || []).map(r => ({
         Card: cardName[r.card_id] || '', Date: r.date, Type: r.type, Label: r.label,
-        Amount: r.amount, Category: r.category || '', Notes: r.notes || ''
+        Amount: r.amount, Category: r.category || '', Notes: r.notes || '', ID: r.id
       })), 'Card Transactions')
 
       addSheet(wb, (dt.data || []).map(r => ({
         Date: r.date, Reading: yn(r.reading),
-        Notes: r.notes || '', 'Notes Tomorrow': r.notes_tomorrow || ''
+        Notes: r.notes || '', 'Notes Tomorrow': r.notes_tomorrow || '', ID: r.id
       })), 'Daily Tracking')
 
       addSheet(wb, (prayersD.data || []).map(r => ({
         Date: r.date, Fajr: yn(r.fajr), Dhuhr: yn(r.dhuhr), Asr: yn(r.asr),
-        Maghrib: yn(r.maghrib), Isha: yn(r.isha)
+        Maghrib: yn(r.maghrib), Isha: yn(r.isha), ID: r.id
       })), 'Prayers')
 
       addSheet(wb, (meals.data || []).map(r => ({
-        Date: r.date, Breakfast: r.breakfast || '', Lunch: r.lunch || '', Dinner: r.dinner || ''
+        Date: r.date, Breakfast: r.breakfast || '', Lunch: r.lunch || '',
+        Dinner: r.dinner || '', ID: r.id
       })), 'Meals')
 
       addSheet(wb, (health.data || []).map(r => ({
-        Date: r.date, Type: r.type, Notes: r.notes || ''
+        Date: r.date, Type: r.type, Notes: r.notes || '', Visible: yn(r.visible), ID: r.id
       })), 'Health')
 
       addSheet(wb, (supps.data || []).map(r => ({
-        Date: r.date, Supplement: suppName[r.supplement_id] || '', Taken: yn(r.taken)
+        Date: r.date, Supplement: suppName[r.supplement_id] || '', Taken: yn(r.taken),
+        'Supplement ID': r.supplement_id || '', ID: r.id
       })), 'Supplements')
 
       addSheet(wb, (suppList.data || []).map(r => ({
-        Name: r.name, Active: yn(r.active)
+        Name: r.name, Active: yn(r.active), ID: r.id
       })), 'Supplement List')
 
       addSheet(wb, (cards.data || []).map(r => ({
-        Name: r.name, Limit: r.limit, Visible: yn(r.visible)
+        Name: r.name, Limit: r.limit, Paid: r.paid, Visible: yn(r.visible), ID: r.id
       })), 'Cards')
+
+      // ── the four that were previously missing ──
+      addSheet(wb, (budgets.data || []).map(r => ({
+        Month: r.month, Total: r.total, 'Started At': r.started_at || '', ID: r.id
+      })), 'Budget Settings')
+
+      addSheet(wb, (cats.data || []).map(r => ({
+        Name: r.name, Color: r.color, ID: r.id
+      })), 'Categories')
+
+      addSheet(wb, (logTypes.data || []).map(r => ({
+        Name: r.name, Emoji: r.emoji || '', Active: yn(r.active),
+        'Show In Analytics': yn(r.show_in_analytics), ID: r.id
+      })), 'Custom Log Types')
+
+      addSheet(wb, (logEntries.data || []).map(r => ({
+        Date: r.date, 'Log Type': logTypeName[r.log_type_id] || '', Value: yn(r.value),
+        'Log Type ID': r.log_type_id || '', ID: r.id
+      })), 'Custom Log Entries')
 
       const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
       const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
@@ -2414,6 +2489,201 @@
     }
     btn.textContent = 'Export All Data (Excel)'
     btn.disabled = false
+  }
+
+  // ── IMPORT (Excel restore) ───────────────────────────────
+  // Upsert-only by design: rows are matched on the ID column the export writes,
+  // so re-importing the same file twice is a no-op rather than a duplication.
+  // Nothing is ever deleted — a row present in the database but absent from the
+  // file is left alone. Restoring into an emptied table therefore works, and so
+  // does merging a stale backup, without either destroying current data.
+  const IMPORT_SHEETS = [
+    // order matters: foreign-key targets first
+    { sheet: 'Categories', table: 'categories', map: r => ({
+        id: r.ID || undefined, name: r.Name, color: r.Color || '#6b7280' }) },
+    { sheet: 'Cards', table: 'cards', map: r => ({
+        id: r.ID || undefined, name: r.Name, limit: num(r.Limit),
+        paid: num(r.Paid) || 0, visible: bool(r.Visible, true) }) },
+    { sheet: 'Supplement List', table: 'supplement_list', map: r => ({
+        id: r.ID || undefined, name: r.Name, active: bool(r.Active, true) }) },
+    { sheet: 'Custom Log Types', table: 'custom_log_types', map: r => ({
+        id: r.ID || undefined, name: r.Name, emoji: r.Emoji || '📋',
+        active: bool(r.Active, true), show_in_analytics: bool(r['Show In Analytics'], false) }) },
+    { sheet: 'Budget Settings', table: 'budget_settings', map: r => ({
+        id: r.ID || undefined, month: r.Month, total: num(r.Total),
+        started_at: r['Started At'] || null }) },
+    { sheet: 'Expenses', table: 'expenses', map: r => ({
+        id: r.ID || undefined, date: r.Date, label: r.Label, amount: num(r.Amount),
+        category: r.Category || null, notes: r.Notes || null }) },
+    { sheet: 'Card Transactions', table: 'card_transactions', map: (r, ctx) => ({
+        id: r.ID || undefined, card_id: ctx.cardByName[r.Card] || null, date: r.Date,
+        type: r.Type, label: r.Label, amount: num(r.Amount),
+        category: r.Category || null, notes: r.Notes || null }) },
+    { sheet: 'Daily Tracking', table: 'daily_tracking', map: r => ({
+        id: r.ID || undefined, date: r.Date, reading: bool(r.Reading, false),
+        notes: r.Notes || null, notes_tomorrow: r['Notes Tomorrow'] || null }) },
+    { sheet: 'Prayers', table: 'prayers', map: r => ({
+        id: r.ID || undefined, date: r.Date, fajr: bool(r.Fajr, false), dhuhr: bool(r.Dhuhr, false),
+        asr: bool(r.Asr, false), maghrib: bool(r.Maghrib, false), isha: bool(r.Isha, false) }) },
+    { sheet: 'Meals', table: 'meals', map: r => ({
+        id: r.ID || undefined, date: r.Date, breakfast: bool(r.Breakfast, false),
+        lunch: bool(r.Lunch, false), dinner: bool(r.Dinner, false) }) },
+    { sheet: 'Health', table: 'health_sessions', map: r => ({
+        id: r.ID || undefined, date: r.Date, type: r.Type,
+        notes: r.Notes || null, visible: bool(r.Visible, true) }) },
+    { sheet: 'Supplements', table: 'supplements', map: (r, ctx) => ({
+        id: r.ID || undefined, date: r.Date,
+        supplement_id: r['Supplement ID'] || ctx.suppByName[r.Supplement] || null,
+        taken: bool(r.Taken, false) }) },
+    { sheet: 'Custom Log Entries', table: 'custom_log_entries', map: (r, ctx) => ({
+        id: r.ID || undefined, date: r.Date,
+        log_type_id: r['Log Type ID'] || ctx.logTypeByName[r['Log Type']] || null,
+        value: bool(r.Value, false) }) },
+  ]
+
+  function num(v) { const n = parseFloat(v); return Number.isFinite(n) ? n : null }
+  function bool(v, dflt) {
+    if (v === true || v === false) return v
+    if (v == null || v === '') return dflt
+    const s = String(v).trim().toLowerCase()
+    if (['yes', 'true', '1', 'y'].includes(s)) return true
+    if (['no', 'false', '0', 'n'].includes(s)) return false
+    return dflt
+  }
+
+  function readWorkbook(file) {
+    return new Promise((resolve, reject) => {
+      const fr = new FileReader()
+      fr.onerror = () => reject(new Error('Could not read the file'))
+      fr.onload = () => {
+        try { resolve(XLSX.read(new Uint8Array(fr.result), { type: 'array' })) }
+        catch (e) { reject(new Error('That does not look like a valid Excel file')) }
+      }
+      fr.readAsArrayBuffer(file)
+    })
+  }
+
+  function summariseImport(wb) {
+    return IMPORT_SHEETS.map(spec => {
+      const ws = wb.Sheets[spec.sheet]
+      if (!ws) return { ...spec, rows: [], missing: true }
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: '' })
+        .filter(r => Object.values(r).some(v => v !== '' && v != null))
+      const withId = rows.filter(r => r.ID).length
+      return { ...spec, rows, missing: false, withId }
+    })
+  }
+
+  async function runImport(summary) {
+    // name→id lookups for sheets that reference another table by name
+    const [cardsRes, suppRes, logRes] = await Promise.all([
+      supabase.from('cards').select('id,name'),
+      supabase.from('supplement_list').select('id,name'),
+      supabase.from('custom_log_types').select('id,name'),
+    ])
+    const ctx = { cardByName: {}, suppByName: {}, logTypeByName: {} }
+    ;(cardsRes.data || []).forEach(c => ctx.cardByName[c.name] = c.id)
+    ;(suppRes.data || []).forEach(s => ctx.suppByName[s.name] = s.id)
+    ;(logRes.data || []).forEach(t => ctx.logTypeByName[t.name] = t.id)
+
+    const results = []
+    for (const spec of summary) {
+      if (spec.missing || !spec.rows.length) { results.push({ sheet: spec.sheet, n: 0, skipped: true }); continue }
+      const payload = spec.rows.map(r => spec.map(r, ctx))
+        .filter(o => Object.values(o).some(v => v !== undefined && v !== null && v !== ''))
+      let ok = 0, failed = 0, lastErr = null
+      for (let i = 0; i < payload.length; i += 200) {
+        const chunk = payload.slice(i, i + 200)
+        const { error } = await supabase.from(spec.table).upsert(chunk, { onConflict: 'id' })
+        if (error) { failed += chunk.length; lastErr = error.message } else { ok += chunk.length }
+      }
+      results.push({ sheet: spec.sheet, n: ok, failed, error: lastErr })
+      // refresh lookups after their source table lands
+      if (spec.table === 'cards') {
+        const { data } = await supabase.from('cards').select('id,name')
+        ;(data || []).forEach(c => ctx.cardByName[c.name] = c.id)
+      }
+      if (spec.table === 'supplement_list') {
+        const { data } = await supabase.from('supplement_list').select('id,name')
+        ;(data || []).forEach(s => ctx.suppByName[s.name] = s.id)
+      }
+      if (spec.table === 'custom_log_types') {
+        const { data } = await supabase.from('custom_log_types').select('id,name')
+        ;(data || []).forEach(t => ctx.logTypeByName[t.name] = t.id)
+      }
+    }
+    return results
+  }
+
+  function bindImport() {
+    const btn = $('sett-import-btn')
+    const input = $('sett-import-file')
+    const panel = $('sett-import-panel')
+    if (!btn || !input || !panel) return
+
+    btn.addEventListener('click', () => input.click())
+
+    input.addEventListener('change', async () => {
+      const file = input.files?.[0]
+      if (!file) return
+      panel.style.display = 'block'
+      panel.innerHTML = '<div class="sett-import-status">Reading file…</div>'
+      let summary
+      try {
+        const wb = await readWorkbook(file)
+        summary = summariseImport(wb)
+      } catch (e) {
+        panel.innerHTML = `<div class="sett-import-status err">${escHtml(e.message)}</div>`
+        input.value = ''
+        return
+      }
+      const found = summary.filter(s => !s.missing && s.rows.length)
+      if (!found.length) {
+        panel.innerHTML = '<div class="sett-import-status err">No recognised sheets in that file. Use a workbook produced by Export All Data.</div>'
+        input.value = ''
+        return
+      }
+      const noId = found.filter(s => s.withId === 0)
+      panel.innerHTML = `
+        <div class="sett-import-title">${escHtml(file.name)}</div>
+        <table class="sett-import-table">
+          ${found.map(s => `<tr><td>${escHtml(s.sheet)}</td><td class="r">${s.rows.length}</td></tr>`).join('')}
+        </table>
+        ${noId.length ? `<div class="sett-import-status warn">${noId.length} sheet(s) have no ID column — those rows will be added as new records, not matched to existing ones.</div>` : ''}
+        <div class="sett-import-status">Existing rows are updated, new rows added. Nothing is deleted.</div>
+        <div class="sett-import-actions">
+          <button class="cat-cancel-btn" id="sett-import-cancel">Cancel</button>
+          <button class="cat-save-btn" id="sett-import-go">Import</button>
+        </div>`
+
+      $('sett-import-cancel').addEventListener('click', () => {
+        panel.style.display = 'none'; panel.innerHTML = ''; input.value = ''
+      })
+      $('sett-import-go').addEventListener('click', async ev => {
+        ev.target.disabled = true
+        panel.innerHTML = '<div class="sett-import-status">Importing…</div>'
+        try {
+          const results = await runImport(summary)
+          const failed = results.filter(r => r.failed)
+          panel.innerHTML = `
+            <div class="sett-import-title">${failed.length ? 'Imported with errors' : 'Import complete'}</div>
+            <table class="sett-import-table">
+              ${results.filter(r => !r.skipped).map(r =>
+                `<tr><td>${escHtml(r.sheet)}</td><td class="r">${r.n}${r.failed ? ` · ${r.failed} failed` : ''}</td></tr>`).join('')}
+            </table>
+            ${failed.length ? `<div class="sett-import-status err">${escHtml(failed[0].error || 'Some rows were rejected')}</div>` : ''}
+            <div class="sett-import-status">Reload the page to see the imported data.</div>`
+          showToast(failed.length ? 'Import finished with errors' : 'Import complete ✓', !!failed.length)
+          todayDirty = healthDirty = analyticsNeedReload = true
+          finLoaded = false; finTxnsLoaded = false
+        } catch (e) {
+          console.error(e)
+          panel.innerHTML = `<div class="sett-import-status err">Import failed: ${escHtml(e.message || 'unknown error')}</div>`
+          showToast('Import failed', true)
+        }
+        input.value = ''
+      })
+    })
   }
 
   // ── SETTINGS ─────────────────────────────────────────────
@@ -2626,6 +2896,7 @@
     // Export
     const exportBtn = document.getElementById('sett-export-btn')
     if (exportBtn) exportBtn.addEventListener('click', exportData)
+    bindImport()
 
     // Add category
     const catAddBtn = document.getElementById('sett-cat-add-btn')

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Dashboard</title>
-<link rel="stylesheet" href="style.css?v=126">
+<link rel="stylesheet" href="style.css?v=127">
 </head>
 <body>
 
@@ -453,11 +453,15 @@
 
 
 
-        <!-- Export -->
+        <!-- Export / Import -->
         <div class="sett-section">
           <div class="sett-section-title">Data</div>
-          <div style="background:var(--bg2);border-radius:var(--radius);padding:12px 14px">
+          <div style="background:var(--bg2);border-radius:var(--radius);padding:12px 14px;display:flex;flex-direction:column;gap:10px">
             <button class="sett-add-btn" id="sett-export-btn" style="width:100%">Export All Data (Excel)</button>
+            <button class="sett-add-btn" id="sett-import-btn" style="width:100%">Import from Excel</button>
+            <input type="file" id="sett-import-file" accept=".xlsx,.xls" style="display:none">
+            <div class="sett-import-hint">Import updates existing records and adds new ones. Nothing is deleted.</div>
+            <div id="sett-import-panel" style="display:none"></div>
           </div>
         </div>
 
@@ -493,6 +497,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script type="module" src="script.js?v=126"></script>
+<script type="module" src="script.js?v=127"></script>
 </body>
 </html>
