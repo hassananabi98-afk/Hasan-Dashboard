@@ -58,6 +58,31 @@ schedule. Manual is fine — the point is that a second copy exists.
 
 ---
 
+### KI-06 · Excel export misses four tables
+**Status:** open · **Found:** 27 Jul 2026 · **Impact:** high
+
+`exportData()` in `script.js` writes one sheet per table, but four tables are
+absent from the workbook:
+
+| Missing table | Why it matters |
+|---|---|
+| `budget_settings` | Holds the salary-cycle definitions and budget totals. Without it a restored database has no cycles, and every finance figure becomes uncomputable. |
+| `categories` | `expenses.category` is a foreign key to `categories.name`. Restoring expenses without it breaks referential integrity. |
+| `custom_log_types` | Custom tracker definitions lost |
+| `custom_log_entries` | Currently empty, but would be lost once used |
+
+Verified by exporting and comparing sheet row counts against the live tables:
+everything present matched exactly, so the bug is omission, not corruption.
+
+This matters more than it looks — the export is currently the **only** backup
+mechanism (see KI-03), so an incomplete export means an incomplete safety net.
+
+**Fix direction:** add the four tables to the sheet list in `exportData()`.
+Small change. Worth also adding a row-count assertion so a future table can't be
+silently forgotten.
+
+---
+
 ## Tracking gaps
 
 ### KI-04 · Loan balances are not tracked, only payments
