@@ -63,21 +63,16 @@ a fully manual habit, so don't propose reminder UI for this again.
 
 ## Tracking gaps
 
-### KI-04 · Loan balances are not tracked, only payments
-**Status:** open · **Impact:** medium
+### KI-04 · Loan balances are not tracked, only payments — *won't fix*
+**Status:** closed, declined 5 Aug 2026 · **Impact:** n/a
 
-Credit cards have a `cards` table with limits and a running balance from their
-transaction history. Loans have neither — they appear only as a recurring
-expense row each cycle.
+Loans appear only as a recurring expense each cycle, so the dashboard can show
+what was paid but not what is still owed or when a loan ends. Total debt across
+cards and loans therefore can't be calculated.
 
-The consequence: the dashboard can show what was paid this month, but not what
-is still owed, how many payments remain, or when any loan ends. Total debt
-position across cards and loans cannot be calculated at all, so there's no way
-to see whether it's improving.
-
-**Fix direction:** a `loans` table (name, original amount, monthly payment,
-optional rate and start date) with the same treatment cards get. Bigger than a
-bug — likely becomes its own upgrade idea if wanted.
+**Decided:** not wanted. Loan tracking will not be built — don't re-propose a
+`loans` table or a total-debt figure. Kept here as a record of the decision so
+the gap isn't rediscovered and raised again.
 
 ---
 

@@ -383,3 +383,4 @@ ALTER TABLE budget_settings ADD COLUMN IF NOT EXISTS started_at date;
 - **KI-03 corrected.** It claimed no export mechanism existed, which stopped being true when the Excel export was completed. Restated as what's actually missing: a copy that has been downloaded and kept off the database, and a habit of repeating it. Whether the app should prompt is logged as Q-04
 - Cache version bumped to `?v=133`
 - **Q-04 answered: no backup reminder.** The app will not prompt, show a last-export date, or nudge at cycle start. Backing up stays fully manual by choice — recorded in KI-03 so it isn't re-proposed
+- **KI-04 declined.** Loan balance tracking will not be built. Recorded as closed in `known-issues.md` so it isn't re-proposed
