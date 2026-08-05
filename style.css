@@ -123,7 +123,8 @@
   .cal-num { font-size: 14px; color: var(--text); line-height: 1; position: relative; z-index: 1; }
   .cal-rings { position: absolute; inset: 0; border-radius: 50%; pointer-events: none; }
   /* sits between the bottom of the day number and the inner reading ring */
-  .cal-note-dot { position: absolute; top: 68%; left: 50%; transform: translate(-50%, -50%); width: 4px; height: 4px; border-radius: 50%; background: var(--accent); opacity: 0.8; z-index: 1; pointer-events: none; }
+  /* red, not accent — accent is the reading ring's blue and the dot read as part of it */
+  .cal-note-dot { position: absolute; top: 68%; left: 50%; transform: translate(-50%, -50%); width: 4px; height: 4px; border-radius: 50%; background: var(--danger); opacity: 0.9; z-index: 1; pointer-events: none; }
   .cal-cell-wrap.today .cal-note-dot { background: #fff; opacity: 0.95; }
   .cal-cell-wrap.future .cal-note-dot { opacity: 0.4; }
 
@@ -345,7 +346,7 @@
   .anl-nav-btn{background:var(--bg3);border:none;color:var(--text2);font-size:18px;width:30px;height:30px;border-radius:var(--radius-sm);cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
   .anl-nav-btn:active{background:var(--accent);color:#fff}
   .anl-month-lbl{font-size:13px;font-weight:500;color:var(--text);min-width:80px;text-align:center}
-  .anl-smoke-free .anl-stat-val{color:#22c55e}
+  .anl-stat-good .anl-stat-val{color:#22c55e}
 
   /* ── CARDS ───────────────────────────────────────────── */
   .card-tile{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:8px}
@@ -473,7 +474,7 @@
     box-shadow:0 1px 3px rgba(0,0,0,.05)
   }
   .anl-stat-val{font-size:28px}
-  .anl-smoke-free .anl-stat-val{color:#22c55e}
+  .anl-stat-good .anl-stat-val{color:#22c55e}
 
   /* Health tiles */
   .hlth-type-tile{

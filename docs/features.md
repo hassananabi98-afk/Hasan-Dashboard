@@ -23,7 +23,7 @@ for colours, tokens and component specs see [`style-guide.md`](style-guide.md).
   - Days with nothing logged stay clean
 - Today's cell gets an accent disc behind the number — full-size when no rings are drawn, shrunk to sit inside the inner ring once any ring appears
 - A legend under the grid names the three ring colours
-- **Note dot** — days with a written note show a small dot below the day number, inside the rings. White on today's disc, dimmed on future days
+- **Note dot** — days with a written note show a small **red** dot below the day number, inside the rings. Red rather than accent-blue so it isn't mistaken for the reading ring. White on today's disc, dimmed on future days. There is deliberately no legend entry for it
 - Ring data loads per month; refreshes on return after any save
 - Auto-saves 100ms after a toggle, 600ms after typing stops in notes
 

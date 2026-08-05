@@ -30,31 +30,27 @@ appears. Silent wrong numbers are worse than visible missing ones.
 set when logging a card payment. Then the link is real rather than inferred.
 Requires a schema change and a backfill of existing rows.
 
-### KI-02 · Same merchant categorised inconsistently
-**Status:** open · **Impact:** low
-
-At least one merchant appears under two different categories in the same cycle —
-a small purchase filed under food, a larger one under fitness. Category totals
-and the donut chart are slightly off wherever this happens.
-
-**Fix direction:** no code change needed. Either accept it, or add a
-remembered merchant→category default when logging a repeat merchant.
-
 ---
 
 ## Operational
 
-### KI-03 · No database backup exists
+### KI-03 · No backup has actually been taken
 **Status:** open · **Impact:** high
 
-There is no export, snapshot or copy of the data anywhere. Every record since
-the dashboard started exists in exactly one place.
+The **mechanism** now exists — Settings → Data exports all 13 tables to Excel,
+and the importer restores them. What's missing is a copy that has actually been
+downloaded and stored somewhere other than the database itself, and any habit of
+repeating it.
 
-This compounds [upgrade idea 02](upgrade-ideas/02-anyone-can-read-and-edit-the-database.md):
+Until that happens every record since the dashboard started still exists in
+exactly one place, which compounds
+[upgrade idea 02](upgrade-ideas/02-anyone-can-read-and-edit-the-database.md):
 the current access model permits deletion, and there would be no way back from it.
 
-**Fix direction:** export from the Supabase dashboard, and repeat it on a
-schedule. Manual is fine — the point is that a second copy exists.
+**Fix direction:** tap Export in Settings, keep the file somewhere off the
+database, and repeat it each cycle. Manual is fine — the point is that a second
+copy exists. Whether this should be prompted or automated is
+[Q-04](future-plans.md).
 
 ---
 

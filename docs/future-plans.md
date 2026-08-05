@@ -20,42 +20,19 @@ entry) · `dropped`
 
 ## Open questions
 
-### Q-01 · Should the calendar ring legend get a "Note" entry?
+### Q-04 · Should the app nudge you to take a backup?
 **Status:** open · **Raised:** 5 Aug 2026
 
-Days with a written note now show a small dot below the day number. The legend
-under the calendar grid (`index.html`, `.cal-ring-legend`) explains the three
-rings — Prayers, Meals, Reading — but says nothing about the dot, so it is the
-only indicator on the grid with no key.
+Settings → Data exports all 13 tables, but nothing reminds anyone to use it, and
+no backup has been taken yet (see [KI-03](known-issues.md)). A backup that
+depends on remembering is the one that doesn't happen.
 
-**Trade-off:** adding a fourth legend item makes the row wider, and on a narrow
-phone it may wrap to two lines. The alternative is leaving the dot unlabelled
-and relying on it being self-evident.
+**Options:** leave it fully manual · show the date of the last export in
+Settings so a stale one is visible · prompt once per salary cycle, alongside
+Start New Month, which is already a monthly habit.
 
-**If yes:** two lines in `index.html` plus a colour swatch, matching the
-existing `.cal-ring-legend-item` markup.
-
-### Q-03 · Rename the leftover `.anl-smoke-free` CSS class?
-**Status:** open · **Raised:** 5 Aug 2026
-
-Smoking tracking was removed from the app, but `.anl-smoke-free` survives in
-`style.css` (two rules, light and dark) and is now applied to the **reading**
-stat tiles to turn them green. The code works; the name just describes a feature
-that no longer exists and will mislead the next person who greps for it.
-
-**If yes:** rename to something like `.anl-stat-good` in `style.css` and the two
-`renderReadingStats` lines in `script.js`. Cosmetic, needs a `?v=N` bump.
-
-### Q-02 · Should a failed auto-save stay silent?
-**Status:** open · **Raised:** 5 Aug 2026 · **Currently: showing the error**
-
-`saveDayData` used to suppress its failure toast on auto-save (`if (!silent)`),
-which meant a silently failing auto-save was invisible — the exact problem the
-auto-save fix was meant to solve. It now shows `Save failed` on every path,
-including auto-save; only the success toast stays silent.
-
-This was implemented without being explicitly asked for, so it is logged here as
-a standing decision to confirm or veto. Nothing is blocked either way.
+Nothing here can be automated server-side — the export is generated in the
+browser, so any prompt still ends in a manual tap.
 
 ---
 
