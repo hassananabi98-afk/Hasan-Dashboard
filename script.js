@@ -2688,7 +2688,11 @@
             ${failed.length ? `<div class="sett-import-status err">${escHtml(failed[0].error || 'Some rows were rejected')}</div>` : ''}
             <div class="sett-import-status">Reload the page to see the imported data.</div>`
           showToast(failed.length ? 'Import finished with errors' : 'Import complete ✓', !!failed.length)
-          todayDirty = healthDirty = analyticsNeedReload = true
+          // these are the real flag names — the previous three were never
+          // declared, so in a module (always strict mode) this line threw a
+          // ReferenceError that the catch below reported as "Import failed"
+          // on every successful import
+          todayNeedsRefresh = hlthNeedsRefresh = anlNeedsRefresh = calNeedsRefresh = true
           finLoaded = false; finTxnsLoaded = false
         } catch (e) {
           console.error(e)

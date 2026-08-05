@@ -26,14 +26,37 @@ style.css
 README.md
 CLAUDE.md         ← this file
 docs/
-  schema.md
-  style-guide.md
-  changelog.md
-  future-plans.md   ← unanswered questions + decisions still pending
-  known-issues.md
-  upgrade-ideas/
-  finance-reviews/
+  features.md       ← what each tab does (behaviour reference)
+  style-guide.md    ← colours, tokens, component specs
+  schema.md         ← database tables and columns
+  changelog.md      ← history only, nothing forward-looking
+  future-plans.md   ← unanswered questions + planned features
+  known-issues.md   ← known bugs and data-quality gaps
+  upgrade-ideas/    ← proposals that need a design write-up
+  finance-reviews/  ← the monthly review process (reviews themselves stay out of the repo)
 ```
+
+### Which doc gets the update
+| The change is… | Goes in |
+|---|---|
+| Already shipped | `changelog.md` |
+| Not built yet, or awaiting your decision | `future-plans.md` |
+| A bug or data-quality gap | `known-issues.md` |
+| A proposal needing a written case | `upgrade-ideas/` |
+| How something looks | `style-guide.md` |
+| What a tab does | `features.md` |
+| A table or column | `schema.md` |
+
+**`features.md` goes stale fastest** — it describes live behaviour, so update it
+in the same commit as the behaviour change, never afterwards.
+
+**The repo is public** and GitHub Pages serves from the root, so every file in
+`docs/` is readable at a URL with no PIN in front of it. Never commit **values** —
+amounts, balances, merchant names, bank names, dates tied to a transaction.
+State evidence as ratios and percentages instead; an argument never needs the
+real figures to make its case. Card labels (`ILA`, `CREDIMAX`) are the app's own
+UI identifiers and are fine — it's the numbers attached to them that aren't.
+Every doc carries this warning; keep it there.
 
 ## Rules — Read Before Every Change
 
@@ -106,15 +129,18 @@ For `claude/*` branches from sessions that ended without the finishing signal (e
 - `anlPeriodYM` — cached result of `currentPeriodYM()` set each time `loadAnalytics` runs; used as the next-button cap so the click handler has a reliable value
 - `renderSpendChart` and `renderTrendChart` both use `getPeriodTxns(expenses, month)` — same salary cycle boundaries as Finance, not calendar month
 - `loadAnalytics` calls `loadFinanceCycles()` if `finCycles` is empty, ensuring cycle data is available when Analytics is visited before Finance
-- Smoke and reading "this month" tiles use `currentYM()` (current calendar month) — unaffected by chart navigation
-- Smoking tiles (left→right): day streak · smoked this month · smoke-free total. "Smoke-free total" is all-time (`rows.filter(r => !r.smoked).length`), not month-scoped
+- Reading "this month" tile uses `currentYM()` (current calendar month) — unaffected by chart navigation
 - Reading tiles (left→right): day streak · days this month (plain) · days total (green)
+- `renderTrendChart` draws one bar per month for the **full current year (Jan–Dec)**, not a rolling window
 - Prayer missed counter has no month parameter — always shows all-time missed prayers up to today
 
 ### Dirty-flag pattern
-- Today, Health, Analytics tabs only reload from Supabase when data changed since last visit
-- Flags: `todayDirty`, `healthDirty`, `analyticsNeedReload`
+- Calendar, Today, Health and Analytics tabs only reload from Supabase when data changed since last visit
+- Flags: `calNeedsRefresh`, `todayNeedsRefresh`, `hlthNeedsRefresh`, `anlNeedsRefresh` — all consumed in `switchTab()`
+- Health and Analytics also gate on `hlthLoaded` / `anlLoaded`, so the flag alone won't force a first load
+- These are the only dirty flags. `todayDirty` / `healthDirty` / `analyticsNeedReload` never existed — an assignment to them in the Excel import handler threw a `ReferenceError` on every successful import until it was fixed
 
 ### Auto-save
-- 100ms debounce on all day-view changes (toggles, steppers, notes, supplements)
-- `scheduleAutoSave()` in script.js
+- `scheduleAutoSave(dateStr, prefix, stateRef, delay)` in script.js — `AUTOSAVE_TAP` (100ms) for toggles and supplements, `AUTOSAVE_TEXT` (600ms) for the notes field
+- The snapshot is captured **synchronously** when the change happens, not when the timer fires, so navigating away can't make a pending save write the wrong day
+- Toggle listeners must stay on the **bubble** phase — a capture listener runs before `bindToggle` flips the class and would save the pre-click value

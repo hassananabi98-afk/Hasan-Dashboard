@@ -1,5 +1,13 @@
 # UI & Style Guide
 
+Colours, tokens and component specs. For what each tab actually *does*, see
+[`features.md`](features.md).
+
+> **No private data in this file.** The repo is public and GitHub Pages serves
+> from the root.
+
+---
+
 ## Color Palette
 | Token | Value | Usage |
 |-------|-------|-------|
@@ -45,52 +53,25 @@
 - **3-tap delete** (cards): same but three taps; cascades to transactions
 - **2-tap Start New Month**: first tap → "Confirm?" in red → second tap executes → click elsewhere cancels
 
+
 ---
 
-## Dashboard Tabs
+## Calendar Day Rings (`.cal-rings`)
+SVG per cell, `viewBox="0 0 100 100"`, `position: absolute; inset: 0`.
 
-### CALENDAR
-- Full monthly calendar with prev/next navigation
-- Tap any day → day view (log/edit prayers, meals, smoking, reading, supplements, notes)
-- Segmented ring per day: 1 log = full circle; 2–4 logs = arc segments with gaps
-  - 🟣 Prayers, 🟠 Meals, 🔴 Smoking, 🔵 Reading
-- Ring data loads per month; auto-refreshes on return after any save
-- Auto-saves 100ms after last change
+| Ring | Colour | Radius | Stroke |
+|---|---|---|---|
+| Prayers (outer) | `#a855f7` violet | 46 | 6 |
+| Meals (middle) | `#f97316` orange | 37.5 | 6 |
+| Reading (inner) | `#3b82f6` blue | 29 | 6 |
 
-### TODAY
-- Shortcut to today's day view (same UI as Calendar day view)
-- Auto-saves 100ms after any change
-- Reloads only when data changed since last visit (dirty flag)
+- Partial rings: arc from 12 o'clock clockwise, `stroke-linecap: round`, over a track of the same colour at `opacity: 0.2`
+- Complete rings draw as a `<circle>` — an SVG arc can't represent 360°
+- Today's disc: `fill: var(--accent)`, `r: 44` with no rings drawn, `r: 23` once any ring appears
+- `.cal-num` sits above the SVG at `z-index: 1`
 
-### FINANCE
-- Month navigation (prev/next — future months blocked)
-- Monthly Budget box (violet) — Remaining, progress bar, total budget; tap amount to edit
-- Salary cycle: press **Start New Month** when salary arrives → creates next month's cycle
-  - Cycle open-ended until next Start is pressed
-- Cash expense log — add (label, amount, category, date, notes) + delete + edit
-- Donut chart by category with manual legend
-- Cards section (CREDIMAX blue, ILA green) — all-time balance from transactions
-  - Tap "Limit BHD X.XXX ✎" to edit card limit inline
-  - Tap card tile to expand per-card spending donut
-- Card transactions — add (charge/payment, label, amount, category, date) + delete
-
-### HEALTH
-- Month navigation; reloads only when a session was added/deleted (dirty flag)
-- Session type tiles — pill rows with colored left accent, emoji, label, monthly count
-- Tap a tile to hide it; "Hidden (N)" section reveals hidden tiles; prefs in localStorage
-- Add session (type, date, notes) + delete with inline confirm
-
-### ANALYTICS
-- Reloads only when data changed since last visit (dirty flag)
-- Reading: day streak, days this month, days total
-- Smoking: smoke-free streak, smoke-free days this month, smoked days this month
-- Spending donut: per-category breakdown for selected month + legend; month nav
-- Monthly spending bar: last 6 months; selected month highlighted solid blue
-- Reading/Smoking visibility toggleable in Settings
-
-### SETTINGS
-- Opens via gear icon; re-fetches all data on every open
-- Categories — inline rename, delete (2-tap), add new (auto color)
-- Supplements — active/inactive toggle, delete (2-tap), add new
-- Cards — visible/hidden toggle, delete (3-tap + cascades transactions), add new
-- Analytics Visibility — toggle Reading and Smoking; persisted in localStorage
+## Calendar Note Dot (`.cal-note-dot`)
+- 4px circle at `top: 68%; left: 50%`, translated to centre — between the bottom of the day number and the inner reading ring
+- `background: var(--accent)` at `opacity: 0.8`
+- On today's accent disc: white at `opacity: 0.95`
+- On future days: `opacity: 0.4`

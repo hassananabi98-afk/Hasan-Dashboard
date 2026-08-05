@@ -1,21 +1,17 @@
-# Changelog & Roadmap
+# Changelog
 
-## Pending / Planned
+A record of what shipped. Nothing forward-looking lives here — planned features
+and open decisions are in [`future-plans.md`](future-plans.md), bugs in
+[`known-issues.md`](known-issues.md).
 
-Feature ideas live here. Anything waiting on a **decision** from Hassan — an
-open question, a trade-off to call, SQL handed over but not yet run — goes in
-[`future-plans.md`](future-plans.md) instead.
+> **No private data in this file.** The repo is public and GitHub Pages serves
+> from the root. Record what changed, never live values — no amounts, balances,
+> merchants or card names.
 
-| Item | Notes |
-|------|-------|
-| Edit existing card transactions | Currently delete + re-add only |
-| Edit existing health sessions | Currently delete + re-add only |
-| Quarterly analytics view | Spending grouped by quarter |
-| iPhone Shortcuts integration | POST to Supabase REST from Shortcuts for quick logging |
-| Export / backup | CSV or JSON export of all data |
-| Calendar ring legend | Key showing what each ring colour means |
-| PWA / home screen install | manifest + service worker for offline + install prompt |
-| Rename categories backfill | Renaming a category does not update old expense rows |
+Entries below are historical and describe the app **as it was at the time**.
+Where a feature was later removed — smoking tracking, the "Note for tomorrow"
+field — the old entries are left intact on purpose; the current behaviour is in
+[`features.md`](features.md).
 
 ---
 
@@ -352,3 +348,17 @@ ALTER TABLE budget_settings ADD COLUMN IF NOT EXISTS started_at date;
 - The `ALTER TABLE ... DROP COLUMN` is recorded in `future-plans.md` as P-01 for Hassan to run; schema.md marks the column dropped
 - Cache version bumped to `?v=130`
 - `notes_tomorrow` column dropped from `daily_tracking` (run 5 Aug 2026, 0 rows affected), completing the removal
+
+**Documentation audit + Excel import fix:**
+- **Excel import reported failure on every successful import.** The completion handler assigned to `todayDirty` / `healthDirty` / `analyticsNeedReload`, none of which were ever declared. `script.js` is a module and modules are always strict mode, so the assignment threw a `ReferenceError` that the surrounding `catch` turned into an "Import failed" panel — after the data had already imported correctly. The following line, which cleared the Finance cache, never ran either, so Finance kept serving stale data. Replaced with the real flag names (`todayNeedsRefresh`, `hlthNeedsRefresh`, `anlNeedsRefresh`, `calNeedsRefresh`). Found by checking CLAUDE.md's documented flag names against the code
+- **Private figures removed from `upgrade-ideas/01`.** It carried card charge and repayment totals, the budget over-run in BHD, a monthly budget total, and named merchants — all served publicly with no PIN. Restated as ratios and percentages, which the argument never needed to be told with real numbers. The summary row in `upgrade-ideas/README.md` carried two of the same figures. Note: the values remain in git history; only further exposure is stopped
+- **Privacy warning added to the five docs missing it** — `changelog.md`, `schema.md`, `style-guide.md`, `upgrade-ideas/01`, `upgrade-ideas/README.md`
+- **Smoking removed from the docs.** The feature is entirely gone from `index.html` and `script.js`, but was still documented as live in the style guide (rings, day view, analytics card, Settings toggle) and CLAUDE.md. Historical changelog entries left intact on purpose. The `.anl-smoke-free` CSS class survives and now greens the reading tiles — logged as Q-03 in `future-plans.md`
+- **KI-06 closed** — the Excel export gained the four missing tables (`budget_settings`, `categories`, `custom_log_types`, `custom_log_entries`) and now writes 13 sheets
+
+**Doc reorganisation:**
+- `docs/features.md` added — the tab-by-tab behaviour reference, split out of `style-guide.md`. Every stale fact found in the audit was in that half; the colour and component half was accurate throughout. The style guide keeps design only, and gained specs for the calendar rings and the new note dot
+- `changelog.md`'s "Pending / Planned" table moved to `future-plans.md`, so the changelog is purely historical and there is one list per purpose. Two rows dropped as already shipped: Export/backup and Calendar ring legend
+- CLAUDE.md gained a routing table for which doc gets which kind of update, and a corrected repo map
+- Corrected in CLAUDE.md: the dirty-flag names, the trend chart being a full calendar year rather than a rolling six months, and the auto-save section (split delays, synchronous snapshot, bubble-phase requirement)
+- Cache version bumped to `?v=131`

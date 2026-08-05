@@ -3,6 +3,12 @@
 **Status:** Proposed. Nothing has been built or changed.
 **Found:** July 2026 finance review (cycle 24 Jun – 25 Jul 2026).
 
+> **No private data in this file.** The repo is public and GitHub Pages serves
+> from the root. Evidence below is given as ratios and percentages, never as
+> amounts — the argument doesn't need the real figures, and the real figures
+> would be readable by anyone. Same rule as
+> [`../finance-reviews/`](../finance-reviews/).
+
 ---
 
 ## The problem in one sentence
@@ -27,21 +33,20 @@ So the budget is always describing last month's shopping, not this month's.
 
 ## What it cost in July
 
-| | Amount |
+| | Share |
 |---|---|
-| Charged to the two cards | 152.854 |
-| Paid back to the two cards | 106.354 |
-| **Bought but never counted** | **45.770** |
+| Paid back to the two cards, as a share of what was charged | ~70% |
+| **Charged but never counted by the budget** | **~30% of charges** |
 
-That 45.770 is real shopping — IKEA, R&B, groceries, New Yorker — that happened
-in July and simply never reached the budget.
+That uncounted third was real shopping — furniture, clothing, groceries — that
+happened in July and simply never reached the budget.
 
 The result:
 
-| | Amount | What the dashboard said |
+| | Over budget | What the dashboard said |
 |---|---|---|
-| What the budget showed | 11.632 over (1.02%) | "Slightly over, no big deal" |
-| What actually happened | 58.132 over (5.11%) | Five times worse |
+| What the budget showed | ~1% | "Slightly over, no big deal" |
+| What actually happened | ~5% | Five times worse |
 
 The dashboard wasn't broken and the data wasn't wrong. It measured the thing it
 was built to measure. That thing just isn't the whole picture.
@@ -53,21 +58,18 @@ was built to measure. That thing just isn't the whole picture.
 The obvious answer is "just tell the budget to count card charges too." That
 creates a worse problem: **everything gets counted twice.**
 
-Here's the IKEA purchase, 25.000 on CrediMax:
+Take one chair, bought on a card mid-month:
 
-1. **21 July** — you buy it on the card. The fix counts it. ✅ Correct.
-2. **26 July** — you pay the CrediMax bill and log it as an expense.
-   The budget counts it **again**. ❌ Now you've "spent" 50.000 on one chair.
+1. **Purchase day** — you buy it on the card. The fix counts it. ✅ Correct.
+2. **Bill day** — you pay the card bill and log it as an expense.
+   The budget counts it **again**. ❌ One chair, counted as two.
 
 To avoid this, the app has to be able to look at an expense and know *"this one
 is a card payment, skip it."*
 
-**Right now it can't tell.** You've written that same payment three different
-ways:
-
-- `CrediMax` (24 June)
-- `ILA Credit Card` (24 June)
-- `BBK Credit Card` (26 July)
+**Right now it can't tell.** The same payment has been written three different
+ways across two cycles — a card nickname, the card's full name, and the issuing
+bank's name (see [KI-01](../known-issues.md)).
 
 Guessing from the text would work until the day you type it slightly
 differently, and then the budget would quietly go wrong with no warning. That's
@@ -83,8 +85,8 @@ worse than the problem we started with.
 *pay* for them. Paying off a card stops counting as spending — because it
 isn't. You're returning borrowed money, not buying anything.
 
-**What you'd see:** July's bar would have read 1,195.440 instead of 1,148.940,
-and it would have gone red at the right time.
+**What you'd see:** July's bar would have read about 4% higher than it did, and
+it would have gone red at the right time.
 
 **What it needs:** A small addition to the database so the app can mark an
 expense as "this is a card payment, don't count it." One SQL command, run once
@@ -103,7 +105,7 @@ does today.
 
 **What you'd see:** A small line next to the bar:
 
-> **+45.770 added to card debt this month**
+> **+XX.XXX added to card debt this month**
 
 **What it needs:** Nothing new in the database. The card information is already
 loaded on that screen for the same date range.

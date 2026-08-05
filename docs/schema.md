@@ -2,6 +2,13 @@
 
 All tables use `authenticated` role with RLS enabled (`USING (true) WITH CHECK (true)`).
 
+> **No private data in this file.** The repo is public and GitHub Pages serves
+> from the root. Document columns and types, never row values.
+
+> **Note on RLS:** `USING (true) WITH CHECK (true)` means the policy grants
+> everything to anyone holding the anon key, which ships in `script.js`. That is
+> the subject of [upgrade idea 02](upgrade-ideas/02-anyone-can-read-and-edit-the-database.md).
+
 ---
 
 ## daily_tracking

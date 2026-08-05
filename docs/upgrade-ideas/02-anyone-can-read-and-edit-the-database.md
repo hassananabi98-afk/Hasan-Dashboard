@@ -4,6 +4,10 @@
 **Found:** 26 July 2026, during a repo/data exposure check.
 **Severity:** High. This is the most serious item in this folder.
 
+> **No private data in this file.** The repo is public and GitHub Pages serves
+> from the root. State evidence as ratios and percentages, never as amounts, and
+> don't name merchants or banks.
+
 ---
 
 ## The problem in one sentence
