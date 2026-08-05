@@ -164,3 +164,4 @@ Cycles reviewed so far. No figures — just what was found.
 |---|---|---|
 | July 2026 | 24 Jun – 25 Jul | Cash budget looked ~1% over; accrual restatement showed ~5×. Both cards finished at/above limit. Interest doubled. |
 | August 2026 | 26 Jul – 25 Aug | Planned, not closed. Paydown deferred behind unquoted car repair and service — cash held deliberately. |
+| August 2026 *(mid-cycle checkpoint, day 11)* | 26 Jul – open | Both cards cleared to zero and no new charges — interest went to nil. Raw first-10-day rate looked ~2.7× last cycle's daily average, but that compares a window containing the salary sweep against a full-cycle average; on an accrual basis the discretionary rate is ~1.25×. A block of card payments has no matching cash-side rows, which decides whether the cycle reads as on-track or well over. Last cycle's "defer the paydown" advice was corrected — clearing the balances was the better call. |

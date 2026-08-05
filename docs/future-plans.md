@@ -38,6 +38,30 @@ yourself. A safer version would offer the choice at the moment of tagging
 Nothing is blocked; flagging it so the asymmetry is a decision rather than an
 accident.
 
+### Q-06 · Which account did the mid-cycle card payoff come from?
+**Status:** open · **Raised:** 5 Aug 2026 · **Blocks:** the August cycle review
+
+Both cards were cleared to zero mid-cycle. The payments are recorded on the card
+side, but the largest block of them has **no matching rows in `expenses`**, so
+the budget bar cannot see that outflow. Every other card payment on record was
+mirrored onto the cash side, so this is a break from the existing convention
+rather than a different one.
+
+Two readings, and they point opposite ways:
+
+- **Paid from savings** — the budget figure is accurate as displayed, but a
+  savings drawdown happened that nothing in the app records.
+- **Paid from the current account** — the budget is understated by that amount,
+  and the cycle is already well past its limit rather than tracking under it.
+
+Against the savings reading: a transfer *into* savings was logged the same day.
+Not impossible, but unusual enough to confirm before entering anything.
+
+The fix differs per answer, so nothing should be entered until it's settled.
+Worth noting the general gap too — a card payment made outside the app leaves
+the two sides out of step with no warning, and only a manual reconciliation
+catches it.
+
 ---
 
 ## Pending changes
