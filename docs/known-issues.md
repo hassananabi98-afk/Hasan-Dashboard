@@ -14,21 +14,10 @@ instead.
 
 ## Data quality
 
-### KI-01 · Card payments are recorded under inconsistent labels
-**Status:** open · **Found:** 26 Jul 2026 · **Impact:** medium
-
-The same credit card payment has been logged under three different label
-spellings across two cycles. Nothing in the schema links an expense row to the
-card it paid — the connection exists only in the text of the label.
-
-Anything that needs to identify card payments (see
-[upgrade idea 01](upgrade-ideas/01-budget-doesnt-see-card-spending.md)) has to
-match on that text, and will silently miss a payment the moment a new spelling
-appears. Silent wrong numbers are worse than visible missing ones.
-
-**Fix direction:** add a nullable column on `expenses` referencing `cards.id`,
-set when logging a card payment. Then the link is real rather than inferred.
-Requires a schema change and a backfill of existing rows.
+*(KI-01, KI-02, KI-04, KI-06 and KI-07 are retired — see
+[`changelog.md`](changelog.md) for the fixes and
+[`future-plans.md`](future-plans.md) for what was declined. Retired IDs are not
+reused.)*
 
 ---
 

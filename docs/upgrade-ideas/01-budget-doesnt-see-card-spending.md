@@ -67,13 +67,15 @@ Take one chair, bought on a card mid-month:
 To avoid this, the app has to be able to look at an expense and know *"this one
 is a card payment, skip it."*
 
-**Right now it can't tell.** The same payment has been written three different
-ways across two cycles — a card nickname, the card's full name, and the issuing
-bank's name (see [KI-01](../known-issues.md)).
+**It can now tell — this blocker is gone.** As of 5 Aug 2026 `expenses.card_id`
+links a payment to the card it paid, set from a Type toggle on the expense form,
+and the historical rows have been backfilled.
 
-Guessing from the text would work until the day you type it slightly
-differently, and then the budget would quietly go wrong with no warning. That's
-worse than the problem we started with.
+This mattered more than it looked. The same card had been written both as its own
+name and as the issuing bank's name — two labels with **no word in common**. Any
+text-matching approach would have silently missed one of them, and a budget
+that's quietly wrong is worse than one that's openly incomplete. That risk is
+what made Option A unsafe before; it no longer applies.
 
 ---
 
@@ -88,9 +90,10 @@ isn't. You're returning borrowed money, not buying anything.
 **What you'd see:** July's bar would have read about 4% higher than it did, and
 it would have gone red at the right time.
 
-**What it needs:** A small addition to the database so the app can mark an
-expense as "this is a card payment, don't count it." One SQL command, run once
-by you, plus tagging the five card payments already recorded.
+**What it needs:** Nothing new in the database — `expenses.card_id` already
+marks which expenses are card payments, and the existing rows are tagged. Only
+`renderBudgetBar()` and the donut need to start skipping rows where `card_id` is
+set.
 
 **Trade-off:** This is the correct answer, but it changes what the number
 means. The bar would show a bigger figure than you're used to, and it needs a
@@ -134,10 +137,11 @@ Option B can be built any time, changes nothing you rely on, and cannot break
 anything — it just surfaces a number that's already sitting there. It solves
 the real problem, which is that the card debt was growing invisibly.
 
-Option A is the proper accounting fix and worth doing eventually, but it should
-wait until the card payments are properly tagged in the database. Until then it
-would be guessing from text, and a budget that's silently wrong is worse than
-one that's openly incomplete.
+Option A is the proper accounting fix and worth doing eventually. It was
+previously gated on card payments being properly tagged in the database — that
+is now done (KI-01, 5 Aug 2026), so Option A is buildable whenever you want it.
+It still changes what the headline number means, which is the remaining reason
+to think before building it.
 
 ---
 

@@ -15,7 +15,7 @@ them.
 | # | Idea | Status | Why it matters |
 |---|---|---|---|
 | [02](02-anyone-can-read-and-edit-the-database.md) | **Anyone can read and edit the database** | Proposed — **highest priority** | The PIN protects the page, not the data. Anyone can read, change or delete every table. |
-| [01](01-budget-doesnt-see-card-spending.md) | Budget doesn't see card spending | Proposed — awaiting decision | July looked ~1% over budget. It was really ~5× that. |
+| [01](01-budget-doesnt-see-card-spending.md) | Budget doesn't see card spending | Proposed — **unblocked**, awaiting decision | July looked ~1% over budget. It was really ~5× that. Card payments are now tagged (KI-01), so either option is buildable. |
 
 ## How to use this folder
 
