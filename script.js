@@ -291,16 +291,11 @@
     const { data: dt } = await supabase.from('daily_tracking').select('*').eq('date', dateStr).maybeSingle()
     if (dt) {
       setToggle(`${prefix}tog-reading`, dt.reading || false)
-      if (prefix === '') {
-        $('notes-today').value = dt.notes || ''
-        $('notes-tomorrow').value = dt.notes_tomorrow || ''
-      } else {
-        $('tnotes-today').value = dt.notes || ''
-        $('tnotes-tomorrow').value = dt.notes_tomorrow || ''
-      }
+      if (prefix === '') $('notes-today').value = dt.notes || ''
+      else $('tnotes-today').value = dt.notes || ''
     } else {
-      if (prefix === '') { $('notes-today').value = ''; $('notes-tomorrow').value = '' }
-      else { $('tnotes-today').value = ''; $('tnotes-tomorrow').value = '' }
+      if (prefix === '') $('notes-today').value = ''
+      else $('tnotes-today').value = ''
     }
   }
 
@@ -314,7 +309,6 @@
         [...prayerKeys, ...mealKeys, 'reading'].map(k => [k, getToggle(`${prefix}tog-${k}`)])
       ),
       notes: prefix === '' ? $('notes-today').value : $('tnotes-today').value,
-      notesTomorrow: prefix === '' ? $('notes-tomorrow').value : $('tnotes-tomorrow').value,
       supplements: stateRef.map(s => ({ id: s.id, taken: s.taken })),
     }
   }
@@ -346,7 +340,6 @@
         date: dateStr,
         reading: snapshot.toggles.reading,
         notes: snapshot.notes,
-        notes_tomorrow: snapshot.notesTomorrow,
       }, { onConflict: 'date' }))
 
       // supplements: delete existing for this day, re-insert
@@ -384,7 +377,9 @@
 
   // ── AUTO-SAVE ─────────────────────────────────────────────
   const autoSaveTimers = {}
-  function scheduleAutoSave(dateStr, prefix, stateRef) {
+  const AUTOSAVE_TAP = 100   // discrete actions — a toggle should land immediately
+  const AUTOSAVE_TEXT = 600  // typing — one write per pause instead of one per 100ms
+  function scheduleAutoSave(dateStr, prefix, stateRef, delay = AUTOSAVE_TAP) {
     // Keyed by date (not just prefix) so navigating to a different day
     // doesn't cancel a still-pending save for the day just left, and the
     // snapshot is captured now — before the shared DOM/stateRef can be
@@ -396,7 +391,7 @@
     autoSaveTimers[key] = setTimeout(() => {
       delete autoSaveTimers[key]
       saveDayData(dateStr, prefix, snapshot, true)
-    }, 100)
+    }, delay)
   }
 
   async function loadCalDots(year, month) {
@@ -422,6 +417,8 @@
     ;(dtRes.data||[]).forEach(r => {
       if (!calDotData[r.date]) calDotData[r.date] = {}
       calDotData[r.date].reading = r.reading ? 1 : 0
+      // note flag rides along on the daily_tracking rows already fetched here
+      calDotData[r.date].note = !!(r.notes && r.notes.trim())
     })
   }
 
@@ -518,6 +515,13 @@
       const num = document.createElement('div')
       num.className = 'cal-num'; num.textContent = d
       wrap.appendChild(num)
+
+      // days with a written note get a dot below the number, inside the rings
+      if (dots.note) {
+        const noteDot = document.createElement('div')
+        noteDot.className = 'cal-note-dot'
+        wrap.appendChild(noteDot)
+      }
       wrap.addEventListener('click', () => openDayView(calYear, calMonth, d))
       grid.appendChild(wrap)
     }
@@ -553,13 +557,10 @@
       // toggle before bindToggle flipped it and auto-saved the previous value
       el.addEventListener('click', () => scheduleAutoSave(getDateStr(), prefix, stateRef))
     })
-    // Notes
-    const notesId = prefix === '' ? 'notes-today' : 'tnotes-today'
-    const tmrwId  = prefix === '' ? 'notes-tomorrow' : 'tnotes-tomorrow'
-    ;[notesId, tmrwId].forEach(id => {
-      const el = $(id); if (!el) return
-      el.addEventListener('input', () => scheduleAutoSave(getDateStr(), prefix, stateRef))
-    })
+    // Notes — longer debounce so a write fires per pause in typing, not per keystroke
+    const notesEl = $(prefix === '' ? 'notes-today' : 'tnotes-today')
+    if (notesEl) notesEl.addEventListener('input',
+      () => scheduleAutoSave(getDateStr(), prefix, stateRef, AUTOSAVE_TEXT))
   }
   wireAutoSave('', () => currentDayStr, suppState)
   wireAutoSave('t', () => todayStr(), tsuppState)

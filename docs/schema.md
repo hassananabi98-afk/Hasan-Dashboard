@@ -11,7 +11,7 @@ All tables use `authenticated` role with RLS enabled (`USING (true) WITH CHECK (
 | date | DATE | Unique per day |
 | reading | BOOLEAN | Read today |
 | notes | TEXT | General day notes |
-| notes_tomorrow | TEXT | Note written today for tomorrow |
+| notes_tomorrow | TEXT | **Retired** — the field was removed from the UI and is no longer written. Column kept (it was never used: 0 rows) so the Excel export stays round-trippable; safe to drop whenever |
 | created_at | TIMESTAMP | Auto-set |
 
 ## prayers

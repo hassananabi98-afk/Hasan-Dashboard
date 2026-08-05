@@ -333,3 +333,9 @@ ALTER TABLE budget_settings ADD COLUMN IF NOT EXISTS started_at date;
 - Failed saves reported success: `saveDayData` wrapped its writes in `try`/`catch`, but supabase-js resolves with `{ error }` instead of rejecting, so nothing ever reached the `catch`. Every write is now checked explicitly, and failures surface a toast on auto-save too — only the success toast stays silent
 - Editing today from the calendar day view left the Today tab stale: `saveDayData` set `calNeedsRefresh` and `anlNeedsRefresh` but never `todayNeedsRefresh`, despite the tab-switch handler already consuming it
 - Cache version bumped to `?v=128`
+
+**Notes: slower debounce, tomorrow field removed, calendar note dot:**
+- Notes now auto-save on a 600ms debounce instead of 100ms — `scheduleAutoSave` takes a `delay` argument, so toggles and supplements keep saving instantly (100ms) while typing fires one write per pause rather than one per keystroke gap. Both delays are named constants (`AUTOSAVE_TAP` / `AUTOSAVE_TEXT`)
+- "Note for tomorrow" removed from both the calendar day view and the Today tab — the field was never used (0 of 55 `daily_tracking` rows had a value). The `notes_tomorrow` column is deliberately kept so the Excel export stays round-trippable with older backups; it's marked retired in `schema.md` and is safe to drop later
+- Days with a written note now show a small dot below the day number on the calendar, sized to sit between the number and the inner reading ring. `loadCalDots` already fetched the `daily_tracking` rows, so the flag costs no extra query. Turns white on today's accent disc and dims on future days
+- Cache version bumped to `?v=129`
