@@ -49,8 +49,10 @@ the current access model permits deletion, and there would be no way back from i
 
 **Fix direction:** tap Export in Settings, keep the file somewhere off the
 database, and repeat it each cycle. Manual is fine — the point is that a second
-copy exists. Whether this should be prompted or automated is
-[Q-04](future-plans.md).
+copy exists.
+
+**Decided 5 Aug 2026:** the app will **not** prompt or remind. Backing up stays
+a fully manual habit, so don't propose reminder UI for this again.
 
 ---
 

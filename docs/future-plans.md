@@ -20,19 +20,7 @@ entry) · `dropped`
 
 ## Open questions
 
-### Q-04 · Should the app nudge you to take a backup?
-**Status:** open · **Raised:** 5 Aug 2026
-
-Settings → Data exports all 13 tables, but nothing reminds anyone to use it, and
-no backup has been taken yet (see [KI-03](known-issues.md)). A backup that
-depends on remembering is the one that doesn't happen.
-
-**Options:** leave it fully manual · show the date of the last export in
-Settings so a stale one is visible · prompt once per salary cycle, alongside
-Start New Month, which is already a monthly habit.
-
-Nothing here can be automated server-side — the export is generated in the
-browser, so any prompt still ends in a manual tap.
+*None open.*
 
 ---
 
