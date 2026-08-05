@@ -40,6 +40,21 @@ WHERE started_at IS NOT NULL
 ORDER BY started_at;
 ```
 
+## Before you start — take the backup
+
+Settings → **Data** → **Export All Data (Excel)**, and keep the file somewhere
+that isn't the database. Do this first, every cycle, before any review work.
+
+This is the only backup that exists. There is no automatic one and the app
+deliberately does not remind you (decided 5 Aug 2026) — so it is anchored here
+instead, to the one thing that already happens once per cycle. A backup taken
+last cycle does not cover this cycle's data.
+
+It matters more than it sounds while
+[upgrade idea 02](../upgrade-ideas/02-anyone-can-read-and-edit-the-database.md)
+is open: the current access model permits deletion by anyone holding the key,
+and the export is the only way back.
+
 ## What gets checked
 
 ### 1. Budget vs. cash

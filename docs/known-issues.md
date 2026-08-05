@@ -23,25 +23,10 @@ reused.)*
 
 ## Operational
 
-### KI-03 · No backup has actually been taken
-**Status:** open · **Impact:** high
-
-The **mechanism** now exists — Settings → Data exports all 13 tables to Excel,
-and the importer restores them. What's missing is a copy that has actually been
-downloaded and stored somewhere other than the database itself, and any habit of
-repeating it.
-
-Until that happens every record since the dashboard started still exists in
-exactly one place, which compounds
-[upgrade idea 02](upgrade-ideas/02-anyone-can-read-and-edit-the-database.md):
-the current access model permits deletion, and there would be no way back from it.
-
-**Fix direction:** tap Export in Settings, keep the file somewhere off the
-database, and repeat it each cycle. Manual is fine — the point is that a second
-copy exists.
-
-**Decided 5 Aug 2026:** the app will **not** prompt or remind. Backing up stays
-a fully manual habit, so don't propose reminder UI for this again.
+*(KI-03 is retired — a backup was taken on 5 Aug 2026. Re-exporting each cycle
+is part of the [monthly review](finance-reviews/), not a tracked bug. The app
+will **not** prompt or remind; that was decided and settled, so don't propose
+reminder UI for it again.)*
 
 ---
 
