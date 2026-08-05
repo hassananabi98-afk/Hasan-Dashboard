@@ -1,6 +1,11 @@
 # Changelog & Roadmap
 
 ## Pending / Planned
+
+Feature ideas live here. Anything waiting on a **decision** from Hassan — an
+open question, a trade-off to call, SQL handed over but not yet run — goes in
+[`future-plans.md`](future-plans.md) instead.
+
 | Item | Notes |
 |------|-------|
 | Edit existing card transactions | Currently delete + re-add only |
@@ -339,3 +344,10 @@ ALTER TABLE budget_settings ADD COLUMN IF NOT EXISTS started_at date;
 - "Note for tomorrow" removed from both the calendar day view and the Today tab — the field was never used (0 of 55 `daily_tracking` rows had a value). The `notes_tomorrow` column is deliberately kept so the Excel export stays round-trippable with older backups; it's marked retired in `schema.md` and is safe to drop later
 - Days with a written note now show a small dot below the day number on the calendar, sized to sit between the number and the inner reading ring. `loadCalDots` already fetched the `daily_tracking` rows, so the flag costs no extra query. Turns white on today's accent disc and dims on future days
 - Cache version bumped to `?v=129`
+
+**Open-questions log + notes_tomorrow fully removed:**
+- Added `docs/future-plans.md` — a home for questions raised in a session that never got answered, so they're inherited by the next session instead of being re-asked or quietly decided. Carries the same no-private-data warning as `known-issues.md` since the repo is public
+- CLAUDE.md rule 5 added: an unanswered question must be written to that file before the session ends, and removed once answered with the outcome recorded wherever it belongs. Repo structure block updated to list the docs that already existed but weren't shown
+- `notes_tomorrow` stripped from the Excel export and import as well. This had to ship before the column is dropped — the import sent the field in its insert payload, and PostgREST rejects an entire sheet when a payload column doesn't exist, so dropping the column first would have broken the whole Daily Tracking import rather than just that field
+- The `ALTER TABLE ... DROP COLUMN` is recorded in `future-plans.md` as P-01 for Hassan to run; schema.md marks the column dropped
+- Cache version bumped to `?v=130`

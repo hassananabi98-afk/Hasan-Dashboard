@@ -2440,7 +2440,7 @@
 
       addSheet(wb, (dt.data || []).map(r => ({
         Date: r.date, Reading: yn(r.reading),
-        Notes: r.notes || '', 'Notes Tomorrow': r.notes_tomorrow || '', ID: r.id
+        Notes: r.notes || '', ID: r.id
       })), 'Daily Tracking')
 
       addSheet(wb, (prayersD.data || []).map(r => ({
@@ -2535,7 +2535,7 @@
         category: r.Category || null, notes: r.Notes || null }) },
     { sheet: 'Daily Tracking', table: 'daily_tracking', map: r => ({
         id: r.ID || undefined, date: r.Date, reading: bool(r.Reading, false),
-        notes: r.Notes || null, notes_tomorrow: r['Notes Tomorrow'] || null }) },
+        notes: r.Notes || null }) },
     { sheet: 'Prayers', table: 'prayers', map: r => ({
         id: r.ID || undefined, date: r.Date, fajr: bool(r.Fajr, false), dhuhr: bool(r.Dhuhr, false),
         asr: bool(r.Asr, false), maghrib: bool(r.Maghrib, false), isha: bool(r.Isha, false) }) },

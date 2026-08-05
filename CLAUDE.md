@@ -29,6 +29,10 @@ docs/
   schema.md
   style-guide.md
   changelog.md
+  future-plans.md   ← unanswered questions + decisions still pending
+  known-issues.md
+  upgrade-ideas/
+  finance-reviews/
 ```
 
 ## Rules — Read Before Every Change
@@ -37,6 +41,9 @@ docs/
 2. **Database changes require explicit approval** — never run DDL (ALTER TABLE, CREATE TABLE, etc.) or DML without telling the user what SQL will be run and getting a "yes". The user runs SQL manually in the Supabase SQL Editor.
 3. **Git: commit per task, merge to `main` immediately** — GitHub Pages only serves `main`, and that's the only place the change can actually be seen live, so every confirmed change gets merged and pushed to `main` right away — never deferred to "later" or "end of session." If the session was started on a harness-assigned `claude/*` branch, commit there first, then merge that branch into `main` in the same step. Follow the procedure below.
 4. **No changes to Supabase credentials** — anon key is in `script.js`; never commit secrets.
+5. **Never lose an unanswered question** — if you ask the user something and the session ends, or the conversation moves on, without them answering it, write it into [`docs/future-plans.md`](docs/future-plans.md) before finishing. This applies to every open decision: a design choice offered, a trade-off flagged, a change made on your own judgement that the user should get to veto, or SQL handed over that hasn't been confirmed as run. Do not silently drop a question because it seemed minor — the point of the file is that the next session inherits it instead of re-asking or quietly deciding alone.
+   - Answered questions get **removed** from the file and their outcome recorded wherever it belongs — `changelog.md` if it shipped, `known-issues.md` if it's a bug, an `upgrade-ideas/` doc if it needs a write-up.
+   - Keep the same no-private-data rule the file already carries: the repo is public.
 
 ### Commit & Push Procedure
 Do this every time, right after a change is confirmed:
