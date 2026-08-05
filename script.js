@@ -2449,8 +2449,8 @@
       })), 'Prayers')
 
       addSheet(wb, (meals.data || []).map(r => ({
-        Date: r.date, Breakfast: r.breakfast || '', Lunch: r.lunch || '',
-        Dinner: r.dinner || '', ID: r.id
+        Date: r.date, Breakfast: yn(r.breakfast), Lunch: yn(r.lunch),
+        Dinner: yn(r.dinner), ID: r.id
       })), 'Meals')
 
       addSheet(wb, (health.data || []).map(r => ({

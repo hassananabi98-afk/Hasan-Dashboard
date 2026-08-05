@@ -367,3 +367,8 @@ ALTER TABLE budget_settings ADD COLUMN IF NOT EXISTS started_at date;
 - The full set of columns the app actually reads or writes was derived from `exportData()` and the importer's table maps, which between them cover all 13 tables. Recorded as P-02 in `future-plans.md` with two read-only queries that list any column or table the app never touches
 - Could not be run in-session: the Supabase MCP call required an approval that never arrived, and the environment's network policy blocks direct HTTPS to the project host (`403` on CONNECT), so there was no live path to the database. `schema.md` is therefore verified against the code, not against the live database
 - KI-07 logged: the `Meals` sheet exports raw values while every other boolean sheet uses `yn()`. It round-trips correctly through the importer's `bool()` helper, so no data is at risk — but the only backup file is inconsistent with itself and blank cells are ambiguous to read
+
+**Meals sheet booleans made consistent (KI-07 fixed):**
+- The Excel export wrote the three meal columns as raw values (`r.breakfast || ''`), so a logged meal appeared as `true` and an unlogged one as a blank cell — while every other boolean sheet used `yn()` and wrote `Yes` / `No`. In the file that currently serves as the only backup, a blank cell couldn't be told apart from a row nobody had filled in
+- Now wrapped in `yn()` like the rest. Verified both directions before shipping: new sheets export `Yes` / `No` / blank and import back to `true` / `false` / `false`, and older workbooks written the previous way still import correctly, because the importer's `bool()` helper already accepted `true` and `''` alongside `Yes` and `No`. No migration needed and no re-export required
+- Cache version bumped to `?v=132`
