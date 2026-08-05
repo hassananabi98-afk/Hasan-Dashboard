@@ -50,23 +50,4 @@ a standing decision to confirm or veto. Nothing is blocked either way.
 
 ## Pending changes
 
-### P-01 · Drop the `notes_tomorrow` column
-**Status:** SQL ready to run · **Raised:** 5 Aug 2026
-
-The "Note for tomorrow" field was removed from the UI, the Excel export and the
-Excel import. The column itself is still in the database and is now written by
-nothing.
-
-Run in the Supabase SQL Editor:
-
-```sql
-ALTER TABLE daily_tracking DROP COLUMN notes_tomorrow;
-```
-
-**Safe:** verified 0 of 55 rows had a value before removal, so nothing is lost.
-
-**Order matters:** the code that referenced the column must be deployed *before*
-this runs — it already is, as of `?v=130`. Running the SQL against an older
-deploy would break the Excel import, because the import sent `notes_tomorrow` in
-its insert payload and PostgREST rejects the whole sheet when a column in the
-payload does not exist.
+*None open.*

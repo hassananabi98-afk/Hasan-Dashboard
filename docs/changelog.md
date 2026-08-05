@@ -351,3 +351,4 @@ ALTER TABLE budget_settings ADD COLUMN IF NOT EXISTS started_at date;
 - `notes_tomorrow` stripped from the Excel export and import as well. This had to ship before the column is dropped — the import sent the field in its insert payload, and PostgREST rejects an entire sheet when a payload column doesn't exist, so dropping the column first would have broken the whole Daily Tracking import rather than just that field
 - The `ALTER TABLE ... DROP COLUMN` is recorded in `future-plans.md` as P-01 for Hassan to run; schema.md marks the column dropped
 - Cache version bumped to `?v=130`
+- `notes_tomorrow` column dropped from `daily_tracking` (run 5 Aug 2026, 0 rows affected), completing the removal

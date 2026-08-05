@@ -11,7 +11,6 @@ All tables use `authenticated` role with RLS enabled (`USING (true) WITH CHECK (
 | date | DATE | Unique per day |
 | reading | BOOLEAN | Read today |
 | notes | TEXT | General day notes |
-| ~~notes_tomorrow~~ | TEXT | **Dropped** — the field was removed from the UI, the Excel export and the import. It was never used (0 rows). Remove the column with the SQL in [`future-plans.md`](future-plans.md) if it is still present |
 | created_at | TIMESTAMP | Auto-set |
 
 ## prayers
