@@ -396,3 +396,12 @@ ALTER TABLE budget_settings ADD COLUMN IF NOT EXISTS started_at date;
 - Cache version bumped to `?v=134`
 - **KI-01 closed — historical card payments backfilled.** Four existing expense rows across two cycles were tagged to their cards by row ID, not by text match. One row labelled with the issuing bank's name turned out to be the same card that appears elsewhere under its own name — **two labels with no word in common**, which is precisely the case any text-matching approach would have silently missed. `BBK LOAN` was deliberately left untagged: it's a loan repayment, not a card payment
 - Upgrade idea 01 updated — its stated blocker ("the app can't tell a card payment apart") no longer holds, so both options are now buildable. Its Option A no longer needs a schema change, only for `renderBudgetBar()` to skip rows with `card_id` set
+
+**Card payments now mirror onto the card automatically:**
+- Logging a card payment from Cash Expenses also writes the matching `payment` row on that card's ledger, linked by a new `card_transactions.expense_id` FK (`ON DELETE CASCADE`). Paying a card is one event, so it is now entered once instead of twice — the original complaint that started KI-01
+- The pair is kept in step in both directions: editing amount, date or card on either side updates the other, and deleting from either side removes both. Both confirmation prompts say so before the tap, rather than surprising you after
+- Switching an expense off *Card payment* deletes its mirrored card row. Deleting the expense relies on the FK cascade server-side, with the in-memory transaction list patched to match so the card balance doesn't keep counting a payment that no longer exists
+- Card-side delete removes the **expense** first and lets the cascade take the card row, so the pair can never end up half-deleted if the second call fails
+- Excel export/import carry an `Expense ID` column on Card Transactions. Expenses import before Card Transactions in the sheet list, so the referenced row exists by the time the FK is checked
+- **Mirroring happens only on create**, deliberately. Tagging an existing expense through the edit form links it without generating a card entry — the KI-01 backfilled rows already have their payments logged by hand, and generating more would double-count. Logged as Q-05 in `future-plans.md` so the asymmetry is a decision rather than an accident
+- Cache version bumped to `?v=135`

@@ -20,7 +20,23 @@ entry) · `dropped`
 
 ## Open questions
 
-*None open.*
+### Q-05 · Should tagging an *existing* expense also create the card entry?
+**Status:** open · **Raised:** 5 Aug 2026 · **Currently: it does not**
+
+Creating a new card payment from the cash form mirrors it onto the card. Using
+the edit form to tag an expense that already exists only sets `card_id` — no
+card entry is generated.
+
+That was chosen for data safety: the four rows tagged by the KI-01 backfill
+already have their payments recorded on the card side by hand, so generating
+entries for them would double-count and corrupt both card balances.
+
+The cost is a small inconsistency — if you log something as an ordinary expense
+and *then* realise it was a card payment, you have to add the card entry
+yourself. A safer version would offer the choice at the moment of tagging
+("also add this to the card?") rather than deciding silently either way.
+Nothing is blocked; flagging it so the asymmetry is a decision rather than an
+accident.
 
 ---
 

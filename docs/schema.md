@@ -76,6 +76,7 @@ check returned no rows in either direction.
 | type | TEXT | `'charge'` or `'payment'` |
 | category | TEXT | Optional |
 | notes | TEXT | Optional |
+| expense_id | UUID | FK → expenses.id, `ON DELETE CASCADE`. Set only on a payment that was created from the cash side, linking the two halves of one event. Deleting the expense removes this row automatically |
 
 ## health_sessions
 | Column | Type | Notes |

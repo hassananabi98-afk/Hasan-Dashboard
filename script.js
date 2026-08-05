@@ -1059,8 +1059,32 @@
       if (error) { btn.textContent = 'Save'; btn.disabled = false; showToast('Update failed', true); return }
       const idx = finExpenses.findIndex(x => x.id === id)
       if (idx !== -1) finExpenses[idx] = { ...finExpenses[idx], label, amount, date, category, card_id }
+      await syncLinkedTxnFromExpense(id, { label, amount, date, card_id })
       renderBudgetBar(); renderExpenseList(); renderDonutChart()
+      renderCardSections()
     })
+  }
+
+  // Keeps a mirrored card payment in step with its expense. Only ever touches a
+  // transaction that is already linked — it never creates one, so a row tagged
+  // by the KI-01 backfill (whose payment was logged on the card by hand) can't
+  // sprout a duplicate and skew the balance.
+  async function syncLinkedTxnFromExpense(expenseId, { label, amount, date, card_id }) {
+    const linked = finAllTxns.find(t => t.expense_id === expenseId)
+    if (!linked) return
+    if (!card_id) {
+      // no longer a card payment — the card entry has no reason to exist
+      const { error } = await supabase.from('card_transactions').delete().eq('id', linked.id)
+      if (error) { showToast('Card entry could not be removed', true); return }
+      finAllTxns = finAllTxns.filter(t => t.id !== linked.id)
+    } else {
+      const { error } = await supabase.from('card_transactions')
+        .update({ label, amount, date, card_id }).eq('id', linked.id)
+      if (error) { showToast('Card entry could not be updated', true); return }
+      const i = finAllTxns.findIndex(t => t.id === linked.id)
+      if (i !== -1) finAllTxns[i] = { ...finAllTxns[i], label, amount, date, card_id }
+    }
+    finMonthTxns = getPeriodTxns(finAllTxns, finMonth)
   }
 
   function showDeleteConfirm(id) {
@@ -1071,8 +1095,11 @@
     const conf = document.createElement('div')
     conf.className = 'expense-confirm-row'
     conf.id = `del-conf-${id}`
+    const linkedTxn = finAllTxns.find(t => t.expense_id === id)
     conf.innerHTML = `
-      <span class="expense-confirm-text">Delete this expense?</span>
+      <span class="expense-confirm-text">${linkedTxn
+        ? 'Delete this payment? It will also be removed from the card.'
+        : 'Delete this expense?'}</span>
       <button class="expense-confirm-no">Cancel</button>
       <button class="expense-confirm-yes">Delete</button>`
     row.replaceWith(conf)
@@ -1081,8 +1108,15 @@
       const { error } = await supabase.from('expenses').delete().eq('id', id)
       if (error) { showToast('Delete failed', true); return }
       finExpenses = finExpenses.filter(e => e.id !== id)
+      // the FK cascades the linked card row server-side; drop it locally too so
+      // the card balance doesn't keep counting a payment that no longer exists
+      if (linkedTxn) {
+        finAllTxns = finAllTxns.filter(t => t.id !== linkedTxn.id)
+        finMonthTxns = getPeriodTxns(finAllTxns, finMonth)
+      }
       pendingDeleteId = null
       renderBudgetBar(); renderExpenseList(); renderDonutChart()
+      if (linkedTxn) renderCardSections()
     })
   }
 
@@ -1394,6 +1428,25 @@
       showToast('Could not add expense', true)
       btn.disabled = false; btn.textContent = 'Save'; return
     }
+    // A card payment is one event recorded in two places — mirror it onto the
+    // card's ledger, linked by expense_id so the pair stays in step.
+    // Only on create: historical rows tagged by the KI-01 backfill already have
+    // their payments logged on the card side, and creating more would
+    // double-count against the balance.
+    if (expIsPayment && expPayCardId) {
+      const { data: txn, error: txnErr } = await supabase.from('card_transactions')
+        .insert({ card_id: expPayCardId, type: 'payment', amount, label, date,
+                  category: null, notes, expense_id: data.id })
+        .select().maybeSingle()
+      if (txnErr) {
+        showToast('Expense saved, but the card entry failed', true)
+      } else if (txn) {
+        finAllTxns.unshift(txn)
+        finAllTxns.sort((a,b) => b.date.localeCompare(a.date))
+        finMonthTxns = getPeriodTxns(finAllTxns, finMonth)
+      }
+    }
+
     const { start: ps, end: pe, open: po } = getPeriodDates(finMonth)
     if (data.date >= ps && (po || data.date < pe)) {
       finExpenses.unshift(data)
@@ -1401,7 +1454,8 @@
     }
     closeExpenseForm()
     renderBudgetBar(); renderExpenseList(); renderDonutChart()
-    showToast('Expense added ✓')
+    if (expIsPayment) renderCardSections()
+    showToast(expIsPayment ? 'Payment added to cash and card ✓' : 'Expense added ✓')
   }
 
   function closeExpenseForm() {
@@ -1930,6 +1984,19 @@
       const idx = finAllTxns.findIndex(x => x.id === id)
       if (idx !== -1) finAllTxns[idx] = { ...finAllTxns[idx], label, amount, date, card_id, type, category }
       finMonthTxns = getPeriodTxns(finAllTxns, finMonth)
+      // mirrored payment — push the same change back to the cash side so the
+      // two can't hold different numbers
+      const linkedExpId = finAllTxns[idx]?.expense_id
+      if (linkedExpId) {
+        const { error: expErr } = await supabase.from('expenses')
+          .update({ label, amount, date, card_id }).eq('id', linkedExpId)
+        if (expErr) showToast('Card saved, but the cash entry did not update', true)
+        else {
+          const ei = finExpenses.findIndex(x => x.id === linkedExpId)
+          if (ei !== -1) finExpenses[ei] = { ...finExpenses[ei], label, amount, date, card_id }
+          renderBudgetBar(); renderExpenseList(); renderDonutChart()
+        }
+      }
       renderCardSections()
     })
   }
@@ -1941,12 +2008,26 @@
     if (!row) return
     const conf = document.createElement('div')
     conf.className = 'expense-confirm-row'; conf.id = `txn-conf-${id}`
-    conf.innerHTML = `<span class="expense-confirm-text">Delete this transaction?</span><button class="expense-confirm-no">Cancel</button><button class="expense-confirm-yes">Delete</button>`
+    // a mirrored payment says so up front — deleting it removes the cash side too
+    const linkedExpId = finAllTxns.find(t => t.id === id)?.expense_id
+    const warn = linkedExpId
+      ? 'Delete this payment? It will also be removed from Cash Expenses.'
+      : 'Delete this transaction?'
+    conf.innerHTML = `<span class="expense-confirm-text">${warn}</span><button class="expense-confirm-no">Cancel</button><button class="expense-confirm-yes">Delete</button>`
     row.replaceWith(conf)
     conf.querySelector('.expense-confirm-no').addEventListener('click', () => { pendingTxnDeleteId = null; renderCardSections() })
     conf.querySelector('.expense-confirm-yes').addEventListener('click', async () => {
-      const { error } = await supabase.from('card_transactions').delete().eq('id', id)
-      if (error) { showToast('Delete failed', true); return }
+      // delete the expense first — the FK cascades and takes the card row with
+      // it, so the pair can never be left half-deleted
+      if (linkedExpId) {
+        const { error: expErr } = await supabase.from('expenses').delete().eq('id', linkedExpId)
+        if (expErr) { showToast('Delete failed', true); return }
+        finExpenses = finExpenses.filter(e => e.id !== linkedExpId)
+        renderBudgetBar(); renderExpenseList(); renderDonutChart()
+      } else {
+        const { error } = await supabase.from('card_transactions').delete().eq('id', id)
+        if (error) { showToast('Delete failed', true); return }
+      }
       finAllTxns = finAllTxns.filter(t => t.id !== id)
       finMonthTxns = getPeriodTxns(finAllTxns, finMonth)
       pendingTxnDeleteId = null
@@ -2538,7 +2619,8 @@
 
       addSheet(wb, (txns.data || []).map(r => ({
         Card: cardName[r.card_id] || '', Date: r.date, Type: r.type, Label: r.label,
-        Amount: r.amount, Category: r.category || '', Notes: r.notes || '', ID: r.id
+        Amount: r.amount, Category: r.category || '', Notes: r.notes || '',
+        'Expense ID': r.expense_id || '', ID: r.id
       })), 'Card Transactions')
 
       addSheet(wb, (dt.data || []).map(r => ({
@@ -2636,7 +2718,10 @@
     { sheet: 'Card Transactions', table: 'card_transactions', map: (r, ctx) => ({
         id: r.ID || undefined, card_id: ctx.cardByName[r.Card] || null, date: r.Date,
         type: r.Type, label: r.Label, amount: num(r.Amount),
-        category: r.Category || null, notes: r.Notes || null }) },
+        category: r.Category || null, notes: r.Notes || null,
+        // Expenses import before Card Transactions in this list, so the
+        // referenced row already exists by the time the FK is checked
+        expense_id: r['Expense ID'] || null }) },
     { sheet: 'Daily Tracking', table: 'daily_tracking', map: r => ({
         id: r.ID || undefined, date: r.Date, reading: bool(r.Reading, false),
         notes: r.Notes || null }) },

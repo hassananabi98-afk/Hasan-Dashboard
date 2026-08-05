@@ -41,6 +41,10 @@ for colours, tokens and component specs see [`style-guide.md`](style-guide.md).
   - **Type** — *Expense* or *Card payment*, mirroring the toggle on the card transaction form. Choosing Card payment reveals a card picker and pre-fills the label as `Payment — <CARD>`, which stays editable; the row is stored with `expenses.card_id` set
   - Rows that are card payments show a small coloured chip in the card's colour next to the category and date, so they're identifiable whatever the label says
   - Tagging is what lets anything find card payments without guessing from label text. It does **not** change the budget maths — a card payment still counts exactly as it did before
+  - **The payment is mirrored onto the card automatically.** Saving a card payment also writes a `payment` row on that card's ledger, linked by `card_transactions.expense_id`. One entry, both places
+  - The pair stays in step: editing the amount, date or card on **either** side updates the other, and deleting from either side removes both. Both delete confirmations say so before you tap
+  - Switching an expense off *Card payment* deletes its mirrored card row
+  - **Mirroring happens only on create.** Tagging an already-existing expense via the edit form links it to a card but does not generate a card entry — the rows tagged by the KI-01 backfill already had their payments logged on the card by hand, and generating more would double-count against the balance
 - Donut chart by category:
   - Categories beyond the top 6, or under 2.5% share, fold into one gray "Other" arc so the donut doesn't sprout unreadable slivers
   - The legend below still lists **every** category by name, including the folded ones
