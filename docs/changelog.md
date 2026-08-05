@@ -362,3 +362,8 @@ ALTER TABLE budget_settings ADD COLUMN IF NOT EXISTS started_at date;
 - CLAUDE.md gained a routing table for which doc gets which kind of update, and a corrected repo map
 - Corrected in CLAUDE.md: the dirty-flag names, the trend chart being a full calendar year rather than a rolling six months, and the auto-save section (split delays, synchronous snapshot, bubble-phase requirement)
 - Cache version bumped to `?v=131`
+
+**Database orphan check prepared (not yet run):**
+- The full set of columns the app actually reads or writes was derived from `exportData()` and the importer's table maps, which between them cover all 13 tables. Recorded as P-02 in `future-plans.md` with two read-only queries that list any column or table the app never touches
+- Could not be run in-session: the Supabase MCP call required an approval that never arrived, and the environment's network policy blocks direct HTTPS to the project host (`403` on CONNECT), so there was no live path to the database. `schema.md` is therefore verified against the code, not against the live database
+- KI-07 logged: the `Meals` sheet exports raw values while every other boolean sheet uses `yn()`. It round-trips correctly through the importer's `bool()` helper, so no data is at risk — but the only backup file is inconsistent with itself and blank cells are ambiguous to read

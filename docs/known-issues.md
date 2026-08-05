@@ -58,6 +58,27 @@ schedule. Manual is fine — the point is that a second copy exists.
 
 ---
 
+### KI-07 · Meals sheet exports booleans differently from every other sheet
+**Status:** open · **Found:** 5 Aug 2026 · **Impact:** low
+
+Every boolean column in the Excel export goes through `yn()`, which writes
+`Yes` / `No` — prayers, reading, supplements, card visibility, all of them.
+`Meals` is the exception: `exportData()` writes `r.breakfast || ''`, so a logged
+meal exports as `true` and an unlogged one as an empty cell.
+
+**Not a data-loss bug.** The importer's `bool()` helper accepts `true`, `''`,
+`Yes`, `1` and `y`, so the sheet round-trips correctly — `false → '' → false`.
+The problem is that the one file that serves as the only backup (see KI-03) is
+inconsistent with itself, and a blank cell is ambiguous to a human reading it:
+it can't be told apart from a row that was never filled in.
+
+**Fix direction:** wrap the three meal fields in `yn()` like every other boolean.
+One line. The importer already handles both spellings, so old workbooks keep
+importing correctly and no migration is needed.
+
+*(KI-06 is retired — the Excel export gap it described was fixed. Retired IDs
+are not reused.)*
+
 ---
 
 ## Tracking gaps
