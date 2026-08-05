@@ -972,11 +972,17 @@
     container.innerHTML = filterBar + `<div class="log-card">${filtered.map(e => {
       const cat = finCategories.find(c => c.name === e.category)
       const color = cat ? cat.color : '#6b7280'
+      // card payments carry a chip so they're distinguishable at a glance,
+      // whatever the label happens to say
+      const payCard = e.card_id ? finCards.find(c => c.id === e.card_id) : null
+      const chip = payCard
+        ? `<span class="expense-card-chip" style="--chip:${cardTheme(payCard.name).accent}">${escHtml(payCard.name)}</span>`
+        : ''
       return `<div class="expense-row" data-id="${e.id}">
         <div class="expense-cat-dot" style="background:${color}"></div>
         <div class="expense-meta">
           <div class="expense-label">${escHtml(e.label)}</div>
-          <div class="expense-cat-date">${escHtml(e.category)} · ${fmtDateShort(e.date)}</div>
+          <div class="expense-cat-date">${escHtml(e.category)} · ${fmtDateShort(e.date)}${chip}</div>
         </div>
         <div class="expense-amount">${fmtAmount(e.amount)}</div>
         <button class="expense-del-btn" data-del="${e.id}" aria-label="Delete">×</button>
@@ -1028,6 +1034,13 @@
             ${finCategories.map(c => `<option value="${escHtml(c.name)}" ${c.name === e.category ? 'selected' : ''}>${escHtml(c.name)}</option>`).join('')}
           </select>
         </div>
+        <div class="expense-edit-row">
+          <select class="expense-edit-inp" id="ee-card">
+            <option value="">Not a card payment</option>
+            ${finCards.filter(c => c.visible !== false || c.id === e.card_id)
+              .map(c => `<option value="${c.id}" ${c.id === e.card_id ? 'selected' : ''}>Payment → ${escHtml(c.name)}</option>`).join('')}
+          </select>
+        </div>
         <div class="expense-edit-row" style="justify-content:flex-end">
           <button class="expense-edit-cancel" id="ee-cancel">Cancel</button>
           <button class="expense-edit-save" id="ee-save">Save</button>
@@ -1040,11 +1053,12 @@
       const amount = parseFloat(form.querySelector('#ee-amount').value); if (isNaN(amount)) return
       const date = form.querySelector('#ee-date').value
       const category = form.querySelector('#ee-cat').value
+      const card_id = form.querySelector('#ee-card').value || null
       const btn = form.querySelector('#ee-save'); btn.textContent = 'Saving...'; btn.disabled = true
-      const { error } = await supabase.from('expenses').update({ label, amount, date, category }).eq('id', id)
+      const { error } = await supabase.from('expenses').update({ label, amount, date, category, card_id }).eq('id', id)
       if (error) { btn.textContent = 'Save'; btn.disabled = false; showToast('Update failed', true); return }
       const idx = finExpenses.findIndex(x => x.id === id)
-      if (idx !== -1) finExpenses[idx] = { ...finExpenses[idx], label, amount, date, category }
+      if (idx !== -1) finExpenses[idx] = { ...finExpenses[idx], label, amount, date, category, card_id }
       renderBudgetBar(); renderExpenseList(); renderDonutChart()
     })
   }
@@ -1269,6 +1283,92 @@
     amtInp.addEventListener('input', validateExpenseForm)
     lblInp.addEventListener('input', validateExpenseForm)
     $('fin-confirm-btn').addEventListener('click', submitExpense)
+
+    // Type toggle — an expense marked as a card payment carries card_id, which
+    // is what lets anything identify a payment without matching on label text
+    ;['exp-type-expense','exp-type-payment'].forEach(id => {
+      const el = $(id); if (!el) return
+      el.addEventListener('click', () => setExpenseType(el.dataset.expType))
+    })
+
+    const cardBtn = $('exp-card-btn'), cardDd = $('exp-card-dd')
+    if (cardBtn && cardDd) {
+      cardBtn.addEventListener('click', ev => {
+        ev.stopPropagation()
+        if (cardDd.style.display !== 'none') { cardDd.style.display = 'none'; untrackCatDropdown(); return }
+        renderExpCardDropdown()
+        // .cat-dropdown is position:fixed — it must be placed explicitly or it
+        // renders detached from its button
+        positionCatDropdown(cardBtn, cardDd)
+        cardDd.style.display = 'block'
+        requestAnimationFrame(() => positionCatDropdown(cardBtn, cardDd))
+        trackCatDropdown(cardBtn, cardDd)
+      })
+      document.addEventListener('click', ev => {
+        const wrap = $('exp-card-wrap')
+        if (wrap && !wrap.contains(ev.target) && cardDd.style.display !== 'none') {
+          cardDd.style.display = 'none'
+          untrackCatDropdown()
+        }
+      })
+    }
+  }
+
+  // ── EXPENSE TYPE (expense vs card payment) ───────────────
+  let expIsPayment = false
+  let expPayCardId = null
+
+  function setExpenseType(type) {
+    expIsPayment = type === 'payment'
+    $('exp-type-expense')?.classList.toggle('selected', !expIsPayment)
+    $('exp-type-payment')?.classList.toggle('selected', expIsPayment)
+    const row = $('exp-card-row'); if (row) row.style.display = expIsPayment ? '' : 'none'
+    if (!expIsPayment) { expPayCardId = null; setExpCardPicker(null) }
+    applyPaymentLabel()
+    validateExpenseForm()
+  }
+
+  // Pre-fills the label so a payment never has to be typed by hand — the whole
+  // point of the change. Left editable, and never overwrites something the user
+  // has already typed that isn't one of our generated labels.
+  function applyPaymentLabel() {
+    const lbl = $('fin-label'); if (!lbl) return
+    const generated = /^Payment — /.test(lbl.value)
+    if (expIsPayment) {
+      const card = finCards.find(c => c.id === expPayCardId)
+      if (card && (!lbl.value.trim() || generated)) lbl.value = `Payment — ${card.name}`
+    } else if (generated) {
+      lbl.value = ''
+    }
+  }
+
+  function setExpCardPicker(card) {
+    const dot = $('exp-card-dot'), txt = $('exp-card-txt')
+    if (dot) dot.style.background = card ? cardTheme(card.name).accent : '#6b7280'
+    if (txt) txt.textContent = card ? card.name : 'Select card'
+  }
+
+  function renderExpCardDropdown() {
+    const dd = $('exp-card-dd'); if (!dd) return
+    const visible = finCards.filter(c => c.visible !== false)
+    if (visible.length === 0) {
+      dd.innerHTML = '<div class="cat-option" style="color:var(--text3)">No cards</div>'
+      return
+    }
+    dd.innerHTML = visible.map(c =>
+      `<div class="cat-option" data-exp-card="${c.id}">
+         <span class="cat-picker-dot" style="background:${cardTheme(c.name).accent}"></span>${escHtml(c.name)}
+       </div>`).join('')
+    dd.querySelectorAll('[data-exp-card]').forEach(el => {
+      el.addEventListener('click', () => {
+        expPayCardId = el.dataset.expCard
+        setExpCardPicker(finCards.find(c => c.id === expPayCardId))
+        dd.style.display = 'none'
+        untrackCatDropdown()
+        applyPaymentLabel()
+        validateExpenseForm()
+      })
+    })
   }
 
   function validateExpenseForm() {
@@ -1276,7 +1376,7 @@
     if (!btn) return
     const amt = parseFloat($('fin-amount')?.value)
     const lbl = $('fin-label')?.value?.trim()
-    btn.disabled = !(amt > 0 && lbl && selectedCatName)
+    btn.disabled = !(amt > 0 && lbl && selectedCatName && (!expIsPayment || expPayCardId))
   }
 
   async function submitExpense() {
@@ -1287,7 +1387,8 @@
     const date = $('fin-date').value || todayStr()
     const notes = $('fin-notes').value.trim() || null
     const { data, error } = await supabase.from('expenses')
-      .insert({ date, label, amount, category: selectedCatName, notes })
+      .insert({ date, label, amount, category: selectedCatName, notes,
+                card_id: expIsPayment ? expPayCardId : null })
       .select().maybeSingle()
     if (error) {
       showToast('Could not add expense', true)
@@ -1311,6 +1412,8 @@
     if (btn) { btn.disabled = true; btn.textContent = 'Save' }
     ;['fin-amount','fin-label','fin-notes'].forEach(id => { const el = $(id); if (el) el.value = '' })
     const dd = $('cat-dropdown'); if (dd) dd.style.display = 'none'
+    const cdd = $('exp-card-dd'); if (cdd) cdd.style.display = 'none'
+    setExpenseType('expense')
   }
 
   // ── LOAD FINANCE DATA ────────────────────────────────────
@@ -2430,7 +2533,7 @@
       // row from a new one and silently duplicates everything.
       addSheet(wb, (expenses.data || []).map(r => ({
         Date: r.date, Label: r.label, Amount: r.amount, Category: r.category || '',
-        Notes: r.notes || '', ID: r.id
+        Notes: r.notes || '', 'Card Payment': cardName[r.card_id] || '', ID: r.id
       })), 'Expenses')
 
       addSheet(wb, (txns.data || []).map(r => ({
@@ -2526,9 +2629,10 @@
     { sheet: 'Budget Settings', table: 'budget_settings', map: r => ({
         id: r.ID || undefined, month: r.Month, total: num(r.Total),
         started_at: r['Started At'] || null }) },
-    { sheet: 'Expenses', table: 'expenses', map: r => ({
+    { sheet: 'Expenses', table: 'expenses', map: (r, ctx) => ({
         id: r.ID || undefined, date: r.Date, label: r.Label, amount: num(r.Amount),
-        category: r.Category || null, notes: r.Notes || null }) },
+        category: r.Category || null, notes: r.Notes || null,
+        card_id: r['Card Payment'] ? (ctx.cardByName[r['Card Payment']] || null) : null }) },
     { sheet: 'Card Transactions', table: 'card_transactions', map: (r, ctx) => ({
         id: r.ID || undefined, card_id: ctx.cardByName[r.Card] || null, date: r.Date,
         type: r.Type, label: r.Label, amount: num(r.Amount),

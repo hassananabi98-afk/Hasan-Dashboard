@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Dashboard</title>
-<link rel="stylesheet" href="style.css?v=133">
+<link rel="stylesheet" href="style.css?v=134">
 </head>
 <body>
 
@@ -235,6 +235,24 @@
             <div class="donut-legend" id="fin-legend"></div>
           </div>
           <div class="add-expense-form" id="add-expense-form" style="display:none;margin-top:10px">
+            <div class="fin-form-row">
+              <span class="fin-form-label">Type</span>
+              <div class="txn-type-toggle">
+                <button class="txn-type-btn charge selected" id="exp-type-expense" data-exp-type="expense" type="button">Expense</button>
+                <button class="txn-type-btn payment" id="exp-type-payment" data-exp-type="payment" type="button">Card payment</button>
+              </div>
+            </div>
+            <div class="fin-form-row" id="exp-card-row" style="display:none">
+              <span class="fin-form-label">Card</span>
+              <div class="cat-picker-wrap" id="exp-card-wrap">
+                <button class="cat-picker-btn" id="exp-card-btn" type="button">
+                  <span class="cat-picker-dot" id="exp-card-dot" style="background:#6b7280"></span>
+                  <span id="exp-card-txt">Select card</span>
+                  <span class="cat-picker-chevron">▾</span>
+                </button>
+                <div class="cat-dropdown" id="exp-card-dd" style="display:none"></div>
+              </div>
+            </div>
             <div class="fin-form-row">
               <span class="fin-form-label">Amount</span>
               <input class="fin-form-input" id="fin-amount" type="number" min="0" step="0.001" placeholder="0.000" inputmode="decimal">
@@ -487,6 +505,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script type="module" src="script.js?v=133"></script>
+<script type="module" src="script.js?v=134"></script>
 </body>
 </html>

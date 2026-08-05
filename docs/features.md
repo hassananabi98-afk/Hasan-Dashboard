@@ -37,7 +37,10 @@ for colours, tokens and component specs see [`style-guide.md`](style-guide.md).
 - Monthly Budget box (violet) — Remaining, progress bar, total budget; tap amount to edit
 - Salary cycle: press **Start New Month** when salary arrives → creates next month's cycle
   - Cycle open-ended until the next Start is pressed
-- Cash expense log — add (label, amount, category, date, notes) + delete + edit
+- Cash expense log — add (type, amount, label, category, date, notes) + delete + edit
+  - **Type** — *Expense* or *Card payment*, mirroring the toggle on the card transaction form. Choosing Card payment reveals a card picker and pre-fills the label as `Payment — <CARD>`, which stays editable; the row is stored with `expenses.card_id` set
+  - Rows that are card payments show a small coloured chip in the card's colour next to the category and date, so they're identifiable whatever the label says
+  - Tagging is what lets anything find card payments without guessing from label text. It does **not** change the budget maths — a card payment still counts exactly as it did before
 - Donut chart by category:
   - Categories beyond the top 6, or under 2.5% share, fold into one gray "Other" arc so the donut doesn't sprout unreadable slivers
   - The legend below still lists **every** category by name, including the folded ones

@@ -247,6 +247,8 @@
   .expense-cat-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
   .expense-meta{flex:1;min-width:0}
   .expense-label{font-size:14px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* marks an expense that is a payment toward a card */
+  .expense-card-chip{display:inline-block;margin-left:6px;padding:0 5px;border-radius:999px;font-size:9px;font-weight:700;letter-spacing:.04em;line-height:14px;color:var(--chip);background:color-mix(in srgb,var(--chip) 16%,transparent);border:1px solid color-mix(in srgb,var(--chip) 32%,transparent)}
   .expense-cat-date{font-size:11px;color:var(--text3);margin-top:2px}
   .expense-amount{font-size:14px;font-weight:500;color:var(--text);white-space:nowrap;flex-shrink:0}
   .expense-del-btn{width:34px;height:34px;border:none;background:none;color:var(--text3);cursor:pointer;font-size:24px;display:flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;line-height:1;padding:0}

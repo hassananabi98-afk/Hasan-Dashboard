@@ -53,6 +53,7 @@ check returned no rows in either direction.
 | amount | DECIMAL | |
 | category | TEXT | Stores category name directly (not UUID FK) |
 | notes | TEXT | Optional |
+| card_id | UUID | FK → cards.id, `ON DELETE SET NULL`. **Null = ordinary expense; set = this expense is a payment toward that card.** Added so card payments are identifiable without matching on label text (KI-01). Deleting a card unlinks the expense rather than deleting it |
 | created_at | TIMESTAMP | Auto-set |
 
 ## cards

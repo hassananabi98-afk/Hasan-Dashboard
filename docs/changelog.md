@@ -384,3 +384,13 @@ ALTER TABLE budget_settings ADD COLUMN IF NOT EXISTS started_at date;
 - Cache version bumped to `?v=133`
 - **Q-04 answered: no backup reminder.** The app will not prompt, show a last-export date, or nudge at cycle start. Backing up stays fully manual by choice — recorded in KI-03 so it isn't re-proposed
 - **KI-04 declined.** Loan balance tracking will not be built. Recorded as closed in `known-issues.md` so it isn't re-proposed
+
+**Card payments are now a type, not a description (KI-01):**
+- `expenses` gained a nullable `card_id` FK to `cards`, `ON DELETE SET NULL`. Null means an ordinary expense; set means the row is a payment toward that card. This is the real link that replaces guessing from label text
+- The cash expense form gained a **Type** toggle — *Expense* / *Card payment* — mirroring the Charge/Payment control the card transaction form already had. The cash form previously had no type at all, which is why recording a payment meant hand-typing a description that looked like an ordinary purchase, and why the same payment ended up spelled three different ways
+- Choosing Card payment reveals a card picker and pre-fills the label as `Payment — <CARD>`. The label stays editable, and a user-typed label is never overwritten — only a blank field or a previously generated one is replaced
+- Card payments show a chip in the card's own colour on the row's category/date line. It sits there rather than beside the label because the label ellipsizes, which hid the chip entirely on longer labels
+- The expense edit form gained a card selector, so existing rows can be tagged or corrected without SQL
+- Excel export/import carry a `Card Payment` column, resolved by card name in both directions, so the tag survives a backup round-trip
+- **Deliberately not changed:** budget maths. A card payment still counts toward the budget exactly as before. Making the budget treat payments differently is [upgrade idea 01](upgrade-ideas/01-budget-doesnt-see-card-spending.md), a separate decision that this change unblocks
+- Cache version bumped to `?v=134`
