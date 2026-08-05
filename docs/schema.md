@@ -2,6 +2,10 @@
 
 All tables use `authenticated` role with RLS enabled (`USING (true) WITH CHECK (true)`).
 
+**Verified against the live database on 5 Aug 2026.** Every column and table
+below exists, and the database holds nothing the app doesn't use — the orphan
+check returned no rows in either direction.
+
 > **No private data in this file.** The repo is public and GitHub Pages serves
 > from the root. Document columns and types, never row values.
 
