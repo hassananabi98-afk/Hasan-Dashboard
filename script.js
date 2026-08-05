@@ -324,39 +324,49 @@
     if (!silent) { btn.disabled = true; btn.textContent = 'Saving...' }
 
     try {
+      // supabase-js resolves with { error } rather than rejecting, so each
+      // write is checked explicitly — without this a failed save fell straight
+      // through to the success toast and the data was silently lost
+      const check = ({ error }) => { if (error) throw error }
+
       // prayers upsert
-      await supabase.from('prayers').upsert({
+      check(await supabase.from('prayers').upsert({
         date: dateStr,
         ...Object.fromEntries(prayerKeys.map(k => [k, snapshot.toggles[k]]))
-      }, { onConflict: 'date' })
+      }, { onConflict: 'date' }))
 
       // meals upsert
-      await supabase.from('meals').upsert({
+      check(await supabase.from('meals').upsert({
         date: dateStr,
         ...Object.fromEntries(mealKeys.map(k => [k, snapshot.toggles[k]]))
-      }, { onConflict: 'date' })
+      }, { onConflict: 'date' }))
 
       // daily tracking upsert
-      await supabase.from('daily_tracking').upsert({
+      check(await supabase.from('daily_tracking').upsert({
         date: dateStr,
         reading: snapshot.toggles.reading,
         notes: snapshot.notes,
         notes_tomorrow: snapshot.notesTomorrow,
-      }, { onConflict: 'date' })
+      }, { onConflict: 'date' }))
 
       // supplements: delete existing for this day, re-insert
-      await supabase.from('supplements').delete().eq('date', dateStr)
+      check(await supabase.from('supplements').delete().eq('date', dateStr))
       if (snapshot.supplements.length > 0) {
-        await supabase.from('supplements').insert(
+        check(await supabase.from('supplements').insert(
           snapshot.supplements.map(s => ({ date: dateStr, supplement_id: s.id, taken: s.taken }))
-        )
+        ))
       }
 
       calNeedsRefresh = true
       anlNeedsRefresh = true
+      // a day-view save of today leaves the Today tab showing stale values
+      if (prefix === '' && dateStr === todayStr()) todayNeedsRefresh = true
       if (!silent) showToast('Saved ✓')
     } catch (e) {
-      if (!silent) showToast('Save failed', true)
+      // failures are always surfaced, including on auto-save — a silent
+      // auto-save that quietly fails is the thing this whole path exists to
+      // prevent. Only the success toast stays silent.
+      showToast('Save failed', true)
     }
 
     if (!silent) { btn.disabled = false; btn.textContent = 'Save' }
@@ -538,7 +548,10 @@
     const toggleIds = [...prayerKeys, ...mealKeys, 'reading'].map(k => `${prefix}tog-${k}`)
     toggleIds.forEach(id => {
       const el = $(id); if (!el) return
-      el.addEventListener('click', () => scheduleAutoSave(getDateStr(), prefix, stateRef), { capture: true })
+      // NOT capture-phase: at the target element capture listeners run before
+      // bubble ones whatever the registration order, so capturing here read the
+      // toggle before bindToggle flipped it and auto-saved the previous value
+      el.addEventListener('click', () => scheduleAutoSave(getDateStr(), prefix, stateRef))
     })
     // Notes
     const notesId = prefix === '' ? 'notes-today' : 'tnotes-today'

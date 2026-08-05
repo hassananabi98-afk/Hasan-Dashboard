@@ -327,3 +327,9 @@ ALTER TABLE budget_settings ADD COLUMN IF NOT EXISTS started_at date;
 - Settings lists (`#sett-cat-list` etc.) rounded + clipped as a group via `:not(:empty)` so empty containers don't render as stray hairlines
 - Accent-styled boxes (violet budget, tinted finance card sections) keep their identity — they inherit only the radius token
 - Cache version bumped to `?v=28`
+
+**Daily log auto-save fixes:**
+- Auto-save wrote the *previous* toggle value: `wireAutoSave` registered its click listener with `{ capture: true }`, and at the target element capture listeners run before bubble ones regardless of registration order — so the snapshot was taken before `bindToggle` flipped the `.on` class. Symptom was the last switch flipped before leaving a day never sticking, which made pressing Save manually feel mandatory. Listener moved to the bubble phase; supplements were never affected (they flip the class before scheduling)
+- Failed saves reported success: `saveDayData` wrapped its writes in `try`/`catch`, but supabase-js resolves with `{ error }` instead of rejecting, so nothing ever reached the `catch`. Every write is now checked explicitly, and failures surface a toast on auto-save too — only the success toast stays silent
+- Editing today from the calendar day view left the Today tab stale: `saveDayData` set `calNeedsRefresh` and `anlNeedsRefresh` but never `todayNeedsRefresh`, despite the tab-switch handler already consuming it
+- Cache version bumped to `?v=128`
