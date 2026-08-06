@@ -108,6 +108,41 @@ Cash only, ranked. Unpack any category above ~50% — "Bills" in particular hide
 loan repayments and card payments, which are not discretionary and shouldn't be
 read as ordinary spending.
 
+## Budget the next cycle to the *lowest* month, not the average
+
+Adopted 6 Aug 2026, after a cycle whose budget had been set from an
+exceptional pay month and turned out to be unrepeatable.
+
+The budget for a coming cycle must be set from **the lowest non-bonus month
+actually earned across the payslip history**, not from the median, not from the
+average, and never from whatever happened to land in the account on salary day.
+
+Two reasons, and the second is the one that bites:
+
+1. Income here is volatile — a large share of it is overtime, which has ranged
+   several-fold between months. An average month is not a typical month.
+2. Setting the budget from a strong month teaches a spending level that the
+   following month can't fund. The overspend then has nowhere to go except a
+   card, which is the mechanism the whole review exists to interrupt.
+
+Anything the month earns **above** that floor is surplus, not budget. Surplus
+has a standing destination decided in advance (buffer first, then the most
+expensive debt) so it never arrives as unallocated cash.
+
+State the assumed floor at the top of every plan, so a later reader can see
+what the plan was underwritten by.
+
+## Plan to one daily number
+
+A category budget is not operable day to day — nobody recalls nine limits. Each
+plan resolves to **one figure: living spend per day**, covering everything that
+isn't a fixed monthly commitment.
+
+Check it **weekly, not at cycle close.** Both cycles reviewed so far went wrong
+inside the first week and weren't noticed until much later, by which point the
+remaining days couldn't absorb the correction. A weekly check catches drift
+while there is still a cycle left to fix it.
+
 ## Findings
 
 Rank by severity, worst first. Three levels only:
@@ -164,4 +199,5 @@ Cycles reviewed so far. No figures — just what was found.
 |---|---|---|
 | July 2026 | 24 Jun – 25 Jul | Cash budget looked ~1% over; accrual restatement showed ~5×. Both cards finished at/above limit. Interest doubled. |
 | August 2026 | 26 Jul – 25 Aug | Planned, not closed. Paydown deferred behind unquoted car repair and service — cash held deliberately. |
-| August 2026 *(day-11 spot check, not a full review)* | 26 Jul – open | Both cards cleared to zero, no new charges, interest to nil — last cycle's "defer the paydown" advice was wrong and is corrected. Day-to-day spending excluding bills running ~1.8× last cycle's daily rate, but concentrated in the first few days; back under that rate since. |
+| August 2026 *(day-11 spot check, not a full review)* | 26 Jul – open | Both cards cleared to zero, no new charges, interest to nil — last cycle's "defer the paydown" advice was wrong and is corrected. Day-to-day spending excluding bills running ~1.9× last cycle's daily rate, but concentrated in the first few days; back under that rate since. Food and groceries roughly doubled per day — frequency, not ticket size. Traced to a sleep disruption rather than to appetite: the evening supplements stopped, and the grazing followed. Non-financial logs (gym, prayers, meals) came out level or better, so the spending spike was isolated, not part of a general slide. |
+| September 2026 | 26 Aug – 25 Sep | **Planned, not yet started.** First cycle budgeted to the lowest month actually earned rather than to what landed — see the method note above. Plan resolves to a single daily living figure and assumes no bonus and no overtime. Includes a new recurring fixed commitment, so the margin is thinner by design. Reserve is ring-fenced and explicitly not available to the plan. |
