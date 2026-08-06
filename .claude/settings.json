@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "permissions": {
+    "allow": [
+      "mcp__Supabase__execute_sql",
+      "mcp__Supabase__list_tables",
+      "mcp__Supabase__list_projects",
+      "mcp__Supabase__get_project",
+      "mcp__Supabase__get_project_url",
+      "mcp__Supabase__list_migrations",
+      "mcp__Supabase__list_extensions",
+      "mcp__Supabase__get_advisors",
+      "mcp__Supabase__search_docs",
+
+      "mcp__af8634fd-1f9a-4cbf-a6f4-6a1827c2c884__execute_sql",
+      "mcp__af8634fd-1f9a-4cbf-a6f4-6a1827c2c884__list_tables",
+      "mcp__af8634fd-1f9a-4cbf-a6f4-6a1827c2c884__list_projects",
+      "mcp__af8634fd-1f9a-4cbf-a6f4-6a1827c2c884__get_project",
+      "mcp__af8634fd-1f9a-4cbf-a6f4-6a1827c2c884__get_project_url",
+      "mcp__af8634fd-1f9a-4cbf-a6f4-6a1827c2c884__list_migrations",
+      "mcp__af8634fd-1f9a-4cbf-a6f4-6a1827c2c884__list_extensions",
+      "mcp__af8634fd-1f9a-4cbf-a6f4-6a1827c2c884__get_advisors",
+      "mcp__af8634fd-1f9a-4cbf-a6f4-6a1827c2c884__search_docs"
+    ],
+    "deny": [
+      "mcp__Supabase__apply_migration",
+      "mcp__Supabase__deploy_edge_function",
+      "mcp__Supabase__create_project",
+      "mcp__Supabase__pause_project",
+      "mcp__Supabase__restore_project",
+      "mcp__Supabase__create_branch",
+      "mcp__Supabase__delete_branch",
+      "mcp__Supabase__merge_branch",
+      "mcp__Supabase__rebase_branch",
+      "mcp__Supabase__reset_branch",
+      "mcp__Supabase__confirm_cost",
+
+      "mcp__af8634fd-1f9a-4cbf-a6f4-6a1827c2c884__apply_migration",
+      "mcp__af8634fd-1f9a-4cbf-a6f4-6a1827c2c884__deploy_edge_function",
+      "mcp__af8634fd-1f9a-4cbf-a6f4-6a1827c2c884__create_project",
+      "mcp__af8634fd-1f9a-4cbf-a6f4-6a1827c2c884__pause_project",
+      "mcp__af8634fd-1f9a-4cbf-a6f4-6a1827c2c884__restore_project",
+      "mcp__af8634fd-1f9a-4cbf-a6f4-6a1827c2c884__create_branch",
+      "mcp__af8634fd-1f9a-4cbf-a6f4-6a1827c2c884__delete_branch",
+      "mcp__af8634fd-1f9a-4cbf-a6f4-6a1827c2c884__merge_branch",
+      "mcp__af8634fd-1f9a-4cbf-a6f4-6a1827c2c884__rebase_branch",
+      "mcp__af8634fd-1f9a-4cbf-a6f4-6a1827c2c884__reset_branch",
+      "mcp__af8634fd-1f9a-4cbf-a6f4-6a1827c2c884__confirm_cost"
+    ]
+  }
+}
