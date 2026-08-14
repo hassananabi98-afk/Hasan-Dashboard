@@ -14,7 +14,7 @@ them.
 
 | # | Idea | Status | Why it matters |
 |---|---|---|---|
-| [01](01-budget-doesnt-see-card-spending.md) | Budget doesn't see card spending | Proposed — **unblocked**, awaiting decision | July looked ~1% over budget. It was really ~5× that. Card payments are now tagged (KI-01), so either option is buildable. |
+| [01](01-budget-doesnt-see-card-spending.md) | Budget doesn't see card spending | **Declined** — handled by the review process instead | July looked ~1% over budget. It was really ~5× that. Confirmed live again 14 Aug; the periodic finance review catches it, so the app doesn't need to. |
 | [02](02-anyone-can-read-and-edit-the-database.md) | Anyone can read and edit the database | **Done** — see `changelog.md` | The PIN protected the page, not the data. Anyone could read, change or delete every table. |
 
 ## How to use this folder

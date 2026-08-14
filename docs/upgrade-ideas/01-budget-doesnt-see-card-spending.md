@@ -1,7 +1,15 @@
 # Idea 01 — The budget doesn't see card spending
 
-**Status:** Proposed. Nothing has been built or changed.
+**Status:** Declined, 14 Aug 2026. Neither option below will be built.
 **Found:** July 2026 finance review (cycle 24 Jun – 25 Jul 2026).
+
+Visibility into card spending is handled by the periodic finance review,
+which reads the full card transaction history directly rather than relying on
+the live dashboard UI — the review has to read everything anyway, so the gap
+described below doesn't reach the person who'd otherwise be misled by it.
+Confirmed as a live example 14 Aug 2026 and closed there instead of in the
+app; see the review method's category-ledger step. Kept here as a record of
+the decision so this isn't re-proposed.
 
 > **No private data in this file.** The repo is public and GitHub Pages serves
 > from the root. Evidence below is given as ratios and percentages, never as
