@@ -1,7 +1,7 @@
   // ── CONFIG — fill these in ──────────────────────────────
   const SUPABASE_URL = 'https://wrsqsrouliceqewkxvpw.supabase.co'
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indyc3Fzcm91bGljZXFld2t4dnB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMDg0NTEsImV4cCI6MjA5NjY4NDQ1MX0.rCLfPy5wzwY76lttpoFPimYHwzh4igbMsAJr9WnMIoY'
-  const PIN_HASH = 'd59a23c3feff6c21bbd651244d14c5639d3aa704751d4ce7aaa481712a18456d' // generate below, then paste here
+  const LOGIN_EMAIL = 'hassan.a.nabi98@gmail.com'
   // ────────────────────────────────────────────────────────
 
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
@@ -35,51 +35,44 @@
         }
       })
     })
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) await supabase.auth.signInAnonymously()
+    let { data: { session } } = await supabase.auth.getSession()
+    // a leftover anonymous session from before this switch is not a real login — drop it
+    if (session?.user?.is_anonymous) {
+      await supabase.auth.signOut()
+      session = null
+    }
     $('loading').classList.add('hidden')
-    $('pin-screen').classList.remove('hidden')
-  }
-
-  // ── PIN ──────────────────────────────────────────────────
-  async function hashPin(pin) {
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin))
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('')
-  }
-
-  let pinEntry = ''
-
-  function updateDots() {
-    for (let i = 0; i < 4; i++) $(`d${i}`).classList.toggle('filled', i < pinEntry.length)
-  }
-
-  async function handlePinInput(n) {
-    if (pinEntry.length >= 4) return
-    pinEntry += n
-    updateDots()
-    $('pin-error').textContent = ''
-    if (pinEntry.length === 4) {
-      const h = await hashPin(pinEntry)
-      if (h === PIN_HASH) {
-        $('pin-screen').classList.add('hidden')
-        $('app').classList.add('visible')
-        renderCalendar()
-        loadTodayTab()
-      } else {
-        $('pin-error').textContent = 'Incorrect PIN'
-        pinEntry = ''
-        updateDots()
-      }
+    if (session) {
+      $('app').classList.add('visible')
+      renderCalendar()
+      loadTodayTab()
+    } else {
+      $('login-screen').classList.remove('hidden')
     }
   }
 
-  document.querySelectorAll('.pin-key[data-n]').forEach(btn => {
-    btn.addEventListener('click', () => handlePinInput(btn.dataset.n))
-  })
+  // ── LOGIN ────────────────────────────────────────────────
+  async function handleLogin() {
+    const password = $('login-password').value
+    if (!password) return
+    $('login-error').textContent = ''
+    $('login-submit').disabled = true
+    const { error } = await supabase.auth.signInWithPassword({ email: LOGIN_EMAIL, password })
+    $('login-submit').disabled = false
+    if (error) {
+      $('login-error').textContent = 'Incorrect password'
+      $('login-password').value = ''
+      $('login-password').focus()
+      return
+    }
+    $('login-screen').classList.add('hidden')
+    $('app').classList.add('visible')
+    renderCalendar()
+    loadTodayTab()
+  }
 
-  $('pin-del').addEventListener('click', () => {
-    if (pinEntry.length > 0) { pinEntry = pinEntry.slice(0, -1); updateDots(); $('pin-error').textContent = '' }
-  })
+  $('login-submit').addEventListener('click', handleLogin)
+  $('login-password').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin() })
 
   // ── TABS ─────────────────────────────────────────────────
   const tabTitles = { calendar:'Calendar', today:'Today', finance:'Finance', health:'Health', analytics:'Analytics', settings:'Settings' }
