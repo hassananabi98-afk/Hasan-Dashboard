@@ -37,21 +37,6 @@ A minimal marker (self / household) on each expense would settle it permanently.
 The open question is whether it's worth the extra tap on every entry, or whether
 it should default to *self* and only be set when it isn't.
 
-### Q-08 · Should drinks be logged separately from the shop they came from?
-**Status:** open · **Raised:** 6 Aug 2026 · **Currently: they're invisible**
-
-Convenience-store runs are logged as a single line under Groceries. Anything
-bought inside that trip — soft drinks, energy drinks — disappears into it. Over
-the whole dataset to date, soft drinks appear **zero times**, while the owner
-reports buying them near-daily.
-
-So a category the owner actively wants to watch cannot be seen at all, and the
-Food & Drinks figure understates by an unknown margin.
-
-No app change may be needed — logging the drink as its own line would do it. The
-question is whether that's realistic in the moment, or whether it needs a
-one-tap quick-add to stand a chance of happening.
-
 ---
 
 ## Pending changes

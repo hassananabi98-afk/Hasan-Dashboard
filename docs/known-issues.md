@@ -64,6 +64,18 @@ future edit, at the cost of a manual step if you retag an old row.
 **Decided:** not changed. A prompt at tag-time ("also add this to the card?")
 was considered and declined — kept here as a record so it isn't re-proposed.
 
+### KI-10 · Drinks bought inside a shop stay lumped into that shop's category — *won't fix*
+**Status:** closed, declined 14 Aug 2026 · **Impact:** n/a
+
+A convenience-store run is logged as one line under Groceries; anything bought
+inside it — soft drinks, energy drinks — disappears into that figure. Soft
+drinks appear zero times in the dataset despite being bought near-daily, so
+Food & Drinks understates by an unknown margin.
+
+**Decided:** not wanted. Logging drinks as their own line, with or without a
+one-tap quick-add, will not be built — kept here as a record so it isn't
+re-proposed.
+
 ---
 
 ## Repo hygiene
