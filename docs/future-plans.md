@@ -93,7 +93,7 @@ doc in [`upgrade-ideas/`](upgrade-ideas/).
 | PWA / home screen install | manifest + service worker for offline + install prompt |
 | Rename categories backfill | Renaming a category does not update old expense rows (`expenses.category` stores the name as text, not an FK) |
 | Weight tracking | Nothing records body weight. Gym sessions, meals and supplements are all logged, but the number they're aimed at has nowhere to live — so a trend is only noticed once clothes report it. Raised 6 Aug 2026 |
-| Daily spend target vs. actual | The budget bar tracks the cycle total, but plans are now run off a **single daily living figure** (see [`finance-reviews/`](finance-reviews/)). Showing today's spend against that target — and the week against its share — would make drift visible in days instead of weeks |
+| Daily spend target vs. actual | The budget bar tracks the cycle total, but plans are now run off a **single daily living figure**. Showing today's spend against that target — and the week against its share — would make drift visible in days instead of weeks |
 | Weekly checkpoint view | Both cycles reviewed so far went wrong inside the first week and weren't caught until far later. A per-week summary would surface it while the cycle can still absorb a correction |
 
 Two rows were removed from this list as already shipped: **Export / backup**

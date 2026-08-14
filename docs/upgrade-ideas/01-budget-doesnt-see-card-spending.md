@@ -6,8 +6,7 @@
 > **No private data in this file.** The repo is public and GitHub Pages serves
 > from the root. Evidence below is given as ratios and percentages, never as
 > amounts — the argument doesn't need the real figures, and the real figures
-> would be readable by anyone. Same rule as
-> [`../finance-reviews/`](../finance-reviews/).
+> would be readable by anyone.
 
 ---
 

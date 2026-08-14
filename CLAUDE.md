@@ -33,7 +33,6 @@ docs/
   future-plans.md   ← unanswered questions + planned features
   known-issues.md   ← known bugs and data-quality gaps
   upgrade-ideas/    ← proposals that need a design write-up
-  finance-reviews/  ← the monthly review process (reviews themselves stay out of the repo)
 ```
 
 ### Which doc gets the update

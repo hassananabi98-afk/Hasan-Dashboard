@@ -24,9 +24,9 @@ reused.)*
 ## Operational
 
 *(KI-03 is retired — a backup was taken on 5 Aug 2026. Re-exporting each cycle
-is part of the [monthly review](finance-reviews/), not a tracked bug. The app
-will **not** prompt or remind; that was decided and settled, so don't propose
-reminder UI for it again.)*
+is part of the monthly finance review, not a tracked bug. The app will **not**
+prompt or remind; that was decided and settled, so don't propose reminder UI
+for it again.)*
 
 ---
 
