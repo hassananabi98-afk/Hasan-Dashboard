@@ -41,6 +41,7 @@ These are literals in `script.js` / inline styles and do **not** follow the them
 | Reading ring | `#3b82f6` | Calendar, inner |
 | CREDIMAX accent | `#3b82f6` / `#1d4ed8` | Blue card |
 | ILA accent | `#22c55e` / `#15803d` | Green card |
+| `SAVINGS_COLOR` | `#4ade80` | Lighter green than ILA's — Savings box |
 | `.anl-stat-good` | `#22c55e` | Green stat value on the reading tiles |
 
 Note the reading ring's `#3b82f6` is a *different* blue from `--accent`. That
@@ -57,6 +58,7 @@ near-match is why the calendar note dot was moved off `--accent` and onto
 - `::before` — 3px absolute top line, `height: 3px`, `border-radius: var(--radius) var(--radius) 0 0`, gradient from `--card-accent` to `--card-accent-2`
 - Balance amount: `.card-tile-balance` — `font-size: 20px; font-weight: 700; font-family: ui-monospace`
 - Card name: `.card-tile-name` — `font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em`
+- `.card-tile-meta` reads **Available, then Limit**, left to right (reversed from the original build 14 Aug 2026)
 
 ## Monthly Budget Box (`#budget-wrap`)
 - Mirrors card tile aesthetic with violet color
@@ -67,6 +69,17 @@ near-match is why the calendar note dot was moved off `--accent` and onto
   - `box-shadow: 0 2px 12px hexA('#8b5cf6', 0.08)`
 - Remaining amount uses `.card-tile-balance` class (20px bold monospace)
 - Title "💰 Monthly Budget" and "Start New Month" button sit **outside** the box in a flex row above it
+
+## Savings Box (`#savings-wrap`)
+- Mirrors card tile aesthetic with `SAVINGS_COLOR` (`#4ade80`, lighter green than ILA)
+- `::before` in CSS — 3px absolute top line, `background: #4ade80`
+- Inline styles set in `renderSavingsBox()`:
+  - `background: darkTint('#4ade80', 0.16)`
+  - `border: 1px solid hexA('#4ade80', 0.25)`
+  - `box-shadow: 0 2px 12px hexA('#4ade80', 0.08)`
+  - `padding: 21px 14px` — taller than the flat `14px` every other Finance box uses, since there's no track row to give it the same height. Change this figure, not a track row, if the height ever needs retuning
+- Balance uses `.card-tile-balance`; title "🏦 Savings" sits **inside** the box (unlike Budget's title, which sits outside it) since the whole box is also the collapse/expand tap target
+- No progress bar — tried and removed twice (an all-time added/used split, then the same split scoped to the cycle); neither read as useful in practice
 
 ## Health Session Tiles
 - Class: `.hlth-type-tile`

@@ -236,7 +236,7 @@
 
   /* savings — same shape as budget, teal accent, no progress bar */
   .savings-wrap{background:var(--bg2);border-radius:var(--radius);padding:14px;position:relative;overflow:hidden}
-  .savings-wrap::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:#14b8a6;border-radius:var(--radius) var(--radius) 0 0}
+  .savings-wrap::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:#4ade80;border-radius:var(--radius) var(--radius) 0 0}
 
   /* donut — shared by Finance, Cards and Analytics */
   .donut-wrap{position:relative;width:100%;max-width:210px;margin:0 auto}

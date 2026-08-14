@@ -1728,8 +1728,8 @@
           </div>
           <div class="card-tile-track" style="margin-bottom:4px"><div class="card-tile-fill${pct > 80 ? ' danger' : ''}" style="width:${pct.toFixed(1)}%"></div></div>
           <div class="card-tile-meta">
-            <span class="card-limit-tap" data-card-id="${card.id}" data-limit="${limit}" title="Tap to edit">Limit <span class="card-limit-val">${fmtAmount(limit)}</span> ✎</span>
             <span>Available ${fmtAmount(available)}</span>
+            <span class="card-limit-tap" data-card-id="${card.id}" data-limit="${limit}" title="Tap to edit">Limit <span class="card-limit-val">${fmtAmount(limit)}</span> ✎</span>
           </div>
         </div>
       </div>
@@ -1802,7 +1802,7 @@
 
   // ── SAVINGS (ledger — add/use entries; balance derived like a card, not
   // a monthly cycle) ────────────────────────────────────────
-  const SAVINGS_COLOR = '#14b8a6'
+  const SAVINGS_COLOR = '#4ade80' // lighter green than ILA's #22c55e, same family not a clash
   let finSavingsCollapsed = true
 
   async function loadSavingsData() {

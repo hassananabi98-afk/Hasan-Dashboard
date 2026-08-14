@@ -53,8 +53,9 @@ for colours, tokens and component specs see [`style-guide.md`](style-guide.md).
 - Cards section (CREDIMAX blue, ILA green) — all-time balance derived from transaction history
   - Tap the limit to edit it inline
   - Tap a card tile to expand its spending donut — **scoped to the current salary cycle**
+  - Meta row reads **Available, then Limit** (left to right)
 - Card transactions — add (charge/payment, label, amount, category, date) + edit + delete
-- Savings (🏦) — a running ledger, not a monthly cycle. **Balance** is the all-time sum of **Add** minus **Use** entries, shown the same way a card's balance is
+- Savings (🏦, lighter green than ILA's card) — a running ledger, not a monthly cycle. **Balance** is the all-time sum of **Add** minus **Use** entries, shown the same way a card's balance is
   - Collapsed by default to the balance only; tap it to expand the log, same as a card tile
   - No progress bar — there's no ceiling to show progress against, and a two-colour added/used track was tried and removed as not useful. Just the balance plus an "Added X · Used Y this cycle" line, cycle-scoped for the same reason an all-time split gets permanently dominated by a single starting-balance entry. Extra vertical padding keeps the box the same height as Budget and Cards without a track row to do it
   - Add (type, amount, label, date, notes) + edit + delete, same interaction as Card transactions. **Label is optional** — an unlabelled row shows "Add" or "Use" in its place
