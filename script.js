@@ -1724,12 +1724,12 @@
         <div style="flex:1;min-width:0">
           <div class="card-tile-header">
             <span class="card-tile-name">${escHtml(card.name)}</span>
-            <span class="card-tile-balance">${fmtAmount(balance)}</span>
+            <span class="card-tile-balance">${fmtAmount(available)}</span>
           </div>
           <div class="card-tile-track" style="margin-bottom:4px"><div class="card-tile-fill${pct > 80 ? ' danger' : ''}" style="width:${pct.toFixed(1)}%"></div></div>
           <div class="card-tile-meta">
-            <span>Available ${fmtAmount(available)}</span>
             <span class="card-limit-tap" data-card-id="${card.id}" data-limit="${limit}" title="Tap to edit">Limit <span class="card-limit-val">${fmtAmount(limit)}</span> ✎</span>
+            <span>Used ${fmtAmount(balance)}</span>
           </div>
         </div>
       </div>

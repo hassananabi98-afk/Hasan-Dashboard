@@ -56,9 +56,9 @@ near-match is why the calendar note dot was moved off `--accent` and onto
 - `border: 1px solid var(--card-border, rgba(59,130,246,0.25))`
 - `box-shadow: 0 2px 12px var(--card-glow, rgba(59,130,246,0.08))`
 - `::before` — 3px absolute top line, `height: 3px`, `border-radius: var(--radius) var(--radius) 0 0`, gradient from `--card-accent` to `--card-accent-2`
-- Balance amount: `.card-tile-balance` — `font-size: 20px; font-weight: 700; font-family: ui-monospace`
+- Headline amount: `.card-tile-balance` — `font-size: 20px; font-weight: 700; font-family: ui-monospace`. Shows **Available** (`limit − balance`), not the raw balance — changed 14 Aug 2026
 - Card name: `.card-tile-name` — `font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em`
-- `.card-tile-meta` reads **Available, then Limit**, left to right (reversed from the original build 14 Aug 2026)
+- `.card-tile-meta` reads **Limit, then Used** (the old balance figure), left to right — settled 14 Aug 2026 after two reorderings; don't re-propose Available in this row, it lives in the headline now
 
 ## Monthly Budget Box (`#budget-wrap`)
 - Mirrors card tile aesthetic with violet color

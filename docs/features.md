@@ -53,7 +53,7 @@ for colours, tokens and component specs see [`style-guide.md`](style-guide.md).
 - Cards section (CREDIMAX blue, ILA green) — all-time balance derived from transaction history
   - Tap the limit to edit it inline
   - Tap a card tile to expand its spending donut — **scoped to the current salary cycle**
-  - Meta row reads **Available, then Limit** (left to right)
+  - **Available** is the bold headline figure (was Balance); **Limit** and **Used** sit small underneath it, left to right
 - Card transactions — add (charge/payment, label, amount, category, date) + edit + delete
 - Savings (🏦, lighter green than ILA's card) — a running ledger, not a monthly cycle. **Balance** is the all-time sum of **Add** minus **Use** entries, shown the same way a card's balance is
   - Collapsed by default to the balance only; tap it to expand the log, same as a card tile
