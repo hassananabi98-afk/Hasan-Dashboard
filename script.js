@@ -1826,7 +1826,10 @@
     wrap.style.background = darkTint(SAVINGS_COLOR, 0.16)
     wrap.style.border = `1px solid ${hexA(SAVINGS_COLOR, 0.25)}`
     wrap.style.borderRadius = 'var(--radius)'
-    wrap.style.padding = '14px'
+    // extra vertical padding — no track row to fill the height Budget and
+    // Card boxes get from theirs, so this is what keeps all three the same
+    // size without adding a bar back
+    wrap.style.padding = '21px 14px'
     wrap.style.boxShadow = `0 2px 12px ${hexA(SAVINGS_COLOR, 0.08)}`
     wrap.style.transition = 'background .12s, border-color .12s'
     wrap.innerHTML = `

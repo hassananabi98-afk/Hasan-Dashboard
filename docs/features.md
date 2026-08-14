@@ -56,7 +56,7 @@ for colours, tokens and component specs see [`style-guide.md`](style-guide.md).
 - Card transactions — add (charge/payment, label, amount, category, date) + edit + delete
 - Savings (🏦) — a running ledger, not a monthly cycle. **Balance** is the all-time sum of **Add** minus **Use** entries, shown the same way a card's balance is
   - Collapsed by default to the balance only; tap it to expand the log, same as a card tile
-  - No progress bar — there's no ceiling to show progress against, and a two-colour added/used track was tried and removed as not useful. Just the balance plus an "Added X · Used Y this cycle" line, both cycle-scoped for the same reason: an all-time split gets permanently dominated by a single starting-balance entry
+  - No progress bar — there's no ceiling to show progress against, and a two-colour added/used track was tried and removed as not useful. Just the balance plus an "Added X · Used Y this cycle" line, cycle-scoped for the same reason an all-time split gets permanently dominated by a single starting-balance entry. Extra vertical padding keeps the box the same height as Budget and Cards without a track row to do it
   - Add (type, amount, label, date, notes) + edit + delete, same interaction as Card transactions. **Label is optional** — an unlabelled row shows "Add" or "Use" in its place
   - **Category only appears for Use entries** — an Add doesn't need one, a Use does, so where the money went stays visible in the log itself
   - **The displayed log — not the balance — follows the salary cycle**, same split as Card Transactions: the balance always reflects all-time history, but the visible list is scoped to the month being viewed, so it doesn't grow forever and follows Finance's month navigation
