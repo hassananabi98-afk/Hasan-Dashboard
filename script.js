@@ -1815,25 +1815,29 @@
   function renderSavingsBox() {
     const wrap = $('savings-wrap')
     if (!wrap) return
+    // balance is all-time, but the sub-line and track are cycle-scoped —
+    // an all-time added/used split gets permanently dominated by a single
+    // starting-balance entry and stops reflecting anything current
     const added = finSavingsTxns.filter(t => t.type === 'add').reduce((s,t) => s + Number(t.amount), 0)
     const used = finSavingsTxns.filter(t => t.type === 'use').reduce((s,t) => s + Number(t.amount), 0)
-    const total = added + used
-    const addedPct = total > 0 ? (added / total) * 100 : 0
+    const monthTxns = getPeriodTxns(finSavingsTxns, finMonth)
+    const monthAdded = monthTxns.filter(t => t.type === 'add').reduce((s,t) => s + Number(t.amount), 0)
+    const monthUsed = monthTxns.filter(t => t.type === 'use').reduce((s,t) => s + Number(t.amount), 0)
+    const monthTotal = monthAdded + monthUsed
+    const addedPct = monthTotal > 0 ? (monthAdded / monthTotal) * 100 : 0
     wrap.style.background = darkTint(SAVINGS_COLOR, 0.16)
     wrap.style.border = `1px solid ${hexA(SAVINGS_COLOR, 0.25)}`
     wrap.style.borderRadius = 'var(--radius)'
     wrap.style.padding = '14px'
     wrap.style.boxShadow = `0 2px 12px ${hexA(SAVINGS_COLOR, 0.08)}`
     wrap.style.transition = 'background .12s, border-color .12s'
-    // no ceiling to show progress against, so the track shows the split
-    // between added and used instead of a limit-style fill
     wrap.innerHTML = `
       <div class="budget-header"><span>🏦 Savings</span><span class="card-tile-balance">${fmtAmount(added - used)}</span></div>
       <div class="budget-track" style="display:flex">
         <div style="width:${addedPct.toFixed(1)}%;height:100%;background:var(--success)"></div>
         <div style="width:${(100 - addedPct).toFixed(1)}%;height:100%;background:var(--danger)"></div>
       </div>
-      <div class="budget-sub">Added ${fmtAmount(added)} · Used ${fmtAmount(used)}</div>`
+      <div class="budget-sub">Added ${fmtAmount(monthAdded)} · Used ${fmtAmount(monthUsed)} this cycle</div>`
     renderSavingsList()
   }
 
