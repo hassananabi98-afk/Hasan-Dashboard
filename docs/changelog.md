@@ -426,3 +426,12 @@ ALTER TABLE budget_settings ADD COLUMN IF NOT EXISTS started_at date;
 - The edit form gained a matching Self/Household selector, so existing rows can be corrected without SQL
 - Excel export/import carry a `Household` column (`Yes`/`No`), resolved the same way the existing boolean sheets are, so the marker survives a backup round-trip
 - Cache version bumped to `?v=138`
+
+**Savings section added — a ledger, not a monthly cycle:**
+- New table, `savings_transactions` (`date`, `type` — `add`/`use` — `amount`, `label`, `category`, `notes`). No `month` or `started_at`: balance is the running sum of add minus use, derived the same way a card's balance is, not reset or reconfigured per cycle
+- New section in Finance, after Cards — teal accent, same visual language as the budget box (colored top line, big amount) but no progress bar and no "of X budget," since there's no ceiling to measure against
+- Add form mirrors Card Transactions: a Type toggle (**Add** / **Use**), amount, label, date, notes — plus a category picker that only appears on **Use**, so spending from savings shows up broken down the same way Cash Expenses and card charges already do
+- Entries are editable and deletable, same interaction as Card Transactions
+- Excel export/import carry a `Savings Transactions` sheet, same shape as `Card Transactions`
+- First real use: closing the gap from the 14 Aug finance discussion, where savings had two competing, unscheduled claims on it (a card payoff and an unquoted car repair) with no visibility into either
+- Cache version bumped to `?v=139`

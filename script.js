@@ -659,6 +659,11 @@
   let finCardCollapsed = {}
   let finCardTxnType = {}
   let finCardTxnCat = {}
+  let finSavingsTxns = []
+  let finSavingsLoaded = false
+  let savType = 'add'
+  let savCat = null
+  let pendingSavDeleteId = null
   let finCardCharts = {}
   let cardDocClickBound = false
 
@@ -1571,6 +1576,7 @@
       finMonthTxns = getPeriodTxns(finAllTxns, finMonth)
       renderCardSections()
     }
+    if (!finSavingsLoaded) await loadSavingsData()
   }
 
   // ── FINANCE MONTH NAV ────────────────────────────────────
@@ -1607,6 +1613,7 @@
     setFinMonth(currentPeriodYM())
     bindExpenseForm()
     bindCycleStartBtn()
+    bindSavingsForm()
     await loadFinanceData()
   }
 
@@ -1790,6 +1797,249 @@
         <button class="txn-del-btn" data-del="${t.id}" aria-label="Delete">×</button>
       </div>`
     }).join('')}</div>`
+  }
+
+  // ── SAVINGS (ledger — add/use entries; balance derived like a card, not
+  // a monthly cycle) ────────────────────────────────────────
+  const SAVINGS_COLOR = '#14b8a6'
+
+  async function loadSavingsData() {
+    const { data } = await supabase.from('savings_transactions').select('*').order('date', { ascending: false })
+    finSavingsTxns = data || []
+    finSavingsLoaded = true
+    renderSavingsBox()
+  }
+
+  function savingsBalance() {
+    const added = finSavingsTxns.filter(t => t.type === 'add').reduce((s,t) => s + Number(t.amount), 0)
+    const used = finSavingsTxns.filter(t => t.type === 'use').reduce((s,t) => s + Number(t.amount), 0)
+    return added - used
+  }
+
+  function renderSavingsBox() {
+    const wrap = $('savings-wrap')
+    if (!wrap) return
+    wrap.style.background = darkTint(SAVINGS_COLOR, 0.16)
+    wrap.style.border = `1px solid ${hexA(SAVINGS_COLOR, 0.25)}`
+    wrap.style.borderRadius = 'var(--radius)'
+    wrap.style.padding = '14px'
+    wrap.style.boxShadow = `0 2px 12px ${hexA(SAVINGS_COLOR, 0.08)}`
+    wrap.style.transition = 'background .12s, border-color .12s'
+    wrap.innerHTML = `<div class="budget-header"><span>Balance</span><span class="card-tile-balance">${fmtAmount(savingsBalance())}</span></div>`
+    renderSavingsList()
+  }
+
+  function renderSavingsList() {
+    const container = $('savings-list')
+    if (!container) return
+    if (finSavingsTxns.length === 0) {
+      container.innerHTML = '<div class="fin-empty">No savings activity yet</div>'
+      return
+    }
+    container.innerHTML = `<div class="log-card">${finSavingsTxns.map(t => {
+      const isAdd = t.type === 'add'
+      return `<div class="txn-row" data-id="${t.id}">
+        <span class="txn-sign ${t.type}">${isAdd ? '+' : '−'}</span>
+        <div class="txn-meta">
+          <div class="txn-label">${escHtml(t.label)}</div>
+          <div class="txn-sub">${t.category ? escHtml(t.category) + ' · ' : ''}${fmtDateShort(t.date)}</div>
+        </div>
+        <div class="txn-amount ${t.type}">${fmtAmount(t.amount)}</div>
+        <button class="txn-del-btn" data-del="${t.id}" aria-label="Delete">×</button>
+      </div>`
+    }).join('')}</div>`
+    container.querySelectorAll('.txn-row').forEach(row => {
+      row.addEventListener('click', ev => {
+        if (ev.target.closest('.txn-del-btn')) return
+        showSavingsEditForm(row.dataset.id)
+      })
+    })
+    container.querySelectorAll('.txn-del-btn').forEach(btn => {
+      btn.addEventListener('click', ev => { ev.stopPropagation(); showSavingsDeleteConfirm(btn.dataset.del) })
+    })
+  }
+
+  function bindSavingsForm() {
+    const addBtn = $('savings-add-btn'), form = $('savings-form')
+    if (!addBtn) return
+    addBtn.addEventListener('click', () => {
+      form.style.display = 'block'
+      addBtn.style.display = 'none'
+      $('sav-date').value = todayStr()
+      $('sav-amount').focus()
+    })
+    $('sav-cancel-btn').addEventListener('click', closeSavingsForm)
+    $('sav-amount').addEventListener('input', validateSavingsForm)
+    $('sav-label').addEventListener('input', validateSavingsForm)
+    $('sav-confirm-btn').addEventListener('click', submitSavingsTxn)
+
+    ;['sav-type-add','sav-type-use'].forEach(id => {
+      const el = $(id); if (!el) return
+      el.addEventListener('click', () => setSavingsType(el.dataset.savType))
+    })
+
+    const catBtn = $('sav-cat-btn'), catDd = $('sav-cat-dd')
+    if (catBtn && catDd) {
+      catBtn.addEventListener('click', ev => {
+        ev.stopPropagation()
+        if (catDd.style.display !== 'none') { catDd.style.display = 'none'; untrackCatDropdown(); return }
+        renderSavCatDropdown()
+        positionCatDropdown(catBtn, catDd)
+        catDd.style.display = 'block'
+        requestAnimationFrame(() => positionCatDropdown(catBtn, catDd))
+        trackCatDropdown(catBtn, catDd)
+      })
+      document.addEventListener('click', ev => {
+        const wrap = $('sav-cat-wrap')
+        if (wrap && !wrap.contains(ev.target) && catDd.style.display !== 'none') {
+          catDd.style.display = 'none'
+          untrackCatDropdown()
+        }
+      })
+    }
+  }
+
+  // Category only makes sense for a Use entry — knowing where money came
+  // from on the way in isn't the question this answers, only where it went
+  function setSavingsType(type) {
+    savType = type
+    $('sav-type-add')?.classList.toggle('selected', type === 'add')
+    $('sav-type-use')?.classList.toggle('selected', type === 'use')
+    const row = $('sav-cat-row'); if (row) row.style.display = type === 'use' ? '' : 'none'
+    if (type === 'add') { savCat = null; setSavCatPicker(null) }
+    validateSavingsForm()
+  }
+
+  function setSavCatPicker(cat) {
+    const dot = $('sav-cat-dot'), txt = $('sav-cat-txt')
+    if (dot) dot.style.background = cat ? cat.color : '#6b7280'
+    if (txt) txt.textContent = cat ? cat.name : 'None'
+  }
+
+  function renderSavCatDropdown() {
+    const dd = $('sav-cat-dd'); if (!dd) return
+    let html = `<div class="cat-option${!savCat?' selected':''}" data-cat="" data-color="#6b7280"><div class="cat-option-dot" style="background:#6b7280"></div>None</div>`
+    html += finCategories.map(cat => `<div class="cat-option${cat.name===savCat?.name?' selected':''}" data-cat="${escHtml(cat.name)}" data-color="${cat.color}"><div class="cat-option-dot" style="background:${cat.color}"></div>${escHtml(cat.name)}</div>`).join('')
+    dd.innerHTML = html
+    dd.querySelectorAll('.cat-option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        savCat = opt.dataset.cat ? { name: opt.dataset.cat, color: opt.dataset.color } : null
+        setSavCatPicker(savCat)
+        dd.style.display = 'none'
+        untrackCatDropdown()
+      })
+    })
+  }
+
+  function validateSavingsForm() {
+    const btn = $('sav-confirm-btn'); if (!btn) return
+    const amt = parseFloat($('sav-amount')?.value)
+    const lbl = $('sav-label')?.value?.trim()
+    btn.disabled = !(amt > 0 && lbl)
+  }
+
+  async function submitSavingsTxn() {
+    const btn = $('sav-confirm-btn')
+    btn.disabled = true; btn.textContent = 'Saving...'
+    const amount = Math.round(parseFloat($('sav-amount').value) * 1000) / 1000
+    const label = $('sav-label').value.trim()
+    const date = $('sav-date').value || todayStr()
+    const notes = $('sav-notes').value.trim() || null
+    const category = savType === 'use' ? (savCat?.name || null) : null
+    const { data, error } = await supabase.from('savings_transactions')
+      .insert({ date, type: savType, amount, label, category, notes })
+      .select().maybeSingle()
+    if (error) {
+      showToast('Could not add entry', true)
+      btn.disabled = false; btn.textContent = 'Save'; return
+    }
+    finSavingsTxns.unshift(data)
+    finSavingsTxns.sort((a,b) => b.date.localeCompare(a.date))
+    closeSavingsForm()
+    renderSavingsBox()
+    showToast(savType === 'add' ? 'Added to savings ✓' : 'Logged from savings ✓')
+  }
+
+  function closeSavingsForm() {
+    const form = $('savings-form'), addBtn = $('savings-add-btn')
+    if (form) form.style.display = 'none'
+    if (addBtn) addBtn.style.display = ''
+    const btn = $('sav-confirm-btn')
+    if (btn) { btn.disabled = true; btn.textContent = 'Save' }
+    ;['sav-amount','sav-label','sav-notes'].forEach(id => { const el = $(id); if (el) el.value = '' })
+    const dd = $('sav-cat-dd'); if (dd) dd.style.display = 'none'
+    setSavingsType('add')
+  }
+
+  function showSavingsEditForm(id) {
+    const t = finSavingsTxns.find(x => x.id === id); if (!t) return
+    const row = document.querySelector(`#savings-list .txn-row[data-id="${id}"]`); if (!row) return
+    const form = document.createElement('div')
+    form.className = 'expense-edit-form'
+    form.dataset.editId = id
+    const catOpts = `<option value="">None</option>` + finCategories.map(c => `<option value="${escHtml(c.name)}"${c.name === t.category ? ' selected' : ''}>${escHtml(c.name)}</option>`).join('')
+    form.innerHTML = `
+      <div class="expense-edit-grid">
+        <div class="expense-edit-row">
+          <select class="expense-edit-inp" id="se-type" style="max-width:110px">
+            <option value="add"${t.type==='add'?' selected':''}>Add</option>
+            <option value="use"${t.type==='use'?' selected':''}>Use</option>
+          </select>
+          <input class="expense-edit-inp" id="se-amount" type="number" value="${t.amount}" step="0.001" min="0" style="max-width:90px" inputmode="decimal">
+        </div>
+        <div class="expense-edit-row">
+          <input class="expense-edit-inp" id="se-label" value="${escHtml(t.label)}" placeholder="Label" maxlength="80">
+          <input class="expense-edit-inp" id="se-date" type="date" value="${t.date}" style="max-width:140px">
+        </div>
+        <div class="expense-edit-row">
+          <select class="expense-edit-inp" id="se-cat">${catOpts}</select>
+        </div>
+        <div class="expense-edit-row" style="justify-content:flex-end">
+          <button class="expense-edit-cancel" id="se-cancel">Cancel</button>
+          <button class="expense-edit-save" id="se-save">Save</button>
+        </div>
+      </div>`
+    row.replaceWith(form)
+    form.querySelector('#se-cancel').addEventListener('click', () => renderSavingsList())
+    form.querySelector('#se-save').addEventListener('click', async () => {
+      const label = form.querySelector('#se-label').value.trim(); if (!label) return
+      const amount = parseFloat(form.querySelector('#se-amount').value); if (isNaN(amount)) return
+      const date = form.querySelector('#se-date').value
+      const type = form.querySelector('#se-type').value
+      const category = type === 'use' ? (form.querySelector('#se-cat').value || null) : null
+      const btn = form.querySelector('#se-save'); btn.textContent = 'Saving...'; btn.disabled = true
+      const { error } = await supabase.from('savings_transactions').update({ label, amount, date, type, category }).eq('id', id)
+      if (error) { btn.textContent = 'Save'; btn.disabled = false; showToast('Update failed', true); return }
+      const idx = finSavingsTxns.findIndex(x => x.id === id)
+      if (idx !== -1) finSavingsTxns[idx] = { ...finSavingsTxns[idx], label, amount, date, type, category }
+      renderSavingsBox()
+    })
+  }
+
+  function showSavingsDeleteConfirm(id) {
+    cancelSavingsDeleteConfirm()
+    pendingSavDeleteId = id
+    const row = document.querySelector(`#savings-list .txn-row[data-id="${id}"]`)
+    if (!row) return
+    const conf = document.createElement('div')
+    conf.className = 'expense-confirm-row'; conf.id = `sav-conf-${id}`
+    conf.innerHTML = `<span class="expense-confirm-text">Delete this entry?</span><button class="expense-confirm-no">Cancel</button><button class="expense-confirm-yes">Delete</button>`
+    row.replaceWith(conf)
+    conf.querySelector('.expense-confirm-no').addEventListener('click', () => { pendingSavDeleteId = null; renderSavingsList() })
+    conf.querySelector('.expense-confirm-yes').addEventListener('click', async () => {
+      const { error } = await supabase.from('savings_transactions').delete().eq('id', id)
+      if (error) { showToast('Delete failed', true); return }
+      finSavingsTxns = finSavingsTxns.filter(t => t.id !== id)
+      pendingSavDeleteId = null
+      renderSavingsBox()
+    })
+  }
+
+  function cancelSavingsDeleteConfirm() {
+    if (!pendingSavDeleteId) return
+    const el = $(`sav-conf-${pendingSavDeleteId}`)
+    if (el) el.remove()
+    pendingSavDeleteId = null
   }
 
   function drawCardDonut(cardId) {
@@ -2644,7 +2894,7 @@
     btn.disabled = true
     try {
       const [dt, prayersD, meals, expenses, cards, txns, health, suppList, supps,
-             budgets, cats, logTypes, logEntries] = await Promise.all([
+             budgets, cats, logTypes, logEntries, savings] = await Promise.all([
         supabase.from('daily_tracking').select('*').order('date'),
         supabase.from('prayers').select('*').order('date'),
         supabase.from('meals').select('*').order('date'),
@@ -2658,6 +2908,7 @@
         supabase.from('categories').select('*').order('name'),
         supabase.from('custom_log_types').select('*').order('name'),
         supabase.from('custom_log_entries').select('*').order('date'),
+        supabase.from('savings_transactions').select('*').order('date'),
       ])
 
       const cardName = {}; (cards.data || []).forEach(c => cardName[c.id] = c.name)
@@ -2684,6 +2935,11 @@
         Amount: r.amount, Category: r.category || '', Notes: r.notes || '',
         'Expense ID': r.expense_id || '', ID: r.id
       })), 'Card Transactions')
+
+      addSheet(wb, (savings.data || []).map(r => ({
+        Date: r.date, Type: r.type, Label: r.label, Amount: r.amount,
+        Category: r.category || '', Notes: r.notes || '', ID: r.id
+      })), 'Savings Transactions')
 
       addSheet(wb, (dt.data || []).map(r => ({
         Date: r.date, Reading: yn(r.reading),
@@ -2785,6 +3041,9 @@
         // Expenses import before Card Transactions in this list, so the
         // referenced row already exists by the time the FK is checked
         expense_id: r['Expense ID'] || null }) },
+    { sheet: 'Savings Transactions', table: 'savings_transactions', map: r => ({
+        id: r.ID || undefined, date: r.Date, type: r.Type, label: r.Label,
+        amount: num(r.Amount), category: r.Category || null, notes: r.Notes || null }) },
     { sheet: 'Daily Tracking', table: 'daily_tracking', map: r => ({
         id: r.ID || undefined, date: r.Date, reading: bool(r.Reading, false),
         notes: r.Notes || null }) },
@@ -2945,7 +3204,7 @@
           // ReferenceError that the catch below reported as "Import failed"
           // on every successful import
           todayNeedsRefresh = hlthNeedsRefresh = anlNeedsRefresh = calNeedsRefresh = true
-          finLoaded = false; finTxnsLoaded = false
+          finLoaded = false; finTxnsLoaded = false; finSavingsLoaded = false
         } catch (e) {
           console.error(e)
           panel.innerHTML = `<div class="sett-import-status err">Import failed: ${escHtml(e.message || 'unknown error')}</div>`

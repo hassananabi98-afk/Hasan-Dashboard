@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Dashboard</title>
-<link rel="stylesheet" href="style.css?v=138">
+<link rel="stylesheet" href="style.css?v=139">
 </head>
 <body>
 
@@ -312,6 +312,56 @@
       <!-- Section 3: Card tiles (always visible; each tile expands for donut + transactions) -->
       <div id="fin-cards-container"></div>
 
+      <!-- Section 4: Savings — a ledger, not a monthly cycle. Balance derived from add/use entries -->
+      <div class="fin-section">
+        <div class="fin-section-row">
+          <div class="log-section-title" style="margin-bottom:0">🐷 Savings</div>
+          <button class="fin-add-btn" id="savings-add-btn">+ Add</button>
+        </div>
+        <div class="savings-wrap" id="savings-wrap"></div>
+        <div class="add-expense-form" id="savings-form" style="display:none;margin-top:10px">
+          <div class="fin-form-row">
+            <span class="fin-form-label">Type</span>
+            <div class="txn-type-toggle">
+              <button class="txn-type-btn add selected" id="sav-type-add" data-sav-type="add" type="button">Add</button>
+              <button class="txn-type-btn use" id="sav-type-use" data-sav-type="use" type="button">Use</button>
+            </div>
+          </div>
+          <div class="fin-form-row" id="sav-cat-row" style="display:none">
+            <span class="fin-form-label">Category</span>
+            <div class="cat-picker-wrap" id="sav-cat-wrap">
+              <button class="cat-picker-btn" id="sav-cat-btn" type="button">
+                <span class="cat-picker-dot" id="sav-cat-dot" style="background:#6b7280"></span>
+                <span id="sav-cat-txt">None</span>
+                <span class="cat-picker-chevron">▾</span>
+              </button>
+              <div class="cat-dropdown" id="sav-cat-dd" style="display:none"></div>
+            </div>
+          </div>
+          <div class="fin-form-row">
+            <span class="fin-form-label">Amount</span>
+            <input class="fin-form-input" id="sav-amount" type="number" min="0" step="0.001" placeholder="0.000" inputmode="decimal">
+          </div>
+          <div class="fin-form-row">
+            <span class="fin-form-label">Label</span>
+            <input class="fin-form-input" id="sav-label" type="text" placeholder="What was this?" maxlength="80">
+          </div>
+          <div class="fin-form-row">
+            <span class="fin-form-label">Date</span>
+            <input class="fin-form-input" id="sav-date" type="date">
+          </div>
+          <div class="fin-form-row">
+            <span class="fin-form-label">Notes</span>
+            <textarea class="fin-form-input" id="sav-notes" placeholder="Optional..." rows="2" style="resize:none"></textarea>
+          </div>
+          <div class="fin-form-actions">
+            <button class="fin-confirm-btn" id="sav-confirm-btn" disabled>Save</button>
+            <button class="fin-cancel-link" id="sav-cancel-btn" type="button">Cancel</button>
+          </div>
+        </div>
+        <div id="savings-list" style="margin-top:10px"></div>
+      </div>
+
       <div style="height:24px"></div>
     </div>
 
@@ -525,6 +575,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script type="module" src="script.js?v=138"></script>
+<script type="module" src="script.js?v=139"></script>
 </body>
 </html>

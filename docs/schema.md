@@ -79,6 +79,21 @@ the app doesn't use — the orphan check returned no rows in either direction.
 | notes | TEXT | Optional |
 | expense_id | UUID | FK → expenses.id, `ON DELETE CASCADE`. Set only on a payment that was created from the cash side, linking the two halves of one event. Deleting the expense removes this row automatically |
 
+## savings_transactions
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | Primary key |
+| date | DATE | |
+| type | TEXT | `'add'` or `'use'` |
+| amount | DECIMAL | |
+| label | TEXT | What it was for / where it came from |
+| category | TEXT | Optional — only meaningful on `'use'` entries, mirrors `card_transactions` |
+| notes | TEXT | Optional |
+
+**No monthly cycle.** Unlike `budget_settings`, this table has no month or
+`started_at` — balance is the running sum of `add` minus `use`, derived from
+the full history the same way a card's balance is (added 14 Aug 2026).
+
 ## health_sessions
 | Column | Type | Notes |
 |--------|------|-------|

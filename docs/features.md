@@ -53,7 +53,11 @@ for colours, tokens and component specs see [`style-guide.md`](style-guide.md).
 - Cards section (CREDIMAX blue, ILA green) — all-time balance derived from transaction history
   - Tap the limit to edit it inline
   - Tap a card tile to expand its spending donut — **scoped to the current salary cycle**
-- Card transactions — add (charge/payment, label, amount, category, date) + delete
+- Card transactions — add (charge/payment, label, amount, category, date) + edit + delete
+- Savings — a running ledger, not a monthly cycle. Balance is the sum of **Add** minus **Use** entries, shown the same way a card's balance is
+  - Add (type, amount, label, date, notes) + edit + delete, same interaction as Card transactions
+  - **Category only appears for Use entries** — an Add doesn't need one, a Use does, so where the money went stays visible in the log itself
+  - Loads once and stays cached like card transactions; not scoped to the salary cycle at all
 
 ## HEALTH
 - Month navigation; reloads only when a session was added/deleted (dirty flag)
