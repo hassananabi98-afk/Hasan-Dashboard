@@ -66,6 +66,32 @@
   .login-submit:active { opacity: 0.85; }
   .login-error { font-size: 13px; color: var(--danger); height: 18px; }
 
+  /* ── PIN SCREEN (local re-lock) ── */
+  #pin-screen {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0 env(safe-area-inset-bottom);
+    z-index: 100;
+  }
+  #pin-screen.hidden { display: none; }
+  .pin-inner { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 36px; width: 100%; padding: 0 24px; }
+  .pin-top { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+  .pin-title { font-size: 20px; font-weight: 500; color: var(--text); letter-spacing: 0.2px; }
+  .pin-dots { display: flex; gap: 14px; }
+  .pin-dot { width: 14px; height: 14px; border-radius: 50%; border: 2.5px solid var(--text3); background: transparent; transition: background 0.15s, border-color 0.15s; }
+  .pin-dot.filled { background: var(--accent); border-color: var(--accent); }
+  .pin-error { font-size: 13px; color: var(--danger); height: 18px; }
+  .pin-keypad { display: grid; grid-template-columns: repeat(3, min(22vw, 88px)); gap: min(4vw, 16px); }
+  .pin-key { height: min(22vw, 88px); border-radius: 50%; border: none; background: var(--bg2); color: var(--text); font-size: min(6vw, 24px); font-weight: 400; cursor: pointer; transition: background 0.1s, transform 0.1s; display: flex; align-items: center; justify-content: center; }
+  .pin-key:active { background: var(--bg3); transform: scale(0.94); }
+  .pin-key.empty { background: transparent; pointer-events: none; }
+  .pin-key.del { font-size: min(5vw, 20px); }
+  .pin-signout { font-size: 13px; color: var(--text3); text-decoration: underline; cursor: pointer; }
+
   /* ── APP SHELL ── */
   #app { display: none; flex-direction: column; height: 100dvh; }
   #app.visible { display: flex; }

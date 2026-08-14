@@ -10,13 +10,46 @@
 
 <div id="loading"><div class="spinner"></div></div>
 
-<!-- Login Screen -->
+<!-- Login Screen (real account password — only shown with no active session) -->
 <div id="login-screen" class="hidden">
   <div class="login-inner">
     <div class="login-title">Enter Password</div>
     <input class="login-input" id="login-password" type="password" placeholder="Password" autocomplete="current-password">
     <button class="login-submit" id="login-submit">Unlock</button>
     <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- PIN Screen (local re-lock — shown when a session already exists) -->
+<div id="pin-screen" class="hidden">
+  <div class="pin-inner">
+  <div class="pin-top">
+    <div class="pin-title">Enter PIN</div>
+    <div class="pin-dots">
+      <div class="pin-dot" id="d0"></div>
+      <div class="pin-dot" id="d1"></div>
+      <div class="pin-dot" id="d2"></div>
+      <div class="pin-dot" id="d3"></div>
+      <div class="pin-dot" id="d4"></div>
+      <div class="pin-dot" id="d5"></div>
+    </div>
+    <div class="pin-error" id="pin-error"></div>
+  </div>
+  <div class="pin-keypad">
+    <button class="pin-key" data-n="1">1</button>
+    <button class="pin-key" data-n="2">2</button>
+    <button class="pin-key" data-n="3">3</button>
+    <button class="pin-key" data-n="4">4</button>
+    <button class="pin-key" data-n="5">5</button>
+    <button class="pin-key" data-n="6">6</button>
+    <button class="pin-key" data-n="7">7</button>
+    <button class="pin-key" data-n="8">8</button>
+    <button class="pin-key" data-n="9">9</button>
+    <button class="pin-key empty"></button>
+    <button class="pin-key" data-n="0">0</button>
+    <button class="pin-key del" id="pin-del">⌫</button>
+  </div>
+  <div class="pin-signout" id="pin-signout">Not you? Sign out</div>
   </div>
 </div>
 

@@ -2,6 +2,7 @@
   const SUPABASE_URL = 'https://wrsqsrouliceqewkxvpw.supabase.co'
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indyc3Fzcm91bGljZXFld2t4dnB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMDg0NTEsImV4cCI6MjA5NjY4NDQ1MX0.rCLfPy5wzwY76lttpoFPimYHwzh4igbMsAJr9WnMIoY'
   const LOGIN_EMAIL = 'hassan.a.nabi98@gmail.com'
+  const PIN_HASH = 'REPLACE_ME' // 6-digit local re-lock, not a security boundary — generate below, then paste here
   // ────────────────────────────────────────────────────────
 
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
@@ -43,15 +44,13 @@
     }
     $('loading').classList.add('hidden')
     if (session) {
-      $('app').classList.add('visible')
-      renderCalendar()
-      loadTodayTab()
+      $('pin-screen').classList.remove('hidden')
     } else {
       $('login-screen').classList.remove('hidden')
     }
   }
 
-  // ── LOGIN ────────────────────────────────────────────────
+  // ── LOGIN (real account password — only when no session exists) ──
   async function handleLogin() {
     const password = $('login-password').value
     if (!password) return
@@ -73,6 +72,55 @@
 
   $('login-submit').addEventListener('click', handleLogin)
   $('login-password').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin() })
+
+  // ── PIN (local re-lock on top of an already-authenticated session) ──
+  async function hashPin(pin) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin))
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('')
+  }
+
+  let pinEntry = ''
+  const PIN_LEN = 6
+
+  function updateDots() {
+    for (let i = 0; i < PIN_LEN; i++) $(`d${i}`).classList.toggle('filled', i < pinEntry.length)
+  }
+
+  async function handlePinInput(n) {
+    if (pinEntry.length >= PIN_LEN) return
+    pinEntry += n
+    updateDots()
+    $('pin-error').textContent = ''
+    if (pinEntry.length === PIN_LEN) {
+      const h = await hashPin(pinEntry)
+      if (h === PIN_HASH) {
+        $('pin-screen').classList.add('hidden')
+        $('app').classList.add('visible')
+        renderCalendar()
+        loadTodayTab()
+      } else {
+        $('pin-error').textContent = 'Incorrect PIN'
+        pinEntry = ''
+        updateDots()
+      }
+    }
+  }
+
+  document.querySelectorAll('.pin-key[data-n]').forEach(btn => {
+    btn.addEventListener('click', () => handlePinInput(btn.dataset.n))
+  })
+
+  $('pin-del').addEventListener('click', () => {
+    if (pinEntry.length > 0) { pinEntry = pinEntry.slice(0, -1); updateDots(); $('pin-error').textContent = '' }
+  })
+
+  $('pin-signout').addEventListener('click', async () => {
+    await supabase.auth.signOut()
+    pinEntry = ''
+    updateDots()
+    $('pin-screen').classList.add('hidden')
+    $('login-screen').classList.remove('hidden')
+  })
 
   // ── TABS ─────────────────────────────────────────────────
   const tabTitles = { calendar:'Calendar', today:'Today', finance:'Finance', health:'Health', analytics:'Analytics', settings:'Settings' }
