@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Dashboard</title>
-<link rel="stylesheet" href="style.css?v=137">
+<link rel="stylesheet" href="style.css?v=138">
 </head>
 <body>
 
@@ -253,6 +253,13 @@
               <div class="txn-type-toggle">
                 <button class="txn-type-btn charge selected" id="exp-type-expense" data-exp-type="expense" type="button">Expense</button>
                 <button class="txn-type-btn payment" id="exp-type-payment" data-exp-type="payment" type="button">Card payment</button>
+              </div>
+            </div>
+            <div class="fin-form-row">
+              <span class="fin-form-label">For</span>
+              <div class="txn-type-toggle">
+                <button class="txn-type-btn owner selected" id="exp-owner-self" data-exp-owner="self" type="button">Self</button>
+                <button class="txn-type-btn owner" id="exp-owner-household" data-exp-owner="household" type="button">Household</button>
               </div>
             </div>
             <div class="fin-form-row" id="exp-card-row" style="display:none">
@@ -518,6 +525,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script type="module" src="script.js?v=137"></script>
+<script type="module" src="script.js?v=138"></script>
 </body>
 </html>

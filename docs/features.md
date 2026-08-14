@@ -45,6 +45,7 @@ for colours, tokens and component specs see [`style-guide.md`](style-guide.md).
   - The pair stays in step: editing the amount, date or card on **either** side updates the other, and deleting from either side removes both. Both delete confirmations say so before you tap
   - Switching an expense off *Card payment* deletes its mirrored card row
   - **Mirroring happens only on create.** Tagging an already-existing expense via the edit form links it to a card but does not generate a card entry — the rows tagged by the KI-01 backfill already had their payments logged on the card by hand, and generating more would double-count against the balance
+  - **For** — *Self* or *Household*, defaults to Self. Household rows show a small gray "Household" chip next to the category and date. Recorded so a category read as personal (health, spending, habit) can be told apart from a family cost logged on the same line (Q-07)
 - Donut chart by category:
   - Categories beyond the top 6, or under 2.5% share, fold into one gray "Other" arc so the donut doesn't sprout unreadable slivers
   - The legend below still lists **every** category by name, including the folded ones

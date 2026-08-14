@@ -1019,11 +1019,12 @@
       const chip = payCard
         ? `<span class="expense-card-chip" style="--chip:${cardTheme(payCard.name).accent}">${escHtml(payCard.name)}</span>`
         : ''
+      const householdChip = e.household ? `<span class="expense-household-chip">Household</span>` : ''
       return `<div class="expense-row" data-id="${e.id}">
         <div class="expense-cat-dot" style="background:${color}"></div>
         <div class="expense-meta">
           <div class="expense-label">${escHtml(e.label)}</div>
-          <div class="expense-cat-date">${escHtml(e.category)} · ${fmtDateShort(e.date)}${chip}</div>
+          <div class="expense-cat-date">${escHtml(e.category)} · ${fmtDateShort(e.date)}${chip}${householdChip}</div>
         </div>
         <div class="expense-amount">${fmtAmount(e.amount)}</div>
         <button class="expense-del-btn" data-del="${e.id}" aria-label="Delete">×</button>
@@ -1081,6 +1082,10 @@
             ${finCards.filter(c => c.visible !== false || c.id === e.card_id)
               .map(c => `<option value="${c.id}" ${c.id === e.card_id ? 'selected' : ''}>Payment → ${escHtml(c.name)}</option>`).join('')}
           </select>
+          <select class="expense-edit-inp" id="ee-owner" style="max-width:110px">
+            <option value="self" ${!e.household ? 'selected' : ''}>Self</option>
+            <option value="household" ${e.household ? 'selected' : ''}>Household</option>
+          </select>
         </div>
         <div class="expense-edit-row" style="justify-content:flex-end">
           <button class="expense-edit-cancel" id="ee-cancel">Cancel</button>
@@ -1095,11 +1100,12 @@
       const date = form.querySelector('#ee-date').value
       const category = form.querySelector('#ee-cat').value
       const card_id = form.querySelector('#ee-card').value || null
+      const household = form.querySelector('#ee-owner').value === 'household'
       const btn = form.querySelector('#ee-save'); btn.textContent = 'Saving...'; btn.disabled = true
-      const { error } = await supabase.from('expenses').update({ label, amount, date, category, card_id }).eq('id', id)
+      const { error } = await supabase.from('expenses').update({ label, amount, date, category, card_id, household }).eq('id', id)
       if (error) { btn.textContent = 'Save'; btn.disabled = false; showToast('Update failed', true); return }
       const idx = finExpenses.findIndex(x => x.id === id)
-      if (idx !== -1) finExpenses[idx] = { ...finExpenses[idx], label, amount, date, category, card_id }
+      if (idx !== -1) finExpenses[idx] = { ...finExpenses[idx], label, amount, date, category, card_id, household }
       await syncLinkedTxnFromExpense(id, { label, amount, date, card_id })
       renderBudgetBar(); renderExpenseList(); renderDonutChart()
       renderCardSections()
@@ -1366,6 +1372,12 @@
       el.addEventListener('click', () => setExpenseType(el.dataset.expType))
     })
 
+    // Self/household toggle — defaults to self; only needs a tap for the minority case
+    ;['exp-owner-self','exp-owner-household'].forEach(id => {
+      const el = $(id); if (!el) return
+      el.addEventListener('click', () => setExpenseOwner(el.dataset.expOwner))
+    })
+
     const cardBtn = $('exp-card-btn'), cardDd = $('exp-card-dd')
     if (cardBtn && cardDd) {
       cardBtn.addEventListener('click', ev => {
@@ -1392,6 +1404,13 @@
   // ── EXPENSE TYPE (expense vs card payment) ───────────────
   let expIsPayment = false
   let expPayCardId = null
+  let expIsHousehold = false
+
+  function setExpenseOwner(owner) {
+    expIsHousehold = owner === 'household'
+    $('exp-owner-self')?.classList.toggle('selected', !expIsHousehold)
+    $('exp-owner-household')?.classList.toggle('selected', expIsHousehold)
+  }
 
   function setExpenseType(type) {
     expIsPayment = type === 'payment'
@@ -1463,7 +1482,7 @@
     const notes = $('fin-notes').value.trim() || null
     const { data, error } = await supabase.from('expenses')
       .insert({ date, label, amount, category: selectedCatName, notes,
-                card_id: expIsPayment ? expPayCardId : null })
+                card_id: expIsPayment ? expPayCardId : null, household: expIsHousehold })
       .select().maybeSingle()
     if (error) {
       showToast('Could not add expense', true)
@@ -1509,6 +1528,7 @@
     const dd = $('cat-dropdown'); if (dd) dd.style.display = 'none'
     const cdd = $('exp-card-dd'); if (cdd) cdd.style.display = 'none'
     setExpenseType('expense')
+    setExpenseOwner('self')
   }
 
   // ── LOAD FINANCE DATA ────────────────────────────────────
@@ -2655,7 +2675,8 @@
       // row from a new one and silently duplicates everything.
       addSheet(wb, (expenses.data || []).map(r => ({
         Date: r.date, Label: r.label, Amount: r.amount, Category: r.category || '',
-        Notes: r.notes || '', 'Card Payment': cardName[r.card_id] || '', ID: r.id
+        Notes: r.notes || '', 'Card Payment': cardName[r.card_id] || '',
+        Household: yn(r.household), ID: r.id
       })), 'Expenses')
 
       addSheet(wb, (txns.data || []).map(r => ({
@@ -2755,7 +2776,8 @@
     { sheet: 'Expenses', table: 'expenses', map: (r, ctx) => ({
         id: r.ID || undefined, date: r.Date, label: r.Label, amount: num(r.Amount),
         category: r.Category || null, notes: r.Notes || null,
-        card_id: r['Card Payment'] ? (ctx.cardByName[r['Card Payment']] || null) : null }) },
+        card_id: r['Card Payment'] ? (ctx.cardByName[r['Card Payment']] || null) : null,
+        household: bool(r.Household, false) }) },
     { sheet: 'Card Transactions', table: 'card_transactions', map: (r, ctx) => ({
         id: r.ID || undefined, card_id: ctx.cardByName[r.Card] || null, date: r.Date,
         type: r.Type, label: r.Label, amount: num(r.Amount),

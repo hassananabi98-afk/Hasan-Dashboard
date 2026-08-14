@@ -418,3 +418,11 @@ ALTER TABLE budget_settings ADD COLUMN IF NOT EXISTS started_at date;
 **6-digit PIN restored as a local re-lock:** always typing the real account password felt too heavy for daily use, and Supabase persists the login session per device — so without something in front of it, the app would just stay open indefinitely once unlocked once. A local PIN restores the old "someone picks up the phone" gate, this time honestly: it only decides whether the already-authenticated app is *shown*, not whether the database can be reached. The real password is still the only thing that can start a session in the first place, and only gets asked again if there's no session (a new device, or after a "Not you? Sign out" tap on the PIN screen)
 - Same shape as the original PIN screen, but 6 digits instead of 4 and matched against a session that already exists rather than gating `signInAnonymously()`
 - Cache version bumped to `?v=137`
+
+**Expenses can now record self vs. household (Q-07 answered):**
+- `expenses` gained a `household` boolean, `NOT NULL DEFAULT false` — false reads as self, true as household. Every existing row defaulted to self on the column add
+- The cash expense form gained a **For** toggle — *Self* / *Household* — next to Type, defaulting to Self so the common case costs no extra tap
+- Household rows show a small gray "Household" chip next to the category and date, the same slot the card-payment chip uses, so the marker is visible in the log itself rather than only in the database
+- The edit form gained a matching Self/Household selector, so existing rows can be corrected without SQL
+- Excel export/import carry a `Household` column (`Yes`/`No`), resolved the same way the existing boolean sheets are, so the marker survives a backup round-trip
+- Cache version bumped to `?v=138`

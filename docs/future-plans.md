@@ -20,22 +20,7 @@ entry) · `dropped`
 
 ## Open questions
 
-### Q-07 · Should expenses record who they were for?
-**Status:** open · **Raised:** 6 Aug 2026 · **Currently: they don't**
-
-Nothing distinguishes the owner's own costs from the household's. A pharmacy or
-clinic entry logged for a family member is indistinguishable from one for
-himself, so any category read as *personal* health, spending or habit is really
-a **household** figure.
-
-This is not hypothetical: it produced a wrong conclusion in the August spot
-check. A run of medical entries was read as the owner's own illness and the
-review had to be corrected twice — first on who was unwell, then on what
-followed from it. The two readings pointed at completely different actions.
-
-A minimal marker (self / household) on each expense would settle it permanently.
-The open question is whether it's worth the extra tap on every entry, or whether
-it should default to *self* and only be set when it isn't.
+*None open.*
 
 ---
 
