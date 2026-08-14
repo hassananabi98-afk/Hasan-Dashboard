@@ -1,8 +1,13 @@
 # Idea 02 — Anyone can read and edit the database
 
-**Status:** Proposed. Nothing has been changed.
+**Status:** Done — implemented 14 Aug 2026. See `changelog.md` for what shipped.
 **Found:** 26 July 2026, during a repo/data exposure check.
-**Severity:** High. This is the most serious item in this folder.
+**Severity:** High. This was the most serious item in this folder.
+
+Everything below describes the problem **as it was before the fix** — kept
+intact as the record of what was wrong and why. The database now requires a
+real login; see the fix section for what actually shipped and what's still
+open (leaked-password protection, Pro-plan gated).
 
 > **No private data in this file.** The repo is public and GitHub Pages serves
 > from the root. State evidence as ratios and percentages, never as amounts, and

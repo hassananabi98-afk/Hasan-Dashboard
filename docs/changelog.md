@@ -406,3 +406,11 @@ ALTER TABLE budget_settings ADD COLUMN IF NOT EXISTS started_at date;
 - **Mirroring happens only on create**, deliberately. Tagging an existing expense through the edit form links it without generating a card entry — the KI-01 backfilled rows already have their payments logged by hand, and generating more would double-count. Logged as Q-05 in `future-plans.md` so the asymmetry is a decision rather than an accident
 - Cache version bumped to `?v=135`
 - **KI-03 closed — a backup exists.** A full Excel export was taken and stored off the database on 5 Aug 2026, so the data no longer lives in exactly one place. Since an in-app reminder was declined (Q-04), "export before you start" is now the first step of the monthly finance review — anchored to the one thing that already happens once per cycle rather than depending on memory
+
+**Anonymous database access closed (upgrade idea 02):**
+- The PIN screen (a local SHA-256 comparison) is replaced by a real Supabase login — a single password field calling `signInWithPassword()` against one real account. `signInAnonymously()` is no longer called at all, and a leftover anonymous session from before the switch is detected and signed out on load rather than treated as a valid login
+- All 13 tables' RLS policies replaced `allow_auth` (`USING (true)`, granted to any authenticated session, anonymous included) with `owner_only`, scoped to the one real account's `auth.uid()`
+- `rls_auto_enable()`'s public `EXECUTE` grant revoked from `PUBLIC` — revoking from `anon`/`authenticated` alone wasn't enough, since both inherited access through the `PUBLIC` pseudo-role underneath
+- Anonymous sign-ins disabled in Auth settings — the step that actually closes the old path, done last and only after the new login was confirmed working on a real device
+- Security advisors confirmed clean afterward: every "anonymous access" warning and both `SECURITY DEFINER` warnings gone. One remains — leaked-password protection — gated to Supabase's Pro plan; logged in `known-issues.md` rather than worked around
+- Cache version bumped to `?v=136`

@@ -1,17 +1,17 @@
 # Database Schema — Supabase (PostgreSQL)
 
-All tables use `authenticated` role with RLS enabled (`USING (true) WITH CHECK (true)`).
+All tables use the `authenticated` role with RLS enabled, scoped to the one
+real account via an `owner_only` policy (`USING (auth.uid() = '<owner-id>')`).
+Anonymous sign-ins are disabled, so the anon key shipped in `script.js` can no
+longer reach any row.
 
-**Verified against the live database on 5 Aug 2026.** Every column and table
-below exists, and the database holds nothing the app doesn't use — the orphan
-check returned no rows in either direction.
+**Verified against the live database on 5 Aug 2026; RLS re-scoped 14 Aug 2026**
+(see [upgrade idea 02](upgrade-ideas/02-anyone-can-read-and-edit-the-database.md),
+now done). Every column and table below exists, and the database holds nothing
+the app doesn't use — the orphan check returned no rows in either direction.
 
 > **No private data in this file.** The repo is public and GitHub Pages serves
 > from the root. Document columns and types, never row values.
-
-> **Note on RLS:** `USING (true) WITH CHECK (true)` means the policy grants
-> everything to anyone holding the anon key, which ships in `script.js`. That is
-> the subject of [upgrade idea 02](upgrade-ideas/02-anyone-can-read-and-edit-the-database.md).
 
 ---
 

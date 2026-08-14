@@ -50,6 +50,20 @@ the gap isn't rediscovered and raised again.
 
 ---
 
+## Security
+
+### KI-08 · Leaked-password protection unavailable on current plan
+**Status:** open, deferred 14 Aug 2026 · **Impact:** low
+
+Supabase's leaked-password check (HaveIBeenPwned) requires a Pro-plan project;
+this project is on the Free tier, and the toggle fails with a plan-gate error.
+Deferred rather than worked around — mitigated by using a long, unique
+password for the one real account instead. Revisit if the project ever moves
+to Pro. Not a blocker: the core fix ([upgrade idea 02](upgrade-ideas/02-anyone-can-read-and-edit-the-database.md)
+— anonymous database access) does not depend on this and is done.
+
+---
+
 ## Repo hygiene
 
 ### KI-05 · Commits from web sessions show as Unverified on GitHub
