@@ -1577,6 +1577,7 @@
       renderCardSections()
     }
     if (!finSavingsLoaded) await loadSavingsData()
+    else renderSavingsBox()
   }
 
   // ── FINANCE MONTH NAV ────────────────────────────────────
@@ -1845,11 +1846,15 @@
   function renderSavingsList() {
     const container = $('savings-list')
     if (!container) return
-    if (finSavingsTxns.length === 0) {
-      container.innerHTML = '<div class="fin-empty">No savings activity yet</div>'
+    // balance (renderSavingsBox) stays all-time; only the displayed log is
+    // scoped to the viewed cycle, same as Card Transactions — otherwise the
+    // list only ever grows and never reflects month navigation
+    const monthTxns = getPeriodTxns(finSavingsTxns, finMonth)
+    if (monthTxns.length === 0) {
+      container.innerHTML = '<div class="fin-empty">No savings activity this month</div>'
       return
     }
-    container.innerHTML = `<div class="log-card">${finSavingsTxns.map(t => {
+    container.innerHTML = `<div class="log-card">${monthTxns.map(t => {
       const isAdd = t.type === 'add'
       return `<div class="txn-row" data-id="${t.id}">
         <span class="txn-sign ${t.type}">${isAdd ? '+' : '−'}</span>

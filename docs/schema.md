@@ -92,7 +92,11 @@ the app doesn't use — the orphan check returned no rows in either direction.
 
 **No monthly cycle.** Unlike `budget_settings`, this table has no month or
 `started_at` — balance is the running sum of `add` minus `use`, derived from
-the full history the same way a card's balance is (added 14 Aug 2026).
+the full history the same way a card's balance is (added 14 Aug 2026). The
+**displayed log** is filtered to the viewed salary cycle via `getPeriodTxns`
+so it doesn't grow forever, but the **balance** always sums the full table —
+same split as `card_transactions` between all-time balance and month-scoped
+list (added 14 Aug 2026).
 
 **Grants matter as much as RLS for a hand-created table.** `CREATE TABLE`
 via raw SQL does not grant `SELECT`/`INSERT`/`UPDATE`/`DELETE` to
