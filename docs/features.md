@@ -57,7 +57,7 @@ for colours, tokens and component specs see [`style-guide.md`](style-guide.md).
 - Savings (🏦) — a running ledger, not a monthly cycle. Balance is the sum of **Add** minus **Use** entries, shown the same way a card's balance is
   - Collapsed by default to the balance only; tap it to expand the log, same as a card tile
   - Balance box has a two-colour track (green share = added, red share = used) instead of a limit-style progress bar, since there's no ceiling — matches the Budget and Card boxes' height
-  - Add (type, amount, label, date, notes) + edit + delete, same interaction as Card transactions
+  - Add (type, amount, label, date, notes) + edit + delete, same interaction as Card transactions. **Label is optional** — an unlabelled row shows "Add" or "Use" in its place
   - **Category only appears for Use entries** — an Add doesn't need one, a Use does, so where the money went stays visible in the log itself
   - Loads once and stays cached like card transactions; not scoped to the salary cycle at all
 

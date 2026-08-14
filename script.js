@@ -1854,7 +1854,7 @@
       return `<div class="txn-row" data-id="${t.id}">
         <span class="txn-sign ${t.type}">${isAdd ? '+' : '−'}</span>
         <div class="txn-meta">
-          <div class="txn-label">${escHtml(t.label)}</div>
+          <div class="txn-label">${t.label ? escHtml(t.label) : (isAdd ? 'Add' : 'Use')}</div>
           <div class="txn-sub">${t.category ? escHtml(t.category) + ' · ' : ''}${fmtDateShort(t.date)}</div>
         </div>
         <div class="txn-amount ${t.type}">${fmtAmount(t.amount)}</div>
@@ -1949,8 +1949,7 @@
   function validateSavingsForm() {
     const btn = $('sav-confirm-btn'); if (!btn) return
     const amt = parseFloat($('sav-amount')?.value)
-    const lbl = $('sav-label')?.value?.trim()
-    btn.disabled = !(amt > 0 && lbl)
+    btn.disabled = !(amt > 0)
   }
 
   async function submitSavingsTxn() {
@@ -2017,7 +2016,7 @@
     row.replaceWith(form)
     form.querySelector('#se-cancel').addEventListener('click', () => renderSavingsList())
     form.querySelector('#se-save').addEventListener('click', async () => {
-      const label = form.querySelector('#se-label').value.trim(); if (!label) return
+      const label = form.querySelector('#se-label').value.trim()
       const amount = parseFloat(form.querySelector('#se-amount').value); if (isNaN(amount)) return
       const date = form.querySelector('#se-date').value
       const type = form.querySelector('#se-type').value

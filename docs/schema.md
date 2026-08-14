@@ -86,13 +86,23 @@ the app doesn't use — the orphan check returned no rows in either direction.
 | date | DATE | |
 | type | TEXT | `'add'` or `'use'` |
 | amount | DECIMAL | |
-| label | TEXT | What it was for / where it came from |
+| label | TEXT | What it was for / where it came from. `NOT NULL` at the column level, but optional in the UI — a blank entry stores `''`, not `NULL`; the list falls back to showing "Add"/"Use" for those rows |
 | category | TEXT | Optional — only meaningful on `'use'` entries, mirrors `card_transactions` |
 | notes | TEXT | Optional |
 
 **No monthly cycle.** Unlike `budget_settings`, this table has no month or
 `started_at` — balance is the running sum of `add` minus `use`, derived from
 the full history the same way a card's balance is (added 14 Aug 2026).
+
+**Grants matter as much as RLS for a hand-created table.** `CREATE TABLE`
+via raw SQL does not grant `SELECT`/`INSERT`/`UPDATE`/`DELETE` to
+`authenticated` the way Supabase Studio's own table creator does — RLS
+policies are checked *after* that base privilege, so a correct policy on a
+table with no grant still denies everything with "permission denied for
+table X," not an RLS-specific error. Hit and fixed 14 Aug 2026; any future
+table created by hand needs an explicit
+`GRANT SELECT, INSERT, UPDATE, DELETE ON public.<table> TO authenticated;`
+alongside its policy.
 
 ## health_sessions
 | Column | Type | Notes |
