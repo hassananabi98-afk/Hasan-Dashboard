@@ -11,7 +11,7 @@ A personal life management dashboard. Calendar-based daily logging for health, f
 | Frontend | Vanilla HTML/CSS/JS — `index.html`, `script.js`, `style.css` at repo root |
 | Database | Supabase (PostgreSQL) |
 | Hosting | GitHub Pages (`hassananabi98-afk.github.io`) — serves from repo root only |
-| Auth | PIN screen (SHA-256 hash) |
+| Auth | Real Supabase login (owner-scoped RLS) + 6-digit local PIN re-lock |
 
 ## Access
 - **Live URL:** `https://hassananabi98-afk.github.io`

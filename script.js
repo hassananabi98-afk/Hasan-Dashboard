@@ -2,7 +2,7 @@
   const SUPABASE_URL = 'https://wrsqsrouliceqewkxvpw.supabase.co'
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indyc3Fzcm91bGljZXFld2t4dnB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMDg0NTEsImV4cCI6MjA5NjY4NDQ1MX0.rCLfPy5wzwY76lttpoFPimYHwzh4igbMsAJr9WnMIoY'
   const LOGIN_EMAIL = 'hassan.a.nabi98@gmail.com'
-  const PIN_HASH = 'REPLACE_ME' // 6-digit local re-lock, not a security boundary — generate below, then paste here
+  const PIN_HASH = '8b2b59d158e8e4bfffb322285c5a339678c2141fd6631e40bba758e866d23a99' // 6-digit local re-lock, not a security boundary
   // ────────────────────────────────────────────────────────
 
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'

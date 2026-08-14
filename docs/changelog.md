@@ -414,3 +414,7 @@ ALTER TABLE budget_settings ADD COLUMN IF NOT EXISTS started_at date;
 - Anonymous sign-ins disabled in Auth settings — the step that actually closes the old path, done last and only after the new login was confirmed working on a real device
 - Security advisors confirmed clean afterward: every "anonymous access" warning and both `SECURITY DEFINER` warnings gone. One remains — leaked-password protection — gated to Supabase's Pro plan; logged in `known-issues.md` rather than worked around
 - Cache version bumped to `?v=136`
+
+**6-digit PIN restored as a local re-lock:** always typing the real account password felt too heavy for daily use, and Supabase persists the login session per device — so without something in front of it, the app would just stay open indefinitely once unlocked once. A local PIN restores the old "someone picks up the phone" gate, this time honestly: it only decides whether the already-authenticated app is *shown*, not whether the database can be reached. The real password is still the only thing that can start a session in the first place, and only gets asked again if there's no session (a new device, or after a "Not you? Sign out" tap on the PIN screen)
+- Same shape as the original PIN screen, but 6 digits instead of 4 and matched against a session that already exists rather than gating `signInAnonymously()`
+- Cache version bumped to `?v=137`
