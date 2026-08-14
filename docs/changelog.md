@@ -435,3 +435,4 @@ ALTER TABLE budget_settings ADD COLUMN IF NOT EXISTS started_at date;
 - Excel export/import carry a `Savings Transactions` sheet, same shape as `Card Transactions`
 - First real use: closing the gap from the 14 Aug finance discussion, where savings had two competing, unscheduled claims on it (a card payoff and an unquoted car repair) with no visibility into either
 - Cache version bumped to `?v=139`
+- **Corrected same day:** the section originally used a pig emoji and stayed fully expanded at all times, out of step with the plain 💰/💵 emoji and the collapse-to-summary behavior every other Finance box has. Changed to 🏦, and the balance box now collapses to just the number by default — tap it to expand the log and Add button, identical interaction to a card tile. Cache bumped to `?v=140`

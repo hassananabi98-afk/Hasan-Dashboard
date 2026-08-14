@@ -1802,6 +1802,7 @@
   // ── SAVINGS (ledger — add/use entries; balance derived like a card, not
   // a monthly cycle) ────────────────────────────────────────
   const SAVINGS_COLOR = '#14b8a6'
+  let finSavingsCollapsed = true
 
   async function loadSavingsData() {
     const { data } = await supabase.from('savings_transactions').select('*').order('date', { ascending: false })
@@ -1825,8 +1826,14 @@
     wrap.style.padding = '14px'
     wrap.style.boxShadow = `0 2px 12px ${hexA(SAVINGS_COLOR, 0.08)}`
     wrap.style.transition = 'background .12s, border-color .12s'
-    wrap.innerHTML = `<div class="budget-header"><span>Balance</span><span class="card-tile-balance">${fmtAmount(savingsBalance())}</span></div>`
+    wrap.innerHTML = `<div class="budget-header"><span>🏦 Savings</span><span class="card-tile-balance">${fmtAmount(savingsBalance())}</span></div>`
     renderSavingsList()
+  }
+
+  function toggleSavingsCollapse() {
+    finSavingsCollapsed = !finSavingsCollapsed
+    const body = $('savings-body')
+    if (body) body.style.display = finSavingsCollapsed ? 'none' : 'block'
   }
 
   function renderSavingsList() {
@@ -1860,6 +1867,8 @@
   }
 
   function bindSavingsForm() {
+    $('savings-wrap')?.addEventListener('click', toggleSavingsCollapse)
+
     const addBtn = $('savings-add-btn'), form = $('savings-form')
     if (!addBtn) return
     addBtn.addEventListener('click', () => {
