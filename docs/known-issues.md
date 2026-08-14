@@ -48,6 +48,22 @@ cards and loans therefore can't be calculated.
 `loans` table or a total-debt figure. Kept here as a record of the decision so
 the gap isn't rediscovered and raised again.
 
+### KI-09 · Editing an expense into a card payment doesn't touch the card ledger — *won't fix*
+**Status:** closed, declined 14 Aug 2026 · **Impact:** n/a
+
+Creating a **new** card payment from the cash form mirrors it onto the card
+automatically. Tagging an **existing** expense as a card payment through the
+edit form only sets `card_id` — no card-ledger entry is generated, so the
+card's own balance doesn't move until that entry is added by hand.
+
+Deliberate: four historical rows already had their payments recorded on the
+card side by hand before this feature existed, and auto-generating entries on
+tag would have double-counted them. The same protection now applies to every
+future edit, at the cost of a manual step if you retag an old row.
+
+**Decided:** not changed. A prompt at tag-time ("also add this to the card?")
+was considered and declined — kept here as a record so it isn't re-proposed.
+
 ---
 
 ## Repo hygiene
