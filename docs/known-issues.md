@@ -76,6 +76,33 @@ Food & Drinks understates by an unknown margin.
 one-tap quick-add, will not be built — kept here as a record so it isn't
 re-proposed.
 
+### KI-11 · A card payment keeps the category of what it paid off, not "debt repayment"
+**Status:** open · **Impact:** data quality
+
+When a cash expense is tagged as a card payment (`card_id` set), it keeps
+whatever spending category was picked on the form — sometimes a category
+unrelated to being a payment at all. Card payments are debt repayment, not
+consumption, so left in place they inflate whichever category they happen to
+land in, and every category total needs manual correction to back them out
+before it means anything.
+
+Possible fix: force the category to a fixed value (e.g. "Bills") whenever
+`card_id` is set on a cash expense, or exclude `card_id`-tagged rows from
+category totals entirely. Not yet decided.
+
+### KI-12 · A cost paid straight from savings has no path into Cash Expenses
+**Status:** open · **Impact:** data quality
+
+Money spent via the Savings tab (a "use" transaction) never creates a
+matching row in `expenses`. It is invisible to the Cash Expenses list, the
+budget bar, and every category total — a deeper version of the gap
+`upgrade-ideas/01-...` already tracks for card charges, since this kind of
+spend doesn't even reach `card_transactions`.
+
+Possible fix: prompt to also log a category expense when a savings "use" is
+recorded, the way a card payment already mirrors onto the card ledger. Not
+yet decided.
+
 ---
 
 ## Repo hygiene
